@@ -1,0 +1,149 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@source "../**/*.{js,ts,jsx,tsx}";
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  :root {
+    /* base surfaces */
+    --background: oklch(0.99 0.005 300);
+    --foreground: oklch(0.22 0.02 280);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.22 0.02 280);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.22 0.02 280);
+
+    /* brand */
+    --primary: oklch(0.55 0.18 295);          /* violet, matches mockup CTA buttons */
+    --primary-foreground: oklch(0.99 0.005 300);
+    --secondary: oklch(0.94 0.02 295);
+    --secondary-foreground: oklch(0.35 0.08 295);
+
+    /* neutral/utility */
+    --muted: oklch(0.96 0.01 280);
+    --muted-foreground: oklch(0.52 0.02 280);
+    --accent: oklch(0.95 0.03 295);
+    --accent-foreground: oklch(0.35 0.08 295);
+
+    /* semantic states */
+    --destructive: oklch(0.58 0.22 25);
+    --destructive-foreground: oklch(0.99 0.005 300);
+    --success: oklch(0.62 0.15 145);
+    --success-foreground: oklch(0.99 0.005 300);
+    --warning: oklch(0.78 0.15 70);
+    --warning-foreground: oklch(0.28 0.07 60);
+
+    /* crisis — deliberately separate from destructive, reserved only for crisis UI */
+    --crisis: oklch(0.55 0.21 25);
+    --crisis-foreground: oklch(0.99 0.005 300);
+
+    /* pastel accent set — Quick Action tiles, illustrated cards (from mockup) */
+    --pastel-mint: oklch(0.93 0.05 165);
+    --pastel-mint-foreground: oklch(0.35 0.08 165);
+    --pastel-peach: oklch(0.93 0.06 50);
+    --pastel-peach-foreground: oklch(0.4 0.1 40);
+    --pastel-pink: oklch(0.93 0.05 10);
+    --pastel-pink-foreground: oklch(0.4 0.1 5);
+    --pastel-lavender: oklch(0.93 0.04 295);
+    --pastel-lavender-foreground: oklch(0.4 0.1 295);
+
+    /* structure */
+    --border: oklch(0.9 0.01 280);
+    --input: oklch(0.9 0.01 280);
+    --ring: oklch(0.55 0.18 295);
+    --radius: 1rem;                            /* large rounded corners per mockup */
+  }
+
+  .dark {
+    --background: oklch(0.18 0.015 280);
+    --foreground: oklch(0.95 0.01 280);
+    --card: oklch(0.22 0.02 280);
+    --card-foreground: oklch(0.95 0.01 280);
+    --popover: oklch(0.22 0.02 280);
+    --popover-foreground: oklch(0.95 0.01 280);
+
+    --primary: oklch(0.68 0.16 295);
+    --primary-foreground: oklch(0.15 0.02 280);
+    --secondary: oklch(0.28 0.03 295);
+    --secondary-foreground: oklch(0.9 0.02 295);
+
+    --muted: oklch(0.26 0.02 280);
+    --muted-foreground: oklch(0.65 0.02 280);
+    --accent: oklch(0.3 0.04 295);
+    --accent-foreground: oklch(0.9 0.02 295);
+
+    --destructive: oklch(0.62 0.2 25);
+    --destructive-foreground: oklch(0.15 0.02 280);
+    --success: oklch(0.65 0.14 145);
+    --success-foreground: oklch(0.15 0.02 280);
+    --warning: oklch(0.72 0.14 70);
+    --warning-foreground: oklch(0.18 0.05 60);
+
+    --crisis: oklch(0.62 0.2 25);
+    --crisis-foreground: oklch(0.15 0.02 280);
+
+    --pastel-mint: oklch(0.3 0.05 165);
+    --pastel-mint-foreground: oklch(0.85 0.05 165);
+    --pastel-peach: oklch(0.32 0.06 50);
+    --pastel-peach-foreground: oklch(0.85 0.06 50);
+    --pastel-pink: oklch(0.3 0.05 10);
+    --pastel-pink-foreground: oklch(0.85 0.05 10);
+    --pastel-lavender: oklch(0.3 0.04 295);
+    --pastel-lavender-foreground: oklch(0.85 0.04 295);
+
+    --border: oklch(0.3 0.02 280);
+    --input: oklch(0.3 0.02 280);
+    --ring: oklch(0.68 0.16 295);
+  }
+
+  /* OPTIONAL future theme — example of how a third theme slots in without touching components */
+  .theme-calm-teal {
+    --primary: oklch(0.55 0.12 195);
+    --ring: oklch(0.55 0.12 195);
+    /* override only what differs from :root; everything else inherits */
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-crisis: var(--crisis);
+  --color-crisis-foreground: var(--crisis-foreground);
+  --color-pastel-mint: var(--pastel-mint);
+  --color-pastel-mint-foreground: var(--pastel-mint-foreground);
+  --color-pastel-peach: var(--pastel-peach);
+  --color-pastel-peach-foreground: var(--pastel-peach-foreground);
+  --color-pastel-pink: var(--pastel-pink);
+  --color-pastel-pink-foreground: var(--pastel-pink-foreground);
+  --color-pastel-lavender: var(--pastel-lavender);
+  --color-pastel-lavender-foreground: var(--pastel-lavender-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 0.25rem);
+  --radius-sm: calc(var(--radius) - 0.5rem);
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+}

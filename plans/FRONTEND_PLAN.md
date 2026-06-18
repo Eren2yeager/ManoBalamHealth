@@ -1587,23 +1587,23 @@ Test: edit name/age/gender, confirm persists on reload; upload an avatar image, 
 Files: all of `features/psychologists/`.
 Test: as a patient, browse list, apply a specialization filter, open a detail page. As the psychologist test account from Backend Step 4, edit own profile fields and confirm they reflect on the public detail page.
 
-**[ ] Step 5 — Availability + booking (manual mode)**
+**[x] Step 5 — Availability + booking (manual mode)**
 Files: all of `features/availability/`, all of `features/booking/` (manual sub-flow only first).
 Test: as psychologist, set recurring rules; as patient, view that psychologist's slots in your OWN local timezone, select one, fill concern text, reach the payment step (don't complete payment yet — that's Step 6). Confirm a slot disappears/shows booked for other viewers immediately after selection-and-hold (test by opening two browser sessions).
 
-**[ ] Step 6 — Payment**
+**[x] Step 6 — Payment**
 Files: all of `features/payment/`.
 Test: complete a real Razorpay test-mode payment end to end (use Razorpay's documented test UPI ID or test card), confirm appointment flips to `confirmed`, confirm a failed/cancelled payment leaves the appointment recoverable (retry option) rather than stuck.
 
-**[ ] Step 7 — Appointments list/detail**
+**[x] Step 7 — Appointments list/detail**
 Files: all of `features/appointments/`.
 Test: confirm the booked appointment from Step 6 shows up in "My Appointments" with correct local-time display; test cancel flow on a different test appointment.
 
-**[ ] Step 8 — Auto allocation mode**
+**[x] Step 8 — Auto allocation mode**
 Files: complete the auto sub-flow in `features/booking/`.
 Test: book via auto mode with a time window, confirm correct psychologist gets assigned per backend logic; test the "no psychologist available" error path renders a sensible message, not a raw error dump.
 
-**[ ] Step 9 — Socket connection + presence**
+**[x] Step 9 — Socket connection + presence**
 Files: `src/lib/socket.ts`, presence-related wiring in psychologist dashboard (show online toggle for psychologist role) and in `PsychologistCard.tsx` (show online indicator for patients browsing).
 Test: toggle psychologist online in one tab, confirm the online dot updates live in another tab browsing the psychologist list, without a page refresh.
 

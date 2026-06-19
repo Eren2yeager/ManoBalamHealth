@@ -1,9 +1,4 @@
-import type {
-  AllocationMode,
-  AppointmentStatus,
-  ConsultationMode,
-  PaginationParams,
-} from "@/types/global.types";
+import type { ConsultationMode, AppointmentStatus, AllocationMode, PaginationParams } from "@/types/global.types";
 
 export interface AppointmentListItem {
   id: string;

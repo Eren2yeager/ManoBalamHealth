@@ -1,25 +1,16 @@
 import { axiosInstance } from "@/lib/axios";
 import type { ApiSuccessResponse } from "@/types/global.types";
-import type {
-  CreateOrderResponse,
-  CreatePaymentOrderDto,
-  VerifyPaymentDto,
-  VerifyPaymentResponse,
-} from "../types/payment.types";
+import type { CreateOrderResponse, VerifyPaymentDto, VerifyPaymentResponse } from "../types/payment.types";
 
-export const createPaymentOrder = async (
-  payload: CreatePaymentOrderDto
-): Promise<CreateOrderResponse> => {
+export const createOrder = async (appointmentId: string): Promise<CreateOrderResponse> => {
   const { data } = await axiosInstance.post<ApiSuccessResponse<CreateOrderResponse>>(
     "/payments/create-order",
-    payload
+    { appointmentId }
   );
   return data.data;
 };
 
-export const verifyPayment = async (
-  payload: VerifyPaymentDto
-): Promise<VerifyPaymentResponse> => {
+export const verifyPayment = async (payload: VerifyPaymentDto): Promise<VerifyPaymentResponse> => {
   const { data } = await axiosInstance.post<ApiSuccessResponse<VerifyPaymentResponse>>(
     "/payments/verify",
     payload

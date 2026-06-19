@@ -1,4 +1,3 @@
-import { Types } from "mongoose";
 import { PsychologistModel } from "../psychologist/psychologist.model";
 import { UserModel } from "../user/user.model";
 import { AppointmentModel, IAppointment } from "../appointment/appointment.model";
@@ -47,13 +46,13 @@ class AdminService {
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Psychologist not found");
     }
 
-    psychologist.verificationStatus = data.status;
-    if (data.status === "rejected" && data.rejectionReason) {
+    psychologist.verificationStatus = data.decision;
+    if (data.decision === "rejected" && data.rejectionReason) {
       (psychologist as any).rejectionReason = data.rejectionReason;
     }
     await psychologist.save();
 
-    return { success: true, message: "Psychologist status updated successfully" };
+    return { id: psychologistId, verificationStatus: data.decision };
   }
 
   async getAppointments(query: { page: number; limit: number; status?: IAppointment["status"] }) {
@@ -123,16 +122,23 @@ class AdminService {
       throw new ApiError(StatusCodes.CONFLICT, ErrorCodes.VALIDATION_ERROR, "No paid payment found for this appointment");
     }
 
+    const refundedAmount = data.amount ?? payment.amount;
+
     // Update appointment status
     appointment.status = "refunded";
     await appointment.save();
 
-    // Update payment (we'd call payment provider here in real app)
+    // Update payment record
+    // NOTE: Razorpay refund API call is not yet integrated — add razorpayProvider.createRefund() here.
     payment.status = "refunded";
     payment.refundReason = data.reason;
     await payment.save();
 
-    return { success: true, message: "Refund processed successfully" };
+    return {
+      paymentId: payment._id.toString(),
+      status: "refunded" as const,
+      refundedAmount,
+    };
   }
 }
 

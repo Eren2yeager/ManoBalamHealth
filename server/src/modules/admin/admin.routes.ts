@@ -14,10 +14,17 @@ const router = Router();
 // All admin routes require authentication and admin role
 router.use(requireAuth, requireRole("admin"));
 
-router.get("/psychologists", validate(getPsychologistsSchema, "query"), adminController.getPsychologists);
-router.patch("/psychologists/:id/status", validate(updatePsychologistStatusSchema), adminController.updatePsychologistStatus);
+// Psychologist management
+router.get("/psychologists/pending", validate(getPsychologistsSchema, "query"), adminController.getPsychologists);
+router.patch("/psychologists/:id/verify", validate(updatePsychologistStatusSchema), adminController.updatePsychologistStatus);
+
+// Appointment oversight
 router.get("/appointments", validate(getAppointmentsSchema, "query"), adminController.getAppointments);
-router.get("/reports/summary", adminController.getReportsSummary);
-router.post("/appointments/:appointmentId/refund", validate(processRefundSchema), adminController.processRefund);
+
+// Reports
+router.get("/reports", adminController.getReportsSummary);
+
+// Payment refunds — keyed by paymentId to match plan
+router.patch("/payments/:id/refund", validate(processRefundSchema), adminController.processRefund);
 
 export default router;

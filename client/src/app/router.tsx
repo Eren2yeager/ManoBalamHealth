@@ -1,94 +1,104 @@
 import { createBrowserRouter } from "react-router-dom";
+
+// Public
 import { LandingPage } from "../features/shared/pages/LandingPage";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { RegisterPage } from "../features/auth/pages/RegisterPage";
 import { VerifyOtpPage } from "../features/auth/pages/VerifyOtpPage";
+
+// Protected (all roles)
 import { HomePage } from "../features/shared/pages/HomePage";
 import { ProfilePage } from "../features/profile/pages/ProfilePage";
 import { PsychologistListPage } from "../features/psychologists/pages/PsychologistListPage";
 import { PsychologistDetailPage } from "../features/psychologists/pages/PsychologistDetailPage";
-import { PsychologistDashboard } from "../features/psychologists/pages/PsychologistDashboard";
 import { BookingFlowPage } from "../features/booking/pages/BookingFlowPage";
 import { MyAppointmentsPage } from "../features/appointments/pages/MyAppointmentsPage";
 import { AppointmentDetailPage } from "../features/appointments/pages/AppointmentDetailPage";
 import { SessionRoomPage } from "../features/session/pages/SessionRoomPage";
+import { FeedbackPage } from "../features/feedback/pages/FeedbackPage";
+import { AssessmentHubPage } from "../features/assessment/pages/AssessmentHubPage";
+import { AssessmentPage } from "../features/assessment/pages/AssessmentPage";
+import { EmergencyPage } from "../features/emergency/pages/EmergencyPage";
+import { EmergencySessionPage } from "../features/emergency/pages/EmergencySessionPage";
+
+// Psychologist-only
+import { PsychologistDashboard } from "../features/psychologists/pages/PsychologistDashboard";
+import { AvailabilityPage } from "../features/availability/pages/AvailabilityPage";
+import { PsychologistAppointmentsPage } from "../features/appointments/pages/PsychologistAppointmentsPage";
+
+// Admin-only
+import { AdminDashboardPage } from "../features/admin/pages/AdminDashboardPage";
+import { AdminVerificationsPage } from "../features/admin/pages/AdminVerificationsPage";
+import { AdminReportsPage } from "../features/admin/pages/AdminReportsPage";
+import { AdminPaymentsPage } from "../features/admin/pages/AdminPaymentsPage";
+// Guards
 import { ProtectedRoute } from "../routes/ProtectedRoute";
 import { RoleRoute } from "../routes/RoleRoute";
 
 const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <LandingPage />,
-  },
-  {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  {
-    path: "/register",
-    element: <RegisterPage />,
-  },
-  {
-    path: "/verify-otp",
-    element: <VerifyOtpPage />,
-  },
+  // ── Public ──────────────────────────────────────────────────────────────
+  { path: "/", element: <LandingPage /> },
+  { path: "/login", element: <LoginPage /> },
+  { path: "/register", element: <RegisterPage /> },
+  { path: "/verify-otp", element: <VerifyOtpPage /> },
+
+  // ── Protected (any authenticated role) ──────────────────────────────────
   {
     element: <ProtectedRoute />,
     children: [
-      {
-        path: "/home",
-        element: <HomePage />,
-      },
-      {
-        path: "/profile",
-        element: <ProfilePage />,
-      },
-      {
-        path: "/psychologists",
-        element: <PsychologistListPage />,
-      },
-      {
-        path: "/psychologists/:id",
-        element: <PsychologistDetailPage />,
-      },
-      {
-        path: "/booking",
-        element: <BookingFlowPage />,
-      },
-      {
-        path: "/booking/:psychologistId",
-        element: <BookingFlowPage />,
-      },
-      {
-        path: "/appointments",
-        element: <MyAppointmentsPage />,
-      },
-      {
-        path: "/appointments/:id",
-        element: <AppointmentDetailPage />,
-      },
-      {
-        path: "/session/:appointmentId",
-        element: <SessionRoomPage />,
-      },
+      { path: "/home", element: <HomePage /> },
+      { path: "/profile", element: <ProfilePage /> },
+
+      // Psychologist browse
+      { path: "/psychologists", element: <PsychologistListPage /> },
+      { path: "/psychologists/:id", element: <PsychologistDetailPage /> },
+
+      // Booking
+      { path: "/book", element: <BookingFlowPage /> },
+      { path: "/book/:psychologistId", element: <BookingFlowPage /> },
+
+      // Appointments
+      { path: "/appointments", element: <MyAppointmentsPage /> },
+      { path: "/appointments/:id", element: <AppointmentDetailPage /> },
+
+      // Session
+      { path: "/session/:appointmentId", element: <SessionRoomPage /> },
+
+      // Feedback
+      { path: "/feedback/:appointmentId", element: <FeedbackPage /> },
+
+      // Assessment
+      { path: "/assessment", element: <AssessmentHubPage /> },
+      { path: "/assessment/:type", element: <AssessmentPage /> },
+      { path: "/assessment/:type/result", element: <AssessmentPage /> },
+
+      // Emergency
+      { path: "/emergency", element: <EmergencyPage /> },
+      { path: "/emergency/session/:sessionId", element: <EmergencySessionPage /> },
     ],
   },
+
+  // ── Psychologist-only ────────────────────────────────────────────────────
   {
-    element: (
-      <RoleRoute allowed={["psychologist"]} />
-    ),
+    element: <RoleRoute allowed={["psychologist"]} />,
     children: [
-      {
-        path: "/psychologist/dashboard",
-        element: <PsychologistDashboard />,
-      },
-      {
-        path: "/psychologist/session/:appointmentId",
-        element: <SessionRoomPage />,
-      },
+      { path: "/psychologist/dashboard", element: <PsychologistDashboard /> },
+      { path: "/psychologist/availability", element: <AvailabilityPage /> },
+      { path: "/psychologist/appointments", element: <PsychologistAppointmentsPage /> },
+      { path: "/psychologist/session/:appointmentId", element: <SessionRoomPage /> },
+    ],
+  },
+
+  // ── Admin-only ───────────────────────────────────────────────────────────
+  {
+    element: <RoleRoute allowed={["admin"]} />,
+    children: [
+      { path: "/admin/dashboard", element: <AdminDashboardPage /> },
+      { path: "/admin/verifications", element: <AdminVerificationsPage /> },
+      { path: "/admin/reports", element: <AdminReportsPage /> },
+      { path: "/admin/payments", element: <AdminPaymentsPage /> },
     ],
   },
 ]);
 
 export { router };
-

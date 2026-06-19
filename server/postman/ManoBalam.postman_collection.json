@@ -1,0 +1,496 @@
+{
+  "info": {
+    "_postman_id": "manobalam-backend-v1",
+    "name": "ManoBalam API",
+    "description": "Full API collection for ManoBalam mental health platform. Base URL is stored in the `baseUrl` collection variable. Access token is stored in `accessToken` and automatically used by the collection-level auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
+    { "key": "psychologistId", "value": "", "type": "string" },
+    { "key": "slotId", "value": "", "type": "string" },
+    { "key": "appointmentId", "value": "", "type": "string" },
+    { "key": "paymentId", "value": "", "type": "string" },
+    { "key": "sessionId", "value": "", "type": "string" },
+    { "key": "sessionChatId", "value": "", "type": "string" },
+    { "key": "feedbackId", "value": "", "type": "string" },
+    { "key": "templateId", "value": "", "type": "string" },
+    { "key": "adminPaymentId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data.userId) pm.collectionVariables.set('userId', res.data.userId);"], "type": "text/javascript" } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"Password1\",\n  \"role\": \"patient\",\n  \"country\": \"IN\",\n  \"timezone\": \"Asia/Kolkata\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data.accessToken) pm.collectionVariables.set('accessToken', res.data.accessToken);"], "type": "text/javascript" } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"otp\": \"123456\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/verify-otp", "host": ["{{baseUrl}}"], "path": ["auth", "verify-otp"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data.accessToken) pm.collectionVariables.set('accessToken', res.data.accessToken);"], "type": "text/javascript" } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"emailOrPhone\": \"testuser@example.com\",\n  \"password\": \"Password1\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/refresh-token", "host": ["{{baseUrl}}"], "path": ["auth", "refresh-token"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Name\",\n  \"age\": 28,\n  \"gender\": \"male\",\n  \"emergencyContact\": { \"name\": \"Emergency Person\", \"phone\": \"+919876543210\" },\n  \"timezone\": \"Asia/Kolkata\"\n}" },
+            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+          }
+        },
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "formdata", "formdata": [{ "key": "avatar", "type": "file", "src": "" }] },
+            "url": { "raw": "{{baseUrl}}/users/me/avatar", "host": ["{{baseUrl}}"], "path": ["users", "me", "avatar"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Psychologists",
+      "item": [
+        {
+          "name": "List Psychologists",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data[0]) pm.collectionVariables.set('psychologistId', res.data[0].id);"], "type": "text/javascript" } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/psychologists?page=1&limit=20&sortBy=rating",
+              "host": ["{{baseUrl}}"], "path": ["psychologists"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "specialization", "value": "anxiety", "disabled": true },
+                { "key": "language", "value": "en", "disabled": true },
+                { "key": "country", "value": "IN", "disabled": true },
+                { "key": "minRating", "value": "4", "disabled": true },
+                { "key": "sortBy", "value": "rating" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Psychologist by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/psychologists/{{psychologistId}}", "host": ["{{baseUrl}}"], "path": ["psychologists", "{{psychologistId}}"] }
+          }
+        },
+        {
+          "name": "Upload Credentials",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "documents", "type": "file", "src": "" },
+              { "key": "type", "value": "license", "type": "text" }
+            ]},
+            "url": { "raw": "{{baseUrl}}/psychologists/credentials", "host": ["{{baseUrl}}"], "path": ["psychologists", "credentials"] }
+          }
+        },
+        {
+          "name": "Update My Profile (Psychologist)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"specialization\": [\"anxiety\", \"depression\"],\n  \"languages\": [\"en\", \"ta\"],\n  \"experienceYears\": 5,\n  \"consultationFee\": { \"amount\": 50000, \"currency\": \"INR\" },\n  \"bio\": \"Experienced therapist specializing in anxiety and depression.\",\n  \"licensedCountries\": [\"IN\"],\n  \"isAcceptingEmergency\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/psychologists/me/profile", "host": ["{{baseUrl}}"], "path": ["psychologists", "me", "profile"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Availability",
+      "item": [
+        {
+          "name": "Set Availability Rules",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rules\": [\n    {\n      \"dayOfWeek\": 1,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"slotDurationMinutes\": 60,\n      \"modes\": [\"chat\", \"video\"]\n    },\n    {\n      \"dayOfWeek\": 3,\n      \"startTime\": \"10:00\",\n      \"endTime\": \"14:00\",\n      \"slotDurationMinutes\": 45,\n      \"modes\": [\"audio\"]\n    }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/availability/me/rules", "host": ["{{baseUrl}}"], "path": ["availability", "me", "rules"] }
+          }
+        },
+        {
+          "name": "Get Available Slots",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data[0]) pm.collectionVariables.set('slotId', res.data[0].slotId);"], "type": "text/javascript" } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/availability/{{psychologistId}}/slots?from=2026-06-20&to=2026-07-01",
+              "host": ["{{baseUrl}}"], "path": ["availability", "{{psychologistId}}", "slots"],
+              "query": [
+                { "key": "from", "value": "2026-06-20" },
+                { "key": "to", "value": "2026-07-01" },
+                { "key": "mode", "value": "video", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Block a Slot",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/availability/slots/{{slotId}}/block", "host": ["{{baseUrl}}"], "path": ["availability", "slots", "{{slotId}}", "block"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Book Appointment (Manual)",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data.appointmentId) pm.collectionVariables.set('appointmentId', res.data.appointmentId);"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"allocationMode\": \"manual\",\n  \"slotId\": \"{{slotId}}\",\n  \"mode\": \"video\",\n  \"concernDescription\": \"Struggling with anxiety and sleep issues.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/appointments", "host": ["{{baseUrl}}"], "path": ["appointments"] }
+          }
+        },
+        {
+          "name": "Book Appointment (Auto)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"allocationMode\": \"auto\",\n  \"preferredFrom\": \"2026-06-25T09:00:00.000Z\",\n  \"preferredTo\": \"2026-06-25T17:00:00.000Z\",\n  \"mode\": \"video\",\n  \"specialization\": \"anxiety\",\n  \"concernDescription\": \"Need help with stress management.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/appointments", "host": ["{{baseUrl}}"], "path": ["appointments"] }
+          }
+        },
+        {
+          "name": "List My Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/me?page=1&limit=20",
+              "host": ["{{baseUrl}}"], "path": ["appointments", "me"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "confirmed", "disabled": true },
+                { "key": "upcoming", "value": "true", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Appointment by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/appointments/{{appointmentId}}", "host": ["{{baseUrl}}"], "path": ["appointments", "{{appointmentId}}"] }
+          }
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Schedule conflict\"\n}" },
+            "url": { "raw": "{{baseUrl}}/appointments/{{appointmentId}}/cancel", "host": ["{{baseUrl}}"], "path": ["appointments", "{{appointmentId}}", "cancel"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create Razorpay Order",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data.razorpayOrderId) pm.collectionVariables.set('razorpayOrderId', res.data.razorpayOrderId);"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/payments/create-order", "host": ["{{baseUrl}}"], "path": ["payments", "create-order"] }
+          }
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"razorpayOrderId\": \"{{razorpayOrderId}}\",\n  \"razorpayPaymentId\": \"pay_XXXXXXXXXXXXXX\",\n  \"razorpaySignature\": \"<signature_from_widget>\"\n}" },
+            "url": { "raw": "{{baseUrl}}/payments/verify", "host": ["{{baseUrl}}"], "path": ["payments", "verify"] }
+          }
+        },
+        {
+          "name": "Razorpay Webhook",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-razorpay-signature", "value": "<webhook_signature>" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"event\": \"payment.captured\",\n  \"payload\": {\n    \"payment\": {\n      \"entity\": {\n        \"id\": \"pay_XXXXXXXXXXXXXX\",\n        \"order_id\": \"order_XXXXXXXXXXXXXX\",\n        \"status\": \"captured\"\n      }\n    }\n  }\n}" },
+            "url": { "raw": "{{baseUrl}}/payments/webhook/razorpay", "host": ["{{baseUrl}}"], "path": ["payments", "webhook", "razorpay"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Get Session by Appointment ID",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data.sessionId) pm.collectionVariables.set('sessionId', res.data.sessionId);"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/sessions/{{appointmentId}}", "host": ["{{baseUrl}}"], "path": ["sessions", "{{appointmentId}}"] }
+          }
+        },
+        {
+          "name": "Update Session Notes (Psychologist)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"notes\": \"Patient showed signs of improvement. Recommended breathing exercises.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/sessions/{{sessionId}}/notes", "host": ["{{baseUrl}}"], "path": ["sessions", "{{sessionId}}", "notes"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Get Chat History",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data[0]) pm.collectionVariables.set('sessionChatId', res.data[0].id);"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/{{sessionId}}/history?page=1&limit=50",
+              "host": ["{{baseUrl}}"], "path": ["chat", "{{sessionId}}", "history"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "50" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "item": [
+        {
+          "name": "Submit Feedback",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data.id) pm.collectionVariables.set('feedbackId', res.data.id);"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"rating\": 5,\n  \"comment\": \"Very helpful session, felt comfortable throughout.\",\n  \"continueWithSamePsychologist\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/feedback", "host": ["{{baseUrl}}"], "path": ["feedback"] }
+          }
+        },
+        {
+          "name": "Get Psychologist Feedback",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/feedback/psychologist/{{psychologistId}}?page=1&limit=20",
+              "host": ["{{baseUrl}}"], "path": ["feedback", "psychologist", "{{psychologistId}}"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assessments",
+      "item": [
+        {
+          "name": "Get Assessment Template",
+          "event": [{ "listen": "test", "script": { "exec": ["var res = pm.response.json();", "if (res.data && res.data.templateId) pm.collectionVariables.set('templateId', res.data.templateId);"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments/templates/anxiety", "host": ["{{baseUrl}}"], "path": ["assessments", "templates", "anxiety"] }
+          }
+        },
+        {
+          "name": "Submit Assessment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"templateId\": \"{{templateId}}\",\n  \"answers\": [\n    { \"questionId\": \"q1\", \"selectedScore\": 2 },\n    { \"questionId\": \"q2\", \"selectedScore\": 1 },\n    { \"questionId\": \"q3\", \"selectedScore\": 3 }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/assessments/submit", "host": ["{{baseUrl}}"], "path": ["assessments", "submit"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Crisis",
+      "item": [
+        {
+          "name": "Get Crisis Resources",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/crisis/resources?country=IN",
+              "host": ["{{baseUrl}}"], "path": ["crisis", "resources"],
+              "query": [{ "key": "country", "value": "IN" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "List Pending Psychologists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/psychologists/pending?page=1&limit=20",
+              "host": ["{{baseUrl}}"], "path": ["admin", "psychologists", "pending"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Psychologist",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"decision\": \"approved\"\n}" },
+            "url": { "raw": "{{baseUrl}}/admin/psychologists/{{psychologistId}}/verify", "host": ["{{baseUrl}}"], "path": ["admin", "psychologists", "{{psychologistId}}", "verify"] }
+          }
+        },
+        {
+          "name": "Reject Psychologist",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"decision\": \"rejected\",\n  \"rejectionReason\": \"License document is expired.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/admin/psychologists/{{psychologistId}}/verify", "host": ["{{baseUrl}}"], "path": ["admin", "psychologists", "{{psychologistId}}", "verify"] }
+          }
+        },
+        {
+          "name": "List All Appointments (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/appointments?page=1&limit=20",
+              "host": ["{{baseUrl}}"], "path": ["admin", "appointments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "confirmed", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/reports",
+              "host": ["{{baseUrl}}"], "path": ["admin", "reports"]
+            }
+          }
+        },
+        {
+          "name": "Refund Payment",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Patient requested cancellation within refund window.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/admin/payments/{{adminPaymentId}}/refund", "host": ["{{baseUrl}}"], "path": ["admin", "payments", "{{adminPaymentId}}", "refund"] }
+          }
+        }
+      ]
+    }
+  ]
+}

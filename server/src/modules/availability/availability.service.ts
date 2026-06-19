@@ -58,13 +58,23 @@ class AvailabilityService {
       throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, ErrorCodes.INTERNAL_ERROR, "Psychologist timezone not set");
     }
 
-    // Validate date range
-    const fromDate = new Date(query.from);
-    const toDate = new Date(query.to);
-    const diffDays = (toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24);
+    // Validate date range — anchor to start-of-day in the psychologist's timezone
+    // so "2026-06-19" means 00:00 local, not an ambiguous UTC midnight.
+    const { DateTime } = await import("luxon");
+    const fromDt = DateTime.fromISO(query.from, { zone: user.timezone }).startOf("day");
+    const toDt   = DateTime.fromISO(query.to,   { zone: user.timezone }).endOf("day");
+
+    if (!fromDt.isValid || !toDt.isValid) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, ErrorCodes.VALIDATION_ERROR, "Invalid date format — use ISO date e.g. 2026-06-19");
+    }
+
+    const diffDays = toDt.diff(fromDt, "days").days;
     if (diffDays > 30) {
       throw new ApiError(StatusCodes.BAD_REQUEST, ErrorCodes.VALIDATION_ERROR, "Date range cannot exceed 30 days");
     }
+
+    const fromDate = fromDt.toJSDate();
+    const toDate   = toDt.toJSDate();
 
     // Get rules
     const rules = await AvailabilityRuleModel.find({ psychologistId: psychologist._id });
@@ -81,16 +91,26 @@ class AvailabilityService {
 
     let slots = await AvailabilitySlotModel.find(filter).sort({ startTime: 1 });
 
-    // If no slots, generate them temporarily for response
+    // If no slots exist, materialise them from rules and persist to DB
     if (slots.length === 0 && rules.length > 0) {
-      const generatedSlots = generateSlots(rules, user.timezone, query.from, query.to);
-      return generatedSlots.map((slot) => ({
-        slotId: "temp_" + Math.random().toString(36).substr(2, 9), // Temporary ID
-        startTime: slot.startTime.toISOString(),
-        endTime: slot.endTime.toISOString(),
+      const generatedSlots = generateSlots(rules, user.timezone, fromDt.toISO()!, toDt.toISO()!);
+      const docs = generatedSlots.map((slot) => ({
+        psychologistId: psychologist._id,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
         mode: slot.mode,
         isBooked: false,
+        isBlocked: false,
       }));
+
+      if (docs.length > 0) {
+        // insertMany with ordered:false ignores duplicate-key errors from concurrent requests
+        await AvailabilitySlotModel.insertMany(docs, { ordered: false }).catch(() => {
+          // Silently ignore duplicate key errors — another request already inserted these slots
+        });
+        // Re-fetch the newly created slots so we return real DB IDs
+        slots = await AvailabilitySlotModel.find(filter).sort({ startTime: 1 });
+      }
     }
 
     // Convert to response

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { getSocket, connectSocket } from "@/lib/socket";
+import { connectSocket } from "@/lib/socket";
 import { getChatHistory } from "../api/chat.api";
 import type { ChatMessage } from "../types/chat.types";
 
@@ -8,6 +8,15 @@ export interface UseChatMessagesOptions {
   initialLimit?: number;
 }
 
+/**
+ * Matches socket event contracts from FRONTEND_PLAN.md § 6.2 exactly.
+ *
+ * emit   "chat:join"    { sessionId }
+ * emit   "chat:message" { sessionId, content, attachmentUrl? }
+ * emit   "chat:typing"  { sessionId }
+ * listen "chat:message" { message: ChatMessage }
+ * listen "chat:typing"  { userId: string }
+ */
 export function useChatMessages({
   sessionId,
   initialLimit = 50,
@@ -22,64 +31,69 @@ export function useChatMessages({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  // Fetch chat history
-  const fetchHistory = useCallback(async (page = 1, limit = initialLimit) => {
-    try {
-      setIsLoading(true);
-      const result = await getChatHistory(sessionId, { page, limit });
-      
-      if (page === 1) {
-        setMessages(result.items);
-      } else {
-        setMessages((prev) => [...result.items, ...prev]);
+  const fetchHistory = useCallback(
+    async (page = 1, limit = initialLimit) => {
+      try {
+        setIsLoading(true);
+        const result = await getChatHistory(sessionId, { page, limit });
+        if (page === 1) {
+          setMessages(result.items);
+        } else {
+          // Prepend older messages
+          setMessages((prev) => [...result.items, ...prev]);
+        }
+        setHasMore(result.meta.page < result.meta.totalPages);
+      } catch {
+        // Non-fatal — history simply won't be pre-populated
+      } finally {
+        setIsLoading(false);
       }
-      
-      setHasMore(result.meta.page < result.meta.totalPages);
-    } catch (error) {
-      console.error("Failed to fetch chat history:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sessionId, initialLimit]);
+    },
+    [sessionId, initialLimit]
+  );
 
-  // Send message
-  const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim() || isSending) return;
+  const sendMessage = useCallback(
+    async (content: string) => {
+      if (!content.trim() || isSending) return;
+      setIsSending(true);
+      try {
+        const socket = connectSocket();
+        // Plan § 6.2: emit "chat:message" with { sessionId, content }
+        socket.emit("chat:message", { sessionId, content });
+      } finally {
+        setIsSending(false);
+      }
+    },
+    [sessionId, isSending]
+  );
 
-    setIsSending(true);
-    const socket = getSocket();
-    
-    try {
-      socket.emit("chat:send", { sessionId, content });
-    } catch (error) {
-      console.error("Failed to send message:", error);
-    } finally {
-      setIsSending(false);
-    }
-  }, [sessionId, isSending]);
+  const sendTyping = useCallback(() => {
+    const socket = connectSocket();
+    // Plan § 6.2: emit "chat:typing" with { sessionId }
+    socket.emit("chat:typing", { sessionId });
+  }, [sessionId]);
 
-  // Initialize socket connection and listeners
   useEffect(() => {
     const socket = connectSocket();
 
-    const handleMessageReceived = (message: ChatMessage) => {
-      setMessages((prev) => [...prev, message]);
+    // Plan § 6.2: join with object payload { sessionId }
+    socket.emit("chat:join", { sessionId });
+
+    // Plan § 6.2: incoming payload is { message: ChatMessage }
+    const handleMessage = (payload: { message: ChatMessage }) => {
+      setMessages((prev) => [...prev, payload.message]);
     };
 
-    // Listen for new messages
-    socket.on("chat:message", handleMessageReceived);
-    socket.emit("chat:join", sessionId);
+    socket.on("chat:message", handleMessage);
 
-    // Fetch initial history
     fetchHistory(1);
 
     return () => {
-      socket.off("chat:message", handleMessageReceived);
-      socket.emit("chat:leave", sessionId);
+      socket.off("chat:message", handleMessage);
+      // No explicit leave event defined in the plan
     };
   }, [sessionId, fetchHistory]);
 
-  // Scroll to bottom when new messages arrive
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
@@ -90,6 +104,7 @@ export function useChatMessages({
     hasMore,
     isSending,
     sendMessage,
+    sendTyping,
     fetchHistory,
     messagesEndRef,
   };

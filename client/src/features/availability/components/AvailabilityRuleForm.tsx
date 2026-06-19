@@ -4,11 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { createAvailabilityRule } from "../api/availability.api";
-import type {
-  CreateAvailabilityRuleDto,
-  Weekday,
-} from "../types/availability.types";
+import { setRecurringRules } from "../api/availability.api";
+import type { AvailabilityRuleDto } from "../types/availability.types";
 import type { ConsultationMode } from "@/types/global.types";
 import { toast } from "sonner";
 
@@ -16,132 +13,184 @@ interface AvailabilityRuleFormProps {
   onSuccess?: () => void;
 }
 
-const WEEKDAYS: Weekday[] = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday",
-];
+const DAY_LABELS: Record<number, string> = {
+  0: "Sunday",
+  1: "Monday",
+  2: "Tuesday",
+  3: "Wednesday",
+  4: "Thursday",
+  5: "Friday",
+  6: "Saturday",
+};
+
+const DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 const MODES: ConsultationMode[] = ["chat", "audio", "video"];
+const DURATIONS: Array<30 | 45 | 60> = [30, 45, 60];
+
+const DEFAULT_RULE: AvailabilityRuleDto = {
+  dayOfWeek: 1,
+  startTime: "09:00",
+  endTime: "17:00",
+  slotDurationMinutes: 60,
+  modes: ["chat", "audio"],
+};
 
 export const AvailabilityRuleForm = ({ onSuccess }: AvailabilityRuleFormProps) => {
-  const [formData, setFormData] = useState<CreateAvailabilityRuleDto>({
-    weekday: "monday",
-    startTime: "09:00",
-    endTime: "17:00",
-    consultationModes: ["chat", "audio"],
-  });
+  const [rules, setRules] = useState<AvailabilityRuleDto[]>([{ ...DEFAULT_RULE }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const updateRule = (index: number, patch: Partial<AvailabilityRuleDto>) => {
+    setRules((prev) =>
+      prev.map((rule, i) => (i === index ? { ...rule, ...patch } : rule))
+    );
+  };
+
+  const toggleMode = (index: number, mode: ConsultationMode) => {
+    setRules((prev) =>
+      prev.map((rule, i) => {
+        if (i !== index) return rule;
+        const modes = rule.modes.includes(mode)
+          ? rule.modes.filter((m) => m !== mode)
+          : [...rule.modes, mode];
+        return { ...rule, modes };
+      })
+    );
+  };
+
+  const addRule = () => setRules((prev) => [...prev, { ...DEFAULT_RULE }]);
+
+  const removeRule = (index: number) =>
+    setRules((prev) => prev.filter((_, i) => i !== index));
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const invalid = rules.find((r) => r.modes.length === 0);
+    if (invalid) {
+      toast.error("Each rule must have at least one consultation mode selected.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await createAvailabilityRule(formData);
-      toast.success("Availability rule created successfully");
+      const { rulesUpdated } = await setRecurringRules(rules);
+      toast.success(`${rulesUpdated} availability rule${rulesUpdated !== 1 ? "s" : ""} saved.`);
       onSuccess?.();
-      setFormData({
-        weekday: "monday",
-        startTime: "09:00",
-        endTime: "17:00",
-        consultationModes: ["chat", "audio"],
-      });
-    } catch (error) {
-      toast.error("Failed to create availability rule");
-      console.error(error);
+    } catch (err) {
+      toast.error("Failed to save availability rules.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const toggleMode = (mode: ConsultationMode) => {
-    setFormData((prev) => ({
-      ...prev,
-      consultationModes: prev.consultationModes.includes(mode)
-        ? prev.consultationModes.filter((m) => m !== mode)
-        : [...prev.consultationModes, mode],
-    }));
-  };
-
   return (
-    <Card className="max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Create Availability Rule</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="weekday">Weekday</Label>
-            <select
-              id="weekday"
-              value={formData.weekday}
-              onChange={(e) => setFormData((prev) => ({
-                ...prev,
-                weekday: e.target.value as Weekday,
-              }))}
-              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-            >
-              {WEEKDAYS.map((day) => (
-                <option key={day} value={day}>
-                  {day.charAt(0).toUpperCase() + day.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {rules.map((rule, index) => (
+        <Card key={index}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base">Rule {index + 1}</CardTitle>
+            {rules.length > 1 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => removeRule(index)}
+                className="text-destructive hover:text-destructive"
+              >
+                Remove
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Day of week */}
             <div className="space-y-2">
-              <Label htmlFor="startTime">Start Time</Label>
-              <Input
-                id="startTime"
-                type="time"
-                value={formData.startTime}
-                onChange={(e) => setFormData((prev) => ({
-                  ...prev,
-                  startTime: e.target.value,
-                }))}
-                required
-              />
+              <Label>Day of Week</Label>
+              <select
+                value={rule.dayOfWeek}
+                onChange={(e) =>
+                  updateRule(index, {
+                    dayOfWeek: Number(e.target.value) as AvailabilityRuleDto["dayOfWeek"],
+                  })
+                }
+                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+              >
+                {DAYS.map((day) => (
+                  <option key={day} value={day}>
+                    {DAY_LABELS[day]}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {/* Time range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor={`startTime-${index}`}>Start Time</Label>
+                <Input
+                  id={`startTime-${index}`}
+                  type="time"
+                  value={rule.startTime}
+                  onChange={(e) => updateRule(index, { startTime: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`endTime-${index}`}>End Time</Label>
+                <Input
+                  id={`endTime-${index}`}
+                  type="time"
+                  value={rule.endTime}
+                  onChange={(e) => updateRule(index, { endTime: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Slot duration */}
             <div className="space-y-2">
-              <Label htmlFor="endTime">End Time</Label>
-              <Input
-                id="endTime"
-                type="time"
-                value={formData.endTime}
-                onChange={(e) => setFormData((prev) => ({
-                  ...prev,
-                  endTime: e.target.value,
-                }))}
-                required
-              />
+              <Label>Slot Duration</Label>
+              <div className="flex gap-2">
+                {DURATIONS.map((d) => (
+                  <Badge
+                    key={d}
+                    variant={rule.slotDurationMinutes === d ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => updateRule(index, { slotDurationMinutes: d })}
+                  >
+                    {d} min
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Consultation Modes</Label>
-            <div className="flex flex-wrap gap-2">
-              {MODES.map((mode) => (
-                <Badge
-                  key={mode}
-                  variant={formData.consultationModes.includes(mode) ? "default" : "outline"}
-                  className="cursor-pointer capitalize"
-                  onClick={() => toggleMode(mode)}
-                >
-                  {mode}
-                </Badge>
-              ))}
+            {/* Consultation modes */}
+            <div className="space-y-2">
+              <Label>Consultation Modes</Label>
+              <div className="flex gap-2">
+                {MODES.map((mode) => (
+                  <Badge
+                    key={mode}
+                    variant={rule.modes.includes(mode) ? "default" : "outline"}
+                    className="cursor-pointer capitalize"
+                    onClick={() => toggleMode(index, mode)}
+                  >
+                    {mode}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
+      ))}
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Rule"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+      <div className="flex gap-3">
+        <Button type="button" variant="outline" onClick={addRule}>
+          + Add Rule
+        </Button>
+        <Button type="submit" disabled={isSubmitting} className="flex-1">
+          {isSubmitting ? "Saving..." : "Save Rules"}
+        </Button>
+      </div>
+    </form>
   );
 };

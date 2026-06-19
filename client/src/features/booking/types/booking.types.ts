@@ -1,5 +1,4 @@
 import type { ConsultationMode, Money } from "@/types/global.types";
-import type { Specialization } from "@/features/psychologists/types/psychologist.types";
 
 export type CreateAppointmentDto =
   | {
@@ -13,7 +12,7 @@ export type CreateAppointmentDto =
       preferredFrom: string;
       preferredTo: string;
       mode: ConsultationMode;
-      specialization?: Specialization;
+      specialization?: string;
       concernDescription?: string;
     };
 

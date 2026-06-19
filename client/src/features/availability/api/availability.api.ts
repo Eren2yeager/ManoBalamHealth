@@ -1,41 +1,31 @@
 import { axiosInstance } from "@/lib/axios";
 import type { ApiSuccessResponse } from "@/types/global.types";
-import type {
-  RecurringAvailabilityRule,
-  CreateAvailabilityRuleDto,
-  AvailableSlot,
-  GetSlotsParams,
-} from "../types/availability.types";
+import type { AvailabilityRuleDto, SlotItem } from "../types/availability.types";
 
-export const getPsychologistAvailabilityRules = async (): Promise<
-  RecurringAvailabilityRule[]
-> => {
-  const { data } = await axiosInstance.get<ApiSuccessResponse<RecurringAvailabilityRule[]>>(
-    "/availability/rules"
+export const setRecurringRules = async (rules: AvailabilityRuleDto[]): Promise<{ rulesUpdated: number }> => {
+  const { data } = await axiosInstance.patch<ApiSuccessResponse<{ rulesUpdated: number }>>(
+    "/availability/me/rules",
+    { rules }
   );
   return data.data;
-};
-
-export const createAvailabilityRule = async (
-  payload: CreateAvailabilityRuleDto
-): Promise<RecurringAvailabilityRule> => {
-  const { data } = await axiosInstance.post<ApiSuccessResponse<RecurringAvailabilityRule>>(
-    "/availability/rules",
-    payload
-  );
-  return data.data;
-};
-
-export const deleteAvailabilityRule = async (ruleId: string): Promise<void> => {
-  await axiosInstance.delete(`/availability/rules/${ruleId}`);
 };
 
 export const getSlots = async (
-  params: GetSlotsParams
-): Promise<AvailableSlot[]> => {
-  const { data } = await axiosInstance.get<ApiSuccessResponse<AvailableSlot[]>>(
-    "/availability/slots",
-    { params }
+  psychologistId: string,
+  from: string,
+  to: string,
+  mode?: "chat" | "audio" | "video"
+): Promise<SlotItem[]> => {
+  const { data } = await axiosInstance.get<ApiSuccessResponse<SlotItem[]>>(
+    `/availability/${psychologistId}/slots`,
+    { params: { from, to, mode } }
+  );
+  return data.data;
+};
+
+export const blockSlot = async (slotId: string): Promise<{ slotId: string; isBlocked: true }> => {
+  const { data } = await axiosInstance.patch<ApiSuccessResponse<{ slotId: string; isBlocked: true }>>(
+    `/availability/slots/${slotId}/block`
   );
   return data.data;
 };

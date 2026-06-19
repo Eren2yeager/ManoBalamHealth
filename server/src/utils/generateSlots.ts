@@ -2,55 +2,62 @@ import { DateTime } from "luxon";
 import { IAvailabilityRule } from "@/modules/availability/availabilityRule.model";
 
 /**
- * Generates time slots from availability rules
- * @param rules - Array of availability rules
- * @param timezone - Psychologist's timezone
- * @param startDate - Start date (ISO string)
- * @param endDate - End date (ISO string)
- * @returns Array of slots with UTC start/end times
+ * Generates time slots from availability rules.
+ *
+ * dayOfWeek convention (matches JS Date.getDay() and the plan):
+ *   0 = Sunday, 1 = Monday, 2 = Tuesday, 3 = Wednesday,
+ *   4 = Thursday, 5 = Friday, 6 = Saturday
+ *
+ * Luxon .weekday:  1=Mon … 6=Sat, 7=Sun
+ * Conversion:      luxonWeekday % 7  →  Mon=1 … Sat=6, Sun=0  ✓
+ *
+ * @param rules     Availability rules for the psychologist
+ * @param timezone  Psychologist's IANA timezone (e.g. "Asia/Kolkata")
+ * @param startDate Start of the range — ISO date or datetime string
+ * @param endDate   End of the range   — ISO date or datetime string
  */
 export const generateSlots = (
   rules: IAvailabilityRule[],
   timezone: string,
   startDate: string,
   endDate: string
-) => {
-  const slots: Array<{
-    startTime: Date;
-    endTime: Date;
-    mode: "chat" | "audio" | "video";
-  }> = [];
+): Array<{ startTime: Date; endTime: Date; mode: "chat" | "audio" | "video" }> => {
+  const slots: Array<{ startTime: Date; endTime: Date; mode: "chat" | "audio" | "video" }> = [];
 
-  const start = DateTime.fromISO(startDate).setZone(timezone);
-  const end = DateTime.fromISO(endDate).setZone(timezone);
+  // Anchor both boundaries to the START of their respective days in the
+  // psychologist's timezone so "2026-06-19" always means 00:00 local time,
+  // not an ambiguous UTC midnight shifted by timezone offset.
+  const start = DateTime.fromISO(startDate, { zone: timezone }).startOf("day");
+  const end   = DateTime.fromISO(endDate,   { zone: timezone }).startOf("day");
+
+  if (!start.isValid || !end.isValid) {
+    throw new Error(`Invalid date range: startDate="${startDate}", endDate="${endDate}"`);
+  }
 
   for (let dt = start; dt <= end; dt = dt.plus({ days: 1 })) {
-    const dayOfWeek = dt.weekday % 7; // Convert luxon's 1-7 to 0-6 (Sunday=0)
+    // Luxon weekday: 1=Mon … 7=Sun  →  % 7 gives Mon=1 … Sat=6, Sun=0
+    const dayOfWeek = dt.weekday % 7;
     const dayRules = rules.filter((r) => r.dayOfWeek === dayOfWeek && r.isActive);
 
     for (const rule of dayRules) {
-      // Parse start and end times
       const [startHour, startMin] = rule.startTime.split(":").map(Number);
-      const [endHour, endMin] = rule.endTime.split(":").map(Number);
+      const [endHour, endMin]     = rule.endTime.split(":").map(Number);
 
-      let currentTime = dt.set({ hour: startHour, minute: startMin, second: 0, millisecond: 0 });
-      const ruleEndTime = dt.set({ hour: endHour, minute: endMin, second: 0, millisecond: 0 });
+      let cursor    = dt.set({ hour: startHour, minute: startMin, second: 0, millisecond: 0 });
+      const ruleEnd = dt.set({ hour: endHour,   minute: endMin,   second: 0, millisecond: 0 });
 
-      // Generate slots
-      while (currentTime.plus({ minutes: rule.slotDurationMinutes }) <= ruleEndTime) {
-        const slotEnd = currentTime.plus({ minutes: rule.slotDurationMinutes });
-        const slotStartUTC = currentTime.toUTC().toJSDate();
-        const slotEndUTC = slotEnd.toUTC().toJSDate();
+      while (cursor.plus({ minutes: rule.slotDurationMinutes }) <= ruleEnd) {
+        const slotEnd = cursor.plus({ minutes: rule.slotDurationMinutes });
 
         for (const mode of rule.modes) {
           slots.push({
-            startTime: slotStartUTC,
-            endTime: slotEndUTC,
+            startTime: cursor.toUTC().toJSDate(),
+            endTime:   slotEnd.toUTC().toJSDate(),
             mode,
           });
         }
 
-        currentTime = slotEnd;
+        cursor = slotEnd;
       }
     }
   }

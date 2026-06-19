@@ -1,16 +1,28 @@
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { usePsychologistFilterStore } from "../store/psychologistFilterStore";
+import { useDebounce } from "@/hooks/useDebounce";
 import type { Specialization } from "../types/psychologist.types";
 
 export const PsychologistFilters = () => {
   const { searchQuery, specialization, setSearchQuery, setSpecialization } = usePsychologistFilterStore();
 
+  // Local input state so the field is responsive on every keystroke,
+  // but setSearchQuery (which triggers a list re-fetch) only fires after 400ms of inactivity.
+  const [inputValue, setInputValue] = useState(searchQuery);
+  const debouncedSearch = useDebounce(inputValue, 400);
+
+  // Sync debounced value into the store when it settles
+  useEffect(() => {
+    setSearchQuery(debouncedSearch);
+  }, [debouncedSearch, setSearchQuery]);
+
   return (
     <div className="flex flex-col sm:flex-row gap-4">
       <Input
         placeholder="Search psychologists..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
         className="flex-1"
       />
       <select

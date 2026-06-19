@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { refreshToken } from "@/features/auth/api/auth.api";
 import { getMe } from "@/features/profile/api/profile.api";
 import { useUserStore } from "@/stores/userStore";
-import { usePresence } from "@/hooks/usePresence";
+import { usePresence } from "@/features/psychologists/hooks/usePresence";
 
 function PresenceWrapper() {
   usePresence();

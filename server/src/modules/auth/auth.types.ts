@@ -24,6 +24,7 @@ export interface VerifyOtpRequest {
 
 export interface VerifyOtpResponse {
   accessToken: string;
+  refreshToken: string;
   user: {
     id: string;
     name: string;

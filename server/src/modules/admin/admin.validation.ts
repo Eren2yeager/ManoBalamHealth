@@ -1,12 +1,16 @@
 import { z } from "zod";
 
 export const updatePsychologistStatusSchema = z.object({
-  status: z.union([z.literal("approved"), z.literal("rejected")]),
+  decision: z.enum(["approved", "rejected"]),
   rejectionReason: z.string().optional(),
-});
+}).refine(
+  (data) => data.decision !== "rejected" || !!data.rejectionReason,
+  { message: "rejectionReason is required when decision is rejected", path: ["rejectionReason"] }
+);
 
 export const processRefundSchema = z.object({
   reason: z.string().min(1),
+  amount: z.number().positive().optional(), // omit for full refund
 });
 
 export const getPsychologistsSchema = z.object({

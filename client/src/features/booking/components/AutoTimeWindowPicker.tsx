@@ -72,7 +72,7 @@ export const AutoTimeWindowPicker = () => {
     nextDate: string,
     nextStart: string,
     nextEnd: string,
-    nextSpecialization: Specialization | null
+    nextSpecialization: string | null
   ) => {
     if (!nextDate || !nextStart || !nextEnd) {
       setValidationError("Please select a date and time window.");
@@ -195,7 +195,7 @@ export const AutoTimeWindowPicker = () => {
           </div>
         )}
 
-        <p className="text-sm text-destructive min-h-[1.25rem]">
+        <p className="text-sm text-destructive min-h-5">
           {validationError ?? ""}
         </p>
       </CardContent>

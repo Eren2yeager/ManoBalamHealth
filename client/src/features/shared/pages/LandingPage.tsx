@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrainCircuit, Users, MessageSquare, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function LandingPage() {
   return (
@@ -16,11 +17,11 @@ export function LandingPage() {
             Your mental wellness, our priority. Connect with licensed psychologists for secure, confidential consultations anytime, anywhere.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" className="rounded-full text-base">
-              Get Started
+            <Button size="lg" className="rounded-full text-base" asChild>
+              <Link to="/register">Get Started</Link>
             </Button>
-            <Button variant="secondary" size="lg" className="rounded-full text-base">
-              Learn More
+            <Button variant="secondary" size="lg" className="rounded-full text-base" asChild>
+              <Link to="/login">Sign In</Link>
             </Button>
           </div>
         </div>

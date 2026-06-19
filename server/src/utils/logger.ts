@@ -12,13 +12,13 @@ const levels = {
   debug: 4,
 };
 
-// Define log colors
+// Define log colors with background colors and font styles
 const colors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  debug: 'white',
+  error: 'redBG white bold',       // Bold white text on red background
+  warn: 'yellowBG white bold',   // Italic black text on yellow background
+  info: 'blueBG white bold',       // Bold white text on blue background
+  http: 'magentaBG white bold',     // Dim white text on magenta background
+  debug: 'cyanBG white underline', // Underlined black text on cyan background
 };
 
 // Add colors to winston
@@ -29,7 +29,7 @@ const format = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
   winston.format.printf(
-    (info) => `[${info.timestamp}] [${info.level}] : ${info.message}${info.metadata ? ` | Metadata: ${JSON.stringify(info.metadata)}` : ''}`,
+    (info) => `[${info.level}] : ${info.message}${info.metadata ? ` | Metadata: ${JSON.stringify(info.metadata)}` : ''}`,
   ),
 );
 

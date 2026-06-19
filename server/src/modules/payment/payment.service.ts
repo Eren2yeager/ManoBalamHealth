@@ -2,7 +2,6 @@ import crypto from "crypto";
 import { PaymentModel } from "./payment.model";
 import { AppointmentModel } from "@/modules/appointment/appointment.model";
 import { PsychologistModel } from "@/modules/psychologist/psychologist.model";
-import { UserModel } from "@/modules/user/user.model";
 import { ApiError } from "@/utils/ApiError";
 import { StatusCodes } from "@/constants/statusCodes.constant";
 import { ErrorCodes } from "@/constants/errorCodes.constant";
@@ -146,21 +145,34 @@ class PaymentService {
    * Handle Razorpay webhook
    */
   async handleRazorpayWebhook(payload: any, signature: string): Promise<void> {
-    // Verify webhook signature first
+    // Verify webhook signature first (uses raw string before parsing)
     const isValid = this.verifyWebhookSignature(payload, signature);
     if (!isValid) {
       throw new ApiError(StatusCodes.BAD_REQUEST, ErrorCodes.PAYMENT_SIGNATURE_INVALID, "Webhook signature is invalid");
     }
 
+    // Parse the raw body string into an object now that the signature is verified
+    let parsed: any;
+    try {
+      parsed = JSON.parse(payload);
+    } catch {
+      throw new ApiError(StatusCodes.BAD_REQUEST, ErrorCodes.VALIDATION_ERROR, "Invalid webhook payload");
+    }
+
     // Process webhook events
-    const event = payload.event;
-    const paymentEntity = payload.payload.payment.entity;
-    const orderId = paymentEntity.order_id;
+    const event = parsed.event;
+    const paymentEntity = parsed.payload?.payment?.entity;
+    const orderId = paymentEntity?.order_id;
+
+    if (!event || !orderId) {
+      // Unknown event shape — acknowledge and ignore
+      return;
+    }
 
     // Find payment by order ID
     const payment = await PaymentModel.findOne({ providerOrderId: orderId });
     if (!payment) {
-      // Payment not found— log and return 200 (webhook should not fail)
+      // Payment not found — log and return 200 (webhook must not fail)
       return;
     }
 

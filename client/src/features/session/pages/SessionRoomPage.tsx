@@ -1,15 +1,19 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { ChatPanel } from "../components/ChatPanel";
+import { AudioCallRoom } from "../components/AudioCallRoom";
+import { VideoCallRoom } from "../components/VideoCallRoom";
 import { getSession } from "../api/session.api";
+import { useSessionStore } from "../store/sessionStore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export function SessionRoomPage() {
   const { appointmentId } = useParams<{ appointmentId: string }>();
-  const [session, setSession] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const { session, isLoading, error, setSession, setIsLoading, setError, reset } =
+    useSessionStore();
 
   useEffect(() => {
     if (!appointmentId) return;
@@ -20,8 +24,8 @@ export function SessionRoomPage() {
         const sessionData = await getSession(appointmentId);
         setSession(sessionData);
       } catch (err: any) {
-        console.error(err);
-        setError(err.message || "Failed to load session");
+        const msg = err.message || "Failed to load session";
+        setError(msg);
         toast.error("Failed to load session");
       } finally {
         setIsLoading(false);
@@ -29,7 +33,10 @@ export function SessionRoomPage() {
     };
 
     loadSession();
-  }, [appointmentId]);
+
+    // Reset store state when leaving the session room
+    return () => reset();
+  }, [appointmentId, setSession, setIsLoading, setError, reset]);
 
   if (isLoading) {
     return (
@@ -57,22 +64,33 @@ export function SessionRoomPage() {
     );
   }
 
+  const mode = session?.mode ?? "video";
+
   return (
     <div className="h-screen flex flex-col">
       <div className="p-6 border-b border-border bg-card">
         <h1 className="text-2xl font-bold">Session Room</h1>
-        <p className="text-muted-foreground text-sm">
-          {session?.mode ? `Mode: ${session.mode}` : ""}
+        <p className="text-muted-foreground text-sm capitalize">
+          {mode ? `Mode: ${mode.charAt(0).toUpperCase() + mode.slice(1)}` : ""}
         </p>
       </div>
-      <div className="flex-1 flex">
-        <div className="flex-1 bg-muted/30 flex items-center justify-center">
-          <div className="text-center p-8">
-            <h2 className="text-xl font-semibold mb-2">Video/Audio Call</h2>
-            <p className="text-muted-foreground">Coming soon</p>
-          </div>
+      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1">
+          {mode === "audio" ? (
+            <AudioCallRoom
+              sessionId={session?.sessionId ?? appointmentId ?? ""}
+              iceServers={session?.iceServers}
+              onEndCall={() => navigate(-1)}
+            />
+          ) : (
+            <VideoCallRoom
+              sessionId={session?.sessionId ?? appointmentId ?? ""}
+              iceServers={session?.iceServers}
+              onEndCall={() => navigate(-1)}
+            />
+          )}
         </div>
-        <ChatPanel sessionId={session?.sessionId || appointmentId} />
+        <ChatPanel sessionId={session?.sessionId ?? appointmentId ?? ""} />
       </div>
     </div>
   );

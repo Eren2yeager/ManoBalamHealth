@@ -1,9 +1,94 @@
+import { ShieldCheck, BrainCircuit } from "lucide-react";
 import { RegisterForm } from "../components/RegisterForm";
 
 export const RegisterPage = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <RegisterForm />
+    <div className="min-h-screen bg-muted/30 flex flex-col">
+      {/* Main content */}
+      <main className="flex-1 flex items-center justify-center py-10 px-4 md:px-8">
+        <div className="w-full max-w-4xl flex flex-col md:flex-row bg-card rounded-2xl border border-border shadow-[0px_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+
+          {/* Left: Branding panel */}
+          <div className="hidden md:flex w-5/12 bg-secondary/30 p-10 flex-col justify-between relative overflow-hidden">
+            {/* Gradient backdrop */}
+            <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-secondary/20 to-background/80 pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col gap-8 h-full">
+              {/* Top: Brand + headline */}
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <BrainCircuit className="h-8 w-8 text-primary" />
+                  <span className="text-xl font-bold text-foreground font-[Manrope,sans-serif]">
+                    ManoBalam
+                  </span>
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold leading-tight text-foreground font-[Manrope,sans-serif]">
+                    Begin Your Journey
+                  </h2>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    Create a secure ManoBalam account to access clinical-grade mental health support
+                    and connect with licensed professionals.
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom: Trust badge */}
+              <div className="mt-auto bg-background/70 backdrop-blur-sm p-4 rounded-xl border border-border/50">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Secure &amp; Confidential</h3>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Your data is encrypted and handled with strict medical-grade confidentiality.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Form */}
+          <div className="w-full md:w-7/12 p-6 md:p-10 flex flex-col">
+            {/* Mobile brand mark */}
+            <div className="flex items-center gap-2 mb-6 md:hidden">
+              <BrainCircuit className="h-6 w-6 text-primary" />
+              <span className="text-lg font-bold text-foreground">ManoBalam</span>
+            </div>
+
+            <div className="mb-6">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight font-[Manrope,sans-serif]">
+                Create an Account
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1.5">
+                Join our serene clinical community.
+              </p>
+            </div>
+
+            <RegisterForm />
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-muted/20 py-5 px-4 md:px-8">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} ManoBalam Clinical. All rights reserved.
+          </p>
+          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-1.5">
+            {["Privacy Policy", "Terms of Service", "Emergency Protocol", "Contact Us"].map((link) => (
+              <a
+                key={link}
+                href="#"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors hover:underline"
+              >
+                {link}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 };

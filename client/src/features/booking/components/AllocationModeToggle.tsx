@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "../store/bookingStore";
-import type { AllocationMode } from "@/types/global.types";
 
-const MODES: { value: AllocationMode; label: string; description: string }[] = [
+const MODES: { value: "manual" | "auto"; label: string; description: string }[] = [
   {
     value: "manual",
     label: "Choose My Psychologist",

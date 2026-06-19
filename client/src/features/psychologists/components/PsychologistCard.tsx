@@ -2,26 +2,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { User } from "lucide-react";
-import type { Psychologist } from "../types/psychologist.types";
+import { User, Star } from "lucide-react";
+import type { PsychologistListItem } from "../types/psychologist.types";
 
 interface PsychologistCardProps {
-  psychologist: Psychologist;
+  psychologist: PsychologistListItem;
 }
 
 export const PsychologistCard = ({ psychologist }: PsychologistCardProps) => {
   const navigate = useNavigate();
 
-  const formatPrice = (amount: number, currency: string) => {
-    // TODO: Use proper currency formatter, smallest unit to actual
-    return `${currency} ${(amount / 100).toFixed(2)}`;
-  };
-
   return (
-    <Card className="w-full hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(`/psychologists/${psychologist.id}`)}>
+    <Card
+      className="w-full hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={() => navigate(`/psychologists/${psychologist.id}`)}
+    >
       <CardHeader className="flex flex-row gap-4 items-start">
         <div className="relative">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-muted flex items-center justify-center shrink-0">
             {psychologist.avatarUrl ? (
               <img
                 src={psychologist.avatarUrl}
@@ -33,31 +31,41 @@ export const PsychologistCard = ({ psychologist }: PsychologistCardProps) => {
             )}
           </div>
           {psychologist.isOnline && (
-            <span className="absolute bottom-0 right-0 w-4 h-4 bg-success border-2 border-white rounded-full"></span>
+            <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
           )}
         </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-lg">{psychologist.name}</CardTitle>
-            {psychologist.isVerified && <Badge variant="secondary">Verified</Badge>}
-          </div>
-          <CardDescription>{psychologist.title}</CardDescription>
+        <div className="flex-1 min-w-0">
+          <CardTitle className="text-lg truncate">{psychologist.name}</CardTitle>
+          <CardDescription className="flex items-center gap-1 mt-1">
+            <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+            <span>{psychologist.rating.average.toFixed(1)}</span>
+            <span className="text-xs">({psychologist.rating.count})</span>
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground line-clamp-3">{psychologist.bio || "N/A"}</p>
+        <p className="text-sm text-muted-foreground line-clamp-3">{psychologist.bio}</p>
         <div className="flex flex-wrap gap-2">
-          {psychologist.specializations?.slice(0, 3).map((spec) => (
-            <Badge key={spec} variant="outline">{spec.replace("-", " ") || "N/A"}</Badge>     
+          {psychologist.specialization.slice(0, 3).map((spec) => (
+            <Badge key={spec} variant="outline" className="capitalize">
+              {spec.replace(/-/g, " ")}
+            </Badge>
           ))}
-          {psychologist.specializations?.length > 3 && (
-            <Badge variant="outline">+{psychologist.specializations.length - 3}</Badge>
+          {psychologist.specialization.length > 3 && (
+            <Badge variant="outline">+{psychologist.specialization.length - 3}</Badge>
           )}
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm font-medium">{formatPrice(psychologist.sessionPrice?.amount || 0, psychologist.sessionPrice?.currency || "N/A")}/session</span> 
-          <Button variant="default">View Profile</Button>
+          <span className="text-sm font-medium">
+            ₹{(psychologist.consultationFee.amount / 100).toLocaleString()}/session
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {psychologist.experienceYears} yrs exp
+          </span>
         </div>
+        <Button variant="default" className="w-full" onClick={(e) => { e.stopPropagation(); navigate(`/psychologists/${psychologist.id}`); }}>
+          View Profile
+        </Button>
       </CardContent>
     </Card>
   );

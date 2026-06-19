@@ -17,6 +17,10 @@ export const createApp = (): Application => {
   app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
   app.use(cookieParser());
 
+  // NOTE: The Razorpay webhook route (/api/payments/webhook/razorpay) is mounted
+  // with express.raw({ type: "application/json" }) directly in payment.routes.ts,
+  // BEFORE the global express.json() middleware reaches it. Signature verification
+  // requires the raw byte body — do not move that route or add global raw parsing here.
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));
 

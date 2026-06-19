@@ -1,29 +1,31 @@
 import { useState, useEffect } from "react";
 import { PsychologistCard } from "./PsychologistCard";
 import { PsychologistFilters } from "./PsychologistFilters";
-import { getPsychologists } from "../api/psychologist.api";
-import type { Psychologist } from "../types/psychologist.types";
+import { listPsychologists } from "../api/psychologist.api";
+import type { PsychologistListItem } from "../types/psychologist.types";
 import { usePsychologistFilterStore } from "../store/psychologistFilterStore";
-import { usePresenceStore } from "@/stores/presenceStore";
+import { usePresenceStore } from "@/features/psychologists/store/presenceStore";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export const PsychologistList = () => {
   const { searchQuery, specialization } = usePsychologistFilterStore();
-  const isPsychologistOnline = usePresenceStore((state) => state.isOnline);
-  const [psychologists, setPsychologists] = useState<Psychologist[]>([]);
+  const isOnline = usePresenceStore((state) => state.isOnline);
+  const [psychologists, setPsychologists] = useState<PsychologistListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchPsychologists = async () => {
       setIsLoading(true);
       try {
-        const { psychologists } = await getPsychologists({
-          specialization,
+        const { items } = await listPsychologists({
+          specialization: specialization ?? undefined,
+          page: 1,
+          limit: 50,
         });
-        setPsychologists(psychologists);
+        setPsychologists(items);
       } catch (error) {
         toast.error("Failed to load psychologists");
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -31,20 +33,24 @@ export const PsychologistList = () => {
     fetchPsychologists();
   }, [specialization]);
 
-  const filteredPsychologists = psychologists
-    .map((p) => ({
-      ...p,
-      isOnline: isPsychologistOnline(p.id),
-    }))
-    .filter((p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.bio.toLowerCase().includes(searchQuery.toLowerCase())
+  // Merge live presence state into the list items
+  const enriched = psychologists
+    .map((p) => ({ ...p, isOnline: isOnline(p.id) }))
+    .filter(
+      (p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.bio.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
   if (isLoading) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="text-muted-foreground">Loading psychologists...</div>
+      <div className="space-y-6">
+        <PsychologistFilters />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-64 w-full rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -54,10 +60,10 @@ export const PsychologistList = () => {
       <PsychologistFilters />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPsychologists.map((psychologist) => (
+        {enriched.map((psychologist) => (
           <PsychologistCard key={psychologist.id} psychologist={psychologist} />
         ))}
-        {filteredPsychologists.length === 0 && (
+        {enriched.length === 0 && (
           <div className="col-span-full text-center py-12 text-muted-foreground">
             No psychologists found matching your criteria.
           </div>

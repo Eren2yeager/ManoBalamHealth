@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { asyncHandler } from "@/utils/asyncHandler";
 import { ApiResponse } from "@/utils/ApiResponse";
+import { StatusCodes } from "@/constants/statusCodes.constant";
 import { feedbackService } from "./feedback.service";
 
 export class FeedbackController {
   createFeedback = asyncHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, _next: NextFunction) => {
       const result = await feedbackService.createFeedback(
         req.user!.userId,
         req.body
@@ -17,7 +18,7 @@ export class FeedbackController {
   );
 
   getPsychologistFeedback = asyncHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, _next: NextFunction) => {
       const result = await feedbackService.getPsychologistFeedback(
         req.params.psychologistId as string,
         req.query as any
@@ -28,8 +29,5 @@ export class FeedbackController {
     }
   );
 }
-
-// Wait, we need to import StatusCodes! Let's add that! Oops!
-import { StatusCodes } from "@/constants/statusCodes.constant";
 
 export const feedbackController = new FeedbackController();

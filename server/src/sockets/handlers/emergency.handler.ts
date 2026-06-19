@@ -32,9 +32,16 @@ export const handleEmergency = (io: Server, socket: AuthenticatedSocket) => {
   const handleEmergencyRequest = async (data: EmergencyRequestData) => {
     if (!socket.user || socket.user.role !== "patient") return;
 
-    // Get patient details
     const patient = await UserModel.findById(socket.user.userId);
     if (!patient) return;
+
+    // Store patientId against requestId so psychologists can notify the right patient on accept
+    await redis.set(
+      `emergency:patient:${data.requestId}`,
+      socket.user.userId,
+      "EX",
+      5 * 60 // expire after 5 minutes if nobody accepts
+    );
 
     // Find eligible psychologists (online, approved, accepting emergencies)
     const eligiblePsychologists = await PsychologistModel.find({
@@ -42,16 +49,14 @@ export const handleEmergency = (io: Server, socket: AuthenticatedSocket) => {
       isAcceptingEmergency: true,
     }).populate("userId");
 
-    // Get online psychologist IDs from presence
     const onlinePsychologistIds = await redis.smembers("psychologists:online");
-    const onlineEligiblePsychologists = eligiblePsychologists.filter((p) =>
+    const onlineEligible = eligiblePsychologists.filter((p) =>
       onlinePsychologistIds.includes(p._id.toString())
     );
 
-    // Broadcast emergency request to all eligible online psychologists
-    for (const psychologist of onlineEligiblePsychologists) {
+    // Broadcast the emergency request to all eligible online psychologists
+    for (const psychologist of onlineEligible) {
       const psychUserId = (psychologist as any).userId._id.toString();
-      // Get all sockets for this user
       const sockets = await io.in(`user:${psychUserId}`).fetchSockets();
       for (const s of sockets) {
         s.emit(SocketEvents.EMERGENCY_REQUEST, {
@@ -71,33 +76,65 @@ export const handleEmergency = (io: Server, socket: AuthenticatedSocket) => {
   const handleEmergencyAccept = async (data: EmergencyAcceptData) => {
     if (!socket.user || socket.user.role !== "psychologist") return;
 
-    // Get psychologist
-    const psychologist = await PsychologistModel.findOne({
-      userId: socket.user.userId,
-    });
+    const psychologist = await PsychologistModel.findOne({ userId: socket.user.userId });
     if (!psychologist) return;
 
-    // Try to acquire lock on this emergency request (ioredis syntax)
+    // Try to acquire a distributed lock — first psychologist to call SET NX wins
     const lockKey = `emergency:lock:${data.requestId}`;
-    const lock = await (redis as any).set(lockKey, psychologist._id.toString(), "NX", "EX", 30); // Lock for 30 seconds
+    const lock = await (redis as any).set(
+      lockKey,
+      psychologist._id.toString(),
+      "NX",
+      "EX",
+      30 // 30-second lock
+    );
 
-    if (lock === "OK") {
-      // We got the lock! First to accept!
-      // TODO: Create appointment here? Or let the REST endpoint handle it?
-      // For now, we'll just broadcast that this request is taken
-      io.emit(SocketEvents.EMERGENCY_ALREADY_TAKEN, { requestId: data.requestId });
-      // Also emit to the patient that their request was accepted
-      // TODO: Find patient's socket
-    } else {
-      // Lock already taken by someone else
+    if (lock !== "OK") {
+      // Another psychologist already accepted
       socket.emit(SocketEvents.EMERGENCY_ALREADY_TAKEN, { requestId: data.requestId });
+      return;
     }
+
+    // We hold the lock — broadcast to all other psychologists that this request is taken
+    io.emit(SocketEvents.EMERGENCY_ALREADY_TAKEN, { requestId: data.requestId });
+
+    // Notify the patient that their request was accepted
+    const patientUserId = await redis.get(`emergency:patient:${data.requestId}`);
+    if (patientUserId) {
+      const patientSockets = await io.in(`user:${patientUserId}`).fetchSockets();
+      for (const s of patientSockets) {
+        s.emit(SocketEvents.EMERGENCY_ACCEPT, {
+          requestId: data.requestId,
+          psychologist: {
+            id: psychologist._id.toString(),
+            userId: socket.user.userId,
+          },
+        });
+      }
+      // Clean up the patient mapping now that it's been used
+      await redis.del(`emergency:patient:${data.requestId}`);
+    }
+
+    // NOTE: Appointment creation for emergency sessions is handled via the REST API
+    // (POST /appointments with allocationMode: "emergency"). The psychologist's client
+    // calls that endpoint after accepting here, which creates the appointment and
+    // initiates the session flow.
   };
 
-  // Handle emergency decline from psychologist
+  // Handle emergency decline from psychologist — notify patient so they know to keep waiting
   const handleEmergencyDecline = async (data: EmergencyDeclineData) => {
-    // For now, just a no-op
-    return;
+    if (!socket.user || socket.user.role !== "psychologist") return;
+
+    const patientUserId = await redis.get(`emergency:patient:${data.requestId}`);
+    if (!patientUserId) return;
+
+    const patientSockets = await io.in(`user:${patientUserId}`).fetchSockets();
+    for (const s of patientSockets) {
+      s.emit(SocketEvents.EMERGENCY_DECLINE, {
+        requestId: data.requestId,
+        psychologistUserId: socket.user.userId,
+      });
+    }
   };
 
   socket.on(SocketEvents.EMERGENCY_REQUEST, handleEmergencyRequest);

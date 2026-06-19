@@ -1,10 +1,11 @@
 export interface UpdatePsychologistStatusRequest {
-  status: "approved" | "rejected";
+  decision: "approved" | "rejected";
   rejectionReason?: string;
 }
 
 export interface ProcessRefundRequest {
   reason: string;
+  amount?: number; // omitted = full refund
 }
 
 export interface PsychologistListItem {

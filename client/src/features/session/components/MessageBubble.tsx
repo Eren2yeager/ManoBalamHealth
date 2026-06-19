@@ -19,11 +19,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             : "bg-muted text-muted-foreground rounded-bl-md"
         }`}
       >
-        {!isOwnMessage && (
-          <div className="text-xs font-semibold mb-1 opacity-90">
-            {message.senderName}
-          </div>
-        )}
         <p className="text-sm">{message.content}</p>
         <div className="text-xs opacity-70 mt-1 text-right">
           {formatInViewerTz(message.sentAt, "h:mm a")}

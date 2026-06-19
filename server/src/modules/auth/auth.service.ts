@@ -1,6 +1,5 @@
 import bcrypt from "bcrypt";
-import { Types } from "mongoose";
-import { UserModel, IUser } from "@/modules/user/user.model";
+import { UserModel } from "@/modules/user/user.model";
 import { ApiError } from "@/utils/ApiError";
 import { StatusCodes } from "@/constants/statusCodes.constant";
 import { ErrorCodes } from "@/constants/errorCodes.constant";
@@ -10,6 +9,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "@/middlewares/auth.middleware";
+import { sendOtpEmail } from "@/modules/notification/channels/email.channel";
 import { logger } from "@/utils/logger";
 import type {
   RegisterRequest,
@@ -72,7 +72,19 @@ export class AuthService {
 
     const otpSentTo = data.email ? "email" : "phone";
 
-    logger.debug("OTP generated and stored for new user", { metadata: { userId: user._id.toString(), otpSentTo } });
+    // Send OTP via the appropriate channel
+    if (data.email) {
+      try {
+        await sendOtpEmail(data.email, user.name, otp);
+        logger.info("OTP email sent", { metadata: { userId: user._id.toString() } });
+      } catch (err) {
+        // Log the failure but don't block registration — user can request a resend
+        logger.error("Failed to send OTP email", { error: err, metadata: { userId: user._id.toString() } });
+      }
+    }
+    // SMS (phone OTP) is not implemented yet — MSG91_API_KEY not configured
+
+    logger.debug("OTP generated for new user", { metadata: { userId: user._id.toString(), otpSentTo } });
 
     return {
       userId: user._id.toString(),
@@ -111,6 +123,7 @@ export class AuthService {
 
     return {
       accessToken,
+      refreshToken,
       user: {
         id: user._id.toString(),
         name: user.name,

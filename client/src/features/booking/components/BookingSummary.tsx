@@ -10,14 +10,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useBookingStore } from "../store/bookingStore";
 import { createAppointment } from "../api/booking.api";
 import { getBookingErrorMessage } from "../utils/bookingErrors";
-import { createPaymentOrder, verifyPayment } from "@/features/payment/api/payment.api";
+import { createOrder, verifyPayment } from "@/features/payment/api/payment.api";
 import { RazorpayCheckout } from "@/features/payment/components/RazorpayCheckout";
 import { getPsychologistById } from "@/features/psychologists/api/psychologist.api";
 import { formatInViewerTz } from "@/lib/timezone";
 import { useUserStore } from "@/stores/userStore";
-import type { PaymentCheckoutState } from "@/features/payment/types/payment.types";
-import type { Psychologist } from "@/features/psychologists/types/psychologist.types";
+import type { CreateOrderResponse } from "@/features/payment/types/payment.types";
+import type { PsychologistDetail } from "@/features/psychologists/types/psychologist.types";
 import type { Specialization } from "@/features/psychologists/types/psychologist.types";
+import type { Money } from "@/types/global.types";
+
+interface PaymentCheckoutState {
+  appointmentId: string;
+  order: CreateOrderResponse;
+  fee: Money;
+}
 
 const SPECIALIZATION_LABELS: Record<Specialization, string> = {
   anxiety: "Anxiety",
@@ -33,10 +40,7 @@ const SPECIALIZATION_LABELS: Record<Specialization, string> = {
 };
 
 const formatMoney = (amount: number, currency: string) =>
-  new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-  }).format(amount / 100);
+  new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount / 100);
 
 interface BookingSummaryProps {
   onBack?: () => void;
@@ -64,7 +68,7 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [paymentCheckout, setPaymentCheckout] = useState<PaymentCheckoutState | null>(null);
   const [shouldOpenPayment, setShouldOpenPayment] = useState(false);
-  const [assignedPsychologist, setAssignedPsychologist] = useState<Psychologist | null>(null);
+  const [assignedPsychologist, setAssignedPsychologist] = useState<PsychologistDetail | null>(null);
   const [isLoadingPsychologist, setIsLoadingPsychologist] = useState(false);
 
   const resolvedPsychologistId = assignedPsychologistId ?? selectedPsychologistId;
@@ -76,26 +80,19 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
     }
 
     let cancelled = false;
-    const loadPsychologist = async () => {
+    const load = async () => {
       setIsLoadingPsychologist(true);
       try {
         const psychologist = await getPsychologistById(resolvedPsychologistId);
-        if (!cancelled) {
-          setAssignedPsychologist(psychologist);
-        }
-      } catch (error) {
-        console.error(error);
+        if (!cancelled) setAssignedPsychologist(psychologist);
+      } catch {
+        // Non-critical — we still show the rest of the summary
       } finally {
-        if (!cancelled) {
-          setIsLoadingPsychologist(false);
-        }
+        if (!cancelled) setIsLoadingPsychologist(false);
       }
     };
-
-    loadPsychologist();
-    return () => {
-      cancelled = true;
-    };
+    load();
+    return () => { cancelled = true; };
   }, [resolvedPsychologistId]);
 
   const { handlePayment, isReady } = RazorpayCheckout({
@@ -108,16 +105,12 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
           description: "Therapy Session",
           order_id: paymentCheckout.order.razorpayOrderId,
           prefill: {
-            name: user?.name || "",
-            email: user?.email || "",
+            name: user?.name ?? "",
+            email: user?.email ?? "",
             contact: "",
           },
-          notes: {
-            appointment_id: paymentCheckout.appointmentId,
-          },
-          theme: {
-            color: "#9333ea",
-          },
+          notes: { appointment_id: paymentCheckout.appointmentId },
+          theme: { color: "#9333ea" },
         }
       : {
           key: "",
@@ -132,7 +125,6 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
         },
     onSuccess: async (response) => {
       if (!paymentCheckout) return;
-
       setIsProcessing(true);
       try {
         await verifyPayment({
@@ -144,15 +136,13 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
         toast.success("Payment successful! Booking confirmed.");
         reset();
         navigate("/appointments");
-      } catch (error) {
+      } catch {
         toast.error("Payment verification failed. You can retry from your appointments.");
-        console.error(error);
       } finally {
         setIsProcessing(false);
       }
     },
-    onError: (error) => {
-      console.error("Payment failed:", error);
+    onError: () => {
       toast.error("Payment failed or cancelled. You can try again.");
       setIsProcessing(false);
     },
@@ -197,7 +187,7 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
         fee: appointment.fee,
       });
 
-      const order = await createPaymentOrder({ appointmentId: appointment.appointmentId });
+      const order = await createOrder(appointment.appointmentId);
       setPaymentCheckout({
         appointmentId: appointment.appointmentId,
         order,
@@ -206,7 +196,6 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
 
       setShouldOpenPayment(true);
     } catch (error) {
-      console.error("Error creating booking:", error);
       setBookingError(getBookingErrorMessage(error));
       if (!(error instanceof AxiosError)) {
         toast.error("Failed to create booking. Please try again.");
@@ -216,7 +205,8 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
     }
   };
 
-  const displayFee = assignedFee ?? assignedPsychologist?.sessionPrice ?? null;
+  // Display fee: from assignment result, or from the fetched psychologist's consultationFee
+  const displayFee = assignedFee ?? assignedPsychologist?.consultationFee ?? null;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -249,7 +239,7 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
               <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">Specialization</span>
                 <span className="text-sm">
-                  {specialization ? SPECIALIZATION_LABELS[specialization] : "Any"}
+                  {specialization ? SPECIALIZATION_LABELS[specialization as Specialization] : "Any"}
                 </span>
               </div>
             </>
@@ -264,7 +254,7 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
                 <Skeleton className="h-5 w-40" />
               ) : (
                 <div className="text-sm font-medium">
-                  {assignedPsychologist?.name ?? "Loading..."}
+                  {assignedPsychologist?.name ?? "—"}
                 </div>
               )}
             </div>

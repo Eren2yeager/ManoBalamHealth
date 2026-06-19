@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import { ZodSchema } from "zod";
+import { ZodType } from "zod";
 import { ApiError } from "@/utils/ApiError";
 import { StatusCodes } from "@/constants/statusCodes.constant";
 import { ErrorCodes } from "@/constants/errorCodes.constant";
 
 type ValidationTarget = "body" | "query" | "params";
 
-export const validate = (schema: ZodSchema, target: ValidationTarget = "body") =>
+export const validate = (schema: ZodType, target: ValidationTarget = "body") =>
   (req: Request, _res: Response, next: NextFunction) => {
     const result = schema.safeParse(req[target]);
     if (!result.success) {
@@ -15,7 +15,7 @@ export const validate = (schema: ZodSchema, target: ValidationTarget = "body") =
           StatusCodes.BAD_REQUEST,
           ErrorCodes.VALIDATION_ERROR,
           "Validation failed",
-          result.error.flatten()
+          result.error.issues
         )
       );
     }

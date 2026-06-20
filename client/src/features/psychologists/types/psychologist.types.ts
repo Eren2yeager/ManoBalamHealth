@@ -1,17 +1,5 @@
 import type { Money, PaginationParams } from "@/types/global.types";
 
-export type Specialization =
-  | "anxiety"
-  | "depression"
-  | "relationships"
-  | "stress"
-  | "trauma"
-  | "grief"
-  | "self-esteem"
-  | "sleep"
-  | "work-life-balance"
-  | "other";
-
 export interface PsychologistListItem {
   id: string;
   name: string;

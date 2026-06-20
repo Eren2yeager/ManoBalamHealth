@@ -17,7 +17,7 @@ import { formatInViewerTz } from "@/lib/timezone";
 import { useUserStore } from "@/stores/userStore";
 import type { CreateOrderResponse } from "@/features/payment/types/payment.types";
 import type { PsychologistDetail } from "@/features/psychologists/types/psychologist.types";
-import type { Specialization } from "@/features/psychologists/types/psychologist.types";
+import { SPECIALIZATIONS } from "@/features/psychologists/constants/psychologist.constants";
 import type { Money } from "@/types/global.types";
 
 interface PaymentCheckoutState {
@@ -26,18 +26,18 @@ interface PaymentCheckoutState {
   fee: Money;
 }
 
-const SPECIALIZATION_LABELS: Record<Specialization, string> = {
-  anxiety: "Anxiety",
-  depression: "Depression",
-  relationships: "Relationships",
-  stress: "Stress",
-  trauma: "Trauma",
-  grief: "Grief",
-  "self-esteem": "Self-esteem",
-  sleep: "Sleep",
-  "work-life-balance": "Work-life balance",
-  other: "Other",
-};
+// const SPECIALIZATIONS: Record<Specialization, string> = {
+//   anxiety: "Anxiety",
+//   depression: "Depression",
+//   relationships: "Relationships",
+//   stress: "Stress",
+//   trauma: "Trauma",
+//   grief: "Grief",
+//   "self-esteem": "Self-esteem",
+//   sleep: "Sleep",
+//   "work-life-balance": "Work-life balance",
+//   other: "Other",
+// };
 
 const formatMoney = (amount: number, currency: string) =>
   new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount / 100);
@@ -239,7 +239,7 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
               <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">Specialization</span>
                 <span className="text-sm">
-                  {specialization ? SPECIALIZATION_LABELS[specialization as Specialization] : "Any"}
+                  {specialization ? SPECIALIZATIONS[specialization] : "Any"}
                 </span>
               </div>
             </>

@@ -34,13 +34,19 @@ import { AdminPaymentsPage } from "../features/admin/pages/AdminPaymentsPage";
 // Guards
 import { ProtectedRoute } from "../routes/ProtectedRoute";
 import { RoleRoute } from "../routes/RoleRoute";
+import { GuestRoute } from "../routes/GuestRoute";
 
 const router = createBrowserRouter([
-  // ── Public ──────────────────────────────────────────────────────────────
+  // ── Public (unauthenticated only) ────────────────────────────────────────
   { path: "/", element: <LandingPage /> },
-  { path: "/login", element: <LoginPage /> },
-  { path: "/register", element: <RegisterPage /> },
-  { path: "/verify-otp", element: <VerifyOtpPage /> },
+  {
+    element: <GuestRoute />,
+    children: [
+      { path: "/login", element: <LoginPage /> },
+      { path: "/register", element: <RegisterPage /> },
+      { path: "/verify-otp", element: <VerifyOtpPage /> },
+    ],
+  },
 
   // ── Protected (any authenticated role) ──────────────────────────────────
   {

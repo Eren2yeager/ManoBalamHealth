@@ -68,6 +68,7 @@ export class AuthService {
 
     // Generate and store OTP
     const otp = generateOtp();
+    logger.debug(`Otp for ${data.email} : ${otp}`)
     await storeOtp(user._id.toString(), otp);
 
     const otpSentTo = data.email ? "email" : "phone";

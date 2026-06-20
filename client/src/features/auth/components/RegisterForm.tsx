@@ -16,11 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { isAxiosError } from "axios";
 import { register } from "../api/auth.api";
 import { useAuthStore } from "../store/authStore";
 import { useGeoCountry } from "@/hooks/useGeoCountry";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import type { ApiErrorResponse } from "@/types/global.types";
 
 export const RegisterForm = () => {
   const navigate = useNavigate();
@@ -87,14 +89,19 @@ export const RegisterForm = () => {
         ...(isEmail ? { email: contact } : { phone: contact }),
         password,
         role,
-        country: country || "US",
+        country: country || "IN",
         timezone: timezone || detectedTimezone,
       });
-      console.log(result)
       setPendingVerification(result.userId, result.otpSentTo);
+
       navigate("/verify-otp");
-    } catch {
-      toast.error("Registration failed. Please try again.");
+
+    } catch (error) {
+      if (isAxiosError<ApiErrorResponse>(error) && error.response?.data) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Registration failed.");
+      }
     } finally {
       setIsLoading(false);
     }

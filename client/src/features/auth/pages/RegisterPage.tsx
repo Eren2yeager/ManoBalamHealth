@@ -70,25 +70,7 @@ export const RegisterPage = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-muted/20 py-5 px-4 md:px-8">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} ManoBalam Clinical. All rights reserved.
-          </p>
-          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-1.5">
-            {["Privacy Policy", "Terms of Service", "Emergency Protocol", "Contact Us"].map((link) => (
-              <a
-                key={link}
-                href="#"
-                className="text-xs text-muted-foreground hover:text-primary transition-colors hover:underline"
-              >
-                {link}
-              </a>
-            ))}
-          </nav>
-        </div>
-      </footer>
+
     </div>
   );
 };

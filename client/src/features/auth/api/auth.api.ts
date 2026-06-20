@@ -10,6 +10,7 @@ import type {
 
 export const register = async (payload: RegisterDto): Promise<RegisterResponse> => {
   const { data } = await axiosInstance.post<ApiSuccessResponse<RegisterResponse>>("/auth/register", payload);
+  console.log(data)
   return data.data;
 };
 

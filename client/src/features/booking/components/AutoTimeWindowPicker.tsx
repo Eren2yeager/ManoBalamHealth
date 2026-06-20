@@ -12,20 +12,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatInViewerTz, getViewerTimezone, localToUtcIso } from "@/lib/timezone";
 import { useBookingStore } from "../store/bookingStore";
-import type { Specialization } from "@/features/psychologists/types/psychologist.types";
-
-const SPECIALIZATION_OPTIONS: { value: Specialization; label: string }[] = [
-  { value: "anxiety", label: "Anxiety" },
-  { value: "depression", label: "Depression" },
-  { value: "relationships", label: "Relationships" },
-  { value: "stress", label: "Stress" },
-  { value: "trauma", label: "Trauma" },
-  { value: "grief", label: "Grief" },
-  { value: "self-esteem", label: "Self-esteem" },
-  { value: "sleep", label: "Sleep" },
-  { value: "work-life-balance", label: "Work-life balance" },
-  { value: "other", label: "Other" },
-];
+import { SPECIALIZATIONS } from "@/features/psychologists/constants/psychologist.constants";
+import type { Specialization } from "@/features/psychologists/constants/psychologist.constants";
 
 const minDateString = () => DateTime.now().setZone(getViewerTimezone()).toFormat("yyyy-MM-dd");
 
@@ -179,7 +167,7 @@ export const AutoTimeWindowPicker = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="any">Any specialization</SelectItem>
-              {SPECIALIZATION_OPTIONS.map((option) => (
+              {SPECIALIZATIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>

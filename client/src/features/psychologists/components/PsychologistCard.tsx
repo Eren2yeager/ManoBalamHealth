@@ -1,72 +1,142 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { User, Star } from "lucide-react";
+import { Star, Briefcase, IndianRupee, ArrowRight } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import type { PsychologistListItem } from "../types/psychologist.types";
 
 interface PsychologistCardProps {
   psychologist: PsychologistListItem;
+  style?: React.CSSProperties;
 }
 
-export const PsychologistCard = ({ psychologist }: PsychologistCardProps) => {
+/** Derive initials from a full name, e.g. "Sarah Jenkins" → "SJ" */
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0].toUpperCase())
+    .join("");
+}
+
+export const PsychologistCard = ({ psychologist, style }: PsychologistCardProps) => {
   const navigate = useNavigate();
 
+  const fee = (psychologist.consultationFee.amount / 100).toLocaleString("en-IN");
+
   return (
-    <Card
-      className="w-full hover:shadow-lg transition-shadow cursor-pointer"
+    <article
+      style={style}
       onClick={() => navigate(`/psychologists/${psychologist.id}`)}
+      className={cn(
+        "relative flex flex-col bg-card rounded-xl border border-border overflow-hidden cursor-pointer",
+        "transition-all duration-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)]",
+        "group"
+      )}
     >
-      <CardHeader className="flex flex-row gap-4 items-start">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-muted flex items-center justify-center shrink-0">
-            {psychologist.avatarUrl ? (
-              <img
-                src={psychologist.avatarUrl}
-                alt={psychologist.name}
-                className="w-full h-full object-cover"
+      {/* Top hover accent bar */}
+      <div className="absolute top-0 left-0 h-[3px] w-full bg-primary scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100" />
+
+      <div className="p-4 flex flex-col gap-4">
+        {/* Header row: avatar + name + rating */}
+        <div className="flex gap-4">
+          {/* Avatar with online dot */}
+          <div className="relative shrink-0">
+            <Avatar className="size-[72px] border-2 border-background shadow-sm">
+              {psychologist.avatarUrl ? (
+                <AvatarImage src={psychologist.avatarUrl} alt={psychologist.name} />
+              ) : null}
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                {getInitials(psychologist.name)}
+              </AvatarFallback>
+            </Avatar>
+            {psychologist.isOnline && (
+              <span
+                title="Online Now"
+                className="absolute bottom-0.5 right-0.5 w-[14px] h-[14px] bg-emerald-500 border-2 border-card rounded-full"
               />
-            ) : (
-              <User className="w-8 h-8 text-muted-foreground" />
             )}
           </div>
-          {psychologist.isOnline && (
-            <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
-          )}
+
+          {/* Name + credential + rating */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-[Manrope,sans-serif] text-base font-semibold text-foreground truncate leading-tight">
+              {psychologist.name}
+            </h3>
+            {psychologist.languages.length > 0 && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                {psychologist.languages.slice(0, 3).join(", ")}
+              </p>
+            )}
+            <div className="flex items-center gap-1 mt-1.5">
+              <Star className="h-3.5 w-3.5 fill-primary text-primary shrink-0" />
+              <span className="text-sm font-semibold text-foreground leading-none">
+                {psychologist.rating.average.toFixed(1)}
+              </span>
+              <span className="text-xs text-muted-foreground leading-none">
+                ({psychologist.rating.count})
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <CardTitle className="text-lg truncate">{psychologist.name}</CardTitle>
-          <CardDescription className="flex items-center gap-1 mt-1">
-            <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-            <span>{psychologist.rating.average.toFixed(1)}</span>
-            <span className="text-xs">({psychologist.rating.count})</span>
-          </CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground line-clamp-3">{psychologist.bio}</p>
-        <div className="flex flex-wrap gap-2">
+
+        {/* Specialization chips */}
+        <div className="flex flex-wrap gap-1.5">
           {psychologist.specialization.slice(0, 3).map((spec) => (
-            <Badge key={spec} variant="outline" className="capitalize">
+            <span
+              key={spec}
+              className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground capitalize"
+            >
               {spec.replace(/-/g, " ")}
-            </Badge>
+            </span>
           ))}
           {psychologist.specialization.length > 3 && (
-            <Badge variant="outline">+{psychologist.specialization.length - 3}</Badge>
+            <span className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground">
+              +{psychologist.specialization.length - 3}
+            </span>
           )}
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium">
-            ₹{(psychologist.consultationFee.amount / 100).toLocaleString()}/session
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {psychologist.experienceYears} yrs exp
-          </span>
+
+        {/* Experience / Fee row */}
+        <div className="grid grid-cols-2 gap-3 border-y border-border py-3">
+          <div className="flex flex-col gap-0.5">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Briefcase className="h-3 w-3 shrink-0" />
+              Experience
+            </span>
+            <span className="text-sm font-semibold text-foreground">
+              {psychologist.experienceYears} yrs
+            </span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <IndianRupee className="h-3 w-3 shrink-0" />
+              Fee
+            </span>
+            <span className="text-sm font-semibold text-foreground">
+              ₹{fee} / session
+            </span>
+          </div>
         </div>
-        <Button variant="default" className="w-full" onClick={(e) => { e.stopPropagation(); navigate(`/psychologists/${psychologist.id}`); }}>
+
+        {/* CTA */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/psychologists/${psychologist.id}`);
+          }}
+          className={cn(
+            "w-full flex items-center justify-center gap-2 py-2.5 rounded-lg",
+            "text-sm font-semibold text-primary bg-muted",
+            "transition-colors duration-200",
+            "hover:bg-primary hover:text-primary-foreground",
+            "mt-auto"
+          )}
+        >
           View Profile
-        </Button>
-      </CardContent>
-    </Card>
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    </article>
   );
 };

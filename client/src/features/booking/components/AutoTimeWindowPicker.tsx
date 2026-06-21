@@ -47,7 +47,7 @@ export const AutoTimeWindowPicker = () => {
     setDate(defaultDate);
     setStartTime("09:00");
     setEndTime("17:00");
-    setAutoSelection(localToUtcIso(fromLocal), localToUtcIso(toLocal), null);
+    setAutoSelection(localToUtcIso(fromLocal), localToUtcIso(toLocal));
   }, [preferredWindow, setAutoSelection]);
 
   const preview = useMemo(() => {

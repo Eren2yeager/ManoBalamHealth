@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "target": "es2023",
-    "lib": ["ES2023", "DOM"],
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "esnext",
     "types": ["vite/client"],
     "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -15,7 +17,6 @@
     "noEmit": true,
     "jsx": "react-jsx",
     
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },

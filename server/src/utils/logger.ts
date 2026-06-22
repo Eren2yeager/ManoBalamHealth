@@ -28,9 +28,16 @@ winston.addColors(colors);
 const format = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(
-    (info) => `[${info.level}] : ${info.message}${info.metadata ? ` | Metadata: ${JSON.stringify(info.metadata)}` : ''}`,
-  ),
+  winston.format.printf((info) => {
+    const error = info.error;
+    const errorDetails =
+      error instanceof Error
+        ? ` | Error: ${error.message}${error.stack ? `\n${error.stack}` : ""}`
+        : error
+          ? ` | Error: ${JSON.stringify(error)}`
+          : "";
+    return `[${info.level}] : ${info.message}${info.metadata ? ` | Metadata: ${JSON.stringify(info.metadata)}` : ""}${errorDetails}`;
+  }),
 );
 
 // Define transports

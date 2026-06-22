@@ -6,13 +6,17 @@ import { StatusCodes } from "../../constants/statusCodes.constant";
 
 export class AdminController {
   getPsychologists = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const result = await adminService.getPsychologists(req.query as any);
+    const result = await adminService.getPsychologists(req.validatedData?.query as any);
     res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Psychologists retrieved successfully", result.meta));
   });
 
   // PATCH /admin/psychologists/:id/verify — body: { decision, rejectionReason? }
   updatePsychologistStatus = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const result = await adminService.updatePsychologistStatus(req.params.id as string, req.body);
+    const result = await adminService.updatePsychologistStatus(
+      req.params.id as string,
+      req.body,
+      req.user!.userId,
+    );
     res.status(StatusCodes.OK).json(ApiResponse.success(result, "Psychologist status updated"));
   });
 

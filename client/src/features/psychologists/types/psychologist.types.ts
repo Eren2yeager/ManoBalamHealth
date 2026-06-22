@@ -16,6 +16,31 @@ export interface PsychologistListItem {
 export interface PsychologistDetail extends PsychologistListItem {
   licensedCountries: string[];
   verificationStatus?: "pending" | "approved" | "rejected"; // only present if requester is self or admin
+  onboardingStatus?: PsychologistOnboardingStatus;
+  rejectionReason?: string;
+  credentials?: PsychologistCredential[];
+  missingFields?: string[];
+  submittedAt?: string;
+}
+
+export type PsychologistOnboardingStatus =
+  | "profile_incomplete"
+  | "documents_pending"
+  | "under_review"
+  | "approved"
+  | "rejected";
+
+export interface PsychologistCredential {
+  docUrl: string;
+  type: "license" | "degree" | "id_proof";
+  verified: boolean;
+}
+
+export interface PsychologistOnboarding extends PsychologistDetail {
+  onboardingStatus: PsychologistOnboardingStatus;
+  verificationStatus: "pending" | "approved" | "rejected";
+  credentials: PsychologistCredential[];
+  missingFields: string[];
 }
 
 export interface PsychologistListParams extends PaginationParams {

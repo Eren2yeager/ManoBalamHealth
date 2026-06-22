@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const updatePsychologistStatusSchema = z.object({
   decision: z.enum(["approved", "rejected"]),
-  rejectionReason: z.string().optional(),
+  rejectionReason: z.string().trim().min(10).max(1000).optional(),
 }).refine(
   (data) => data.decision !== "rejected" || !!data.rejectionReason,
   { message: "rejectionReason is required when decision is rejected", path: ["rejectionReason"] }

@@ -15,9 +15,6 @@ export const usePresence = () => {
   useEffect(() => {
     const socket = connectSocket();
 
-    // Announce this client as online
-    socket.emit("presence:online");
-
     const handlePresenceUpdate = (payload: {
       psychologistId: string;
       isOnline: boolean;
@@ -45,11 +42,7 @@ export const usePresence = () => {
 export const usePsychologistPresenceToggle = () => {
   const toggleOnline = (isOnline: boolean) => {
     const socket = connectSocket();
-    if (isOnline) {
-      socket.emit("presence:online");
-    }
-    // Going offline: the server tracks disconnections automatically;
-    // no explicit "go offline" emit is defined in the plan contract.
+    socket.emit("presence:set", { online: isOnline });
   };
 
   return { toggleOnline };

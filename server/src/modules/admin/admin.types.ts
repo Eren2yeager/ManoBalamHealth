@@ -15,6 +15,16 @@ export interface PsychologistListItem {
   email?: string;
   phone?: string;
   verificationStatus: "pending" | "approved" | "rejected";
+  onboardingStatus: "profile_incomplete" | "documents_pending" | "under_review" | "approved" | "rejected";
+  specialization: string[];
+  languages: string[];
+  experienceYears: number;
+  consultationFee: { amount: number; currency: string };
+  licensedCountries: string[];
+  bio: string;
+  credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
+  submittedAt?: string;
+  rejectionReason?: string;
   rating: { average: number; count: number };
   createdAt: string;
 }

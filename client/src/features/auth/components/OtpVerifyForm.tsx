@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, RotateCcw } from "lucide-react";
 import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/button";
-import { verifyOtp } from "../api/auth.api";
+import { resendOtp, verifyOtp } from "../api/auth.api";
 import { useAuthStore } from "../store/authStore";
 import { useUserStore } from "@/stores/userStore";
 import { toast } from "sonner";
@@ -114,11 +114,15 @@ export const OtpVerifyForm = () => {
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (cooldown > 0) return;
-    // No resend endpoint yet — inform the user
-    toast.info("This feature coming soon");
-    setCooldown(RESEND_COOLDOWN);
+    try {
+      await resendOtp(pendingUserId);
+      toast.success("A new verification code has been sent.");
+      setCooldown(RESEND_COOLDOWN);
+    } catch {
+      toast.error("Unable to resend the verification code.");
+    }
   };
 
   return (

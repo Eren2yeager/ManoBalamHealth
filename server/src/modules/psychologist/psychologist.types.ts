@@ -37,10 +37,22 @@ export interface PsychologistDetailResponse {
   isOnline: boolean;
   licensedCountries: string[];
   verificationStatus?: "pending" | "approved" | "rejected"; // only for self or admin
+  onboardingStatus?: IPsychologistProfile["onboardingStatus"];
+  rejectionReason?: string;
+  credentials?: Array<{ docUrl: string; type: string; verified: boolean }>;
+  missingFields?: string[];
+  submittedAt?: string;
 }
 
 export interface UploadCredentialsResponse {
   credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
+}
+
+export interface PsychologistOnboardingResponse extends PsychologistDetailResponse {
+  onboardingStatus: IPsychologistProfile["onboardingStatus"];
+  verificationStatus: "pending" | "approved" | "rejected";
+  credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
+  missingFields: string[];
 }
 
 export function toPsychologistListResponse(
@@ -79,6 +91,10 @@ export function toPsychologistDetailResponse(
   };
   if (includeSensitive) {
     response.verificationStatus = profile.verificationStatus;
+    response.onboardingStatus = profile.onboardingStatus;
+    response.rejectionReason = profile.rejectionReason;
+    response.credentials = profile.credentials;
+    response.submittedAt = profile.submittedAt?.toISOString?.();
   }
   return response;
 }

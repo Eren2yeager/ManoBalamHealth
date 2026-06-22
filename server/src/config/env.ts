@@ -16,11 +16,31 @@ const envSchema = z.object({
   RAZORPAY_KEY_SECRET: z.string().min(1),
   RAZORPAY_WEBHOOK_SECRET: z.string().min(1),
   RESEND_API_KEY: z.string().min(1),
+  EMAIL_DELIVERY_MODE: z.enum(["resend", "console"]).default("resend"),
+  EMAIL_FROM: z.string().min(3).optional(),
   MSG91_API_KEY: z.string().optional(),
   TURN_SERVER_URL: z.string().min(1),
   TURN_SERVER_USERNAME: z.string().min(1),
   TURN_SERVER_CREDENTIAL: z.string().min(1),
   CLIENT_ORIGIN: z.string().min(1),
+}).superRefine((data, context) => {
+  if (data.NODE_ENV === "production" && data.EMAIL_DELIVERY_MODE !== "resend") {
+    context.addIssue({
+      code: "custom",
+      path: ["EMAIL_DELIVERY_MODE"],
+      message: "Production email delivery must use resend",
+    });
+  }
+  if (
+    data.NODE_ENV === "production" &&
+    (!data.EMAIL_FROM || data.EMAIL_FROM.includes("@resend.dev"))
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["EMAIL_FROM"],
+      message: "Production requires EMAIL_FROM on a verified sending domain",
+    });
+  }
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -8,6 +8,11 @@ import { psychologistService } from "./psychologist.service";
 import { UserModel } from "../user/user.model";
 
 export class PsychologistController {
+  getMyOnboarding = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await psychologistService.getMyOnboarding(req.user!.userId);
+    res.status(200).json(ApiResponse.success(result, "Onboarding profile retrieved"));
+  });
+
   getPsychologists = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     // Get requester's country if authenticated
     let requesterCountry: string | undefined;
@@ -61,6 +66,11 @@ export class PsychologistController {
     const result = await psychologistService.uploadCredentials(userId, files, type);
 
     res.status(201).json(ApiResponse.success(result, "Credentials uploaded successfully"));
+  });
+
+  submitForReview = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await psychologistService.submitForReview(req.user!.userId);
+    res.status(200).json(ApiResponse.success(result, "Application submitted for review"));
   });
 }
 

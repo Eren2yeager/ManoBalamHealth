@@ -41,6 +41,16 @@ const envSchema = z.object({
       message: "Production requires EMAIL_FROM on a verified sending domain",
     });
   }
+  if (
+    data.NODE_ENV === "production" &&
+    data.RAZORPAY_WEBHOOK_SECRET.toLowerCase().includes("your-razorpay")
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["RAZORPAY_WEBHOOK_SECRET"],
+      message: "Production requires the real Razorpay webhook signing secret",
+    });
+  }
 });
 
 const parsed = envSchema.safeParse(process.env);

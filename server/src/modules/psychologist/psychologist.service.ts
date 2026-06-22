@@ -191,6 +191,14 @@ export class PsychologistService {
       requesterId !== undefined &&
       (userIdFromProfile === requesterId || requesterRole === "admin");
 
+    if (!includeSensitive && profile.verificationStatus !== "approved") {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        ErrorCodes.NOT_FOUND,
+        "Psychologist profile not found",
+      );
+    }
+
     // Add user data
     const profileWithUser: any = profile.toObject();
     profileWithUser.user = profile.userId;

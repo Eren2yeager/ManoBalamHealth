@@ -122,46 +122,60 @@ class AppointmentService {
     const psychologistIds = psychologists.map((p) => p._id);
 
     // Find available slots
-    const slots = await AvailabilitySlotModel.find({
+    const holdUntil = new Date(Date.now() + 10 * 60 * 1000);
+    const appointmentId = new Types.ObjectId();
+    const slot = await AvailabilitySlotModel.findOneAndUpdate({
       psychologistId: { $in: psychologistIds },
       startTime: { $gte: preferredFrom, $lte: preferredTo },
+      mode: data.mode,
       isBooked: false,
       isBlocked: false,
       $or: [
         { holdExpiresAt: { $exists: false } },
         { holdExpiresAt: { $lt: new Date() } },
       ],
-    }).sort({ startTime: 1 });
+    }, {
+      $set: { holdExpiresAt: holdUntil, heldByAppointmentId: appointmentId },
+    }, {
+      new: true,
+      sort: { startTime: 1 },
+    });
 
-    if (slots.length === 0) {
+    if (!slot) {
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NO_PSYCHOLOGIST_AVAILABLE, "No available slots in the preferred time window");
     }
-
-    // Pick the first available slot
-    const slot = slots[0];
 
     // Get the psychologist for this slot
     const psychologist = await PsychologistModel.findById(slot.psychologistId).populate("userId");
     if (!psychologist) {
+      await AvailabilitySlotModel.updateOne(
+        { _id: slot._id, heldByAppointmentId: appointmentId },
+        { $unset: { holdExpiresAt: 1, heldByAppointmentId: 1 } },
+      );
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Psychologist not found");
     }
 
     // Mark slot as booked with 10‑minute hold
-    slot.isBooked = true;
-    slot.holdExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    await slot.save();
-
-    // Create appointment
-    const appointment = await AppointmentModel.create({
-      patientId: patient._id,
-      psychologistId: psychologist._id,
-      slotId: slot._id,
-      allocationMode: "auto",
-      mode: data.mode,
-      concernDescription: data.concernDescription,
-      status: "pending_payment",
-      scheduledAt: slot.startTime,
-    });
+    let appointment;
+    try {
+      appointment = await AppointmentModel.create({
+        _id: appointmentId,
+        patientId: patient._id,
+        psychologistId: psychologist._id,
+        slotId: slot._id,
+        allocationMode: "auto",
+        mode: data.mode,
+        concernDescription: data.concernDescription,
+        status: "pending_payment",
+        scheduledAt: slot.startTime,
+      });
+    } catch (error) {
+      await AvailabilitySlotModel.updateOne(
+        { _id: slot._id, heldByAppointmentId: appointmentId },
+        { $unset: { holdExpiresAt: 1, heldByAppointmentId: 1 } },
+      );
+      throw error;
+    }
 
     return {
       appointmentId: appointment._id.toString(),
@@ -186,49 +200,71 @@ class AppointmentService {
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Patient not found");
     }
 
-    // Get slot
-    const slot = await AvailabilitySlotModel.findById(data.slotId);
+    const holdUntil = new Date(Date.now() + 10 * 60 * 1000);
+    const appointmentId = new Types.ObjectId();
+    const slot = await AvailabilitySlotModel.findOneAndUpdate(
+      {
+        _id: data.slotId,
+        mode: data.mode,
+        isBooked: false,
+        isBlocked: false,
+        $or: [
+          { holdExpiresAt: { $exists: false } },
+          { holdExpiresAt: { $lt: new Date() } },
+        ],
+      },
+      { $set: { holdExpiresAt: holdUntil, heldByAppointmentId: appointmentId } },
+      { new: true },
+    );
+
     if (!slot) {
-      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Slot not found");
-    }
-
-    // Check if slot is available
-    if (slot.isBooked || slot.isBlocked) {
-      throw new ApiError(StatusCodes.CONFLICT, ErrorCodes.SLOT_ALREADY_BOOKED, "Slot is already booked or blocked");
-    }
-
-    // Check if hold is active (if any)
-    if (slot.holdExpiresAt && slot.holdExpiresAt > new Date()) {
-      throw new ApiError(StatusCodes.CONFLICT, ErrorCodes.SLOT_ALREADY_BOOKED, "Slot is temporarily held");
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        ErrorCodes.SLOT_ALREADY_BOOKED,
+        "Slot is unavailable, already booked, or does not support this consultation mode",
+      );
     }
 
     // Get psychologist
     const psychologist = await PsychologistModel.findById(slot.psychologistId).populate("userId");
     if (!psychologist) {
+      await AvailabilitySlotModel.updateOne(
+        { _id: slot._id, heldByAppointmentId: appointmentId },
+        { $unset: { holdExpiresAt: 1, heldByAppointmentId: 1 } },
+      );
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Psychologist not found");
     }
 
     // Check if psychologist is approved
     if (psychologist.verificationStatus !== "approved") {
+      await AvailabilitySlotModel.updateOne(
+        { _id: slot._id, heldByAppointmentId: appointmentId },
+        { $unset: { holdExpiresAt: 1, heldByAppointmentId: 1 } },
+      );
       throw new ApiError(StatusCodes.FORBIDDEN, ErrorCodes.PSYCHOLOGIST_NOT_VERIFIED, "Psychologist is not verified");
     }
 
     // Mark slot as booked with 10‑minute hold
-    slot.isBooked = true;
-    slot.holdExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
-    await slot.save();
-
-    // Create appointment
-    const appointment = await AppointmentModel.create({
-      patientId: patient._id,
-      psychologistId: psychologist._id,
-      slotId: slot._id,
-      allocationMode: "manual",
-      mode: data.mode,
-      concernDescription: data.concernDescription,
-      status: "pending_payment",
-      scheduledAt: slot.startTime,
-    });
+    let appointment;
+    try {
+      appointment = await AppointmentModel.create({
+        _id: appointmentId,
+        patientId: patient._id,
+        psychologistId: psychologist._id,
+        slotId: slot._id,
+        allocationMode: "manual",
+        mode: data.mode,
+        concernDescription: data.concernDescription,
+        status: "pending_payment",
+        scheduledAt: slot.startTime,
+      });
+    } catch (error) {
+      await AvailabilitySlotModel.updateOne(
+        { _id: slot._id, heldByAppointmentId: appointmentId },
+        { $unset: { holdExpiresAt: 1, heldByAppointmentId: 1 } },
+      );
+      throw error;
+    }
 
     // Return response
     return {
@@ -426,6 +462,16 @@ class AppointmentService {
     appointment.status = "cancelled";
     appointment.cancellationReason = data.reason;
     await appointment.save();
+
+    if (appointment.slotId) {
+      await AvailabilitySlotModel.updateOne(
+        { _id: appointment.slotId },
+        {
+          $set: { isBooked: false },
+          $unset: { holdExpiresAt: 1, heldByAppointmentId: 1 },
+        },
+      );
+    }
 
     return {
       id: appointment._id.toString(),

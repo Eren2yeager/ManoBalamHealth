@@ -44,7 +44,7 @@ export function PublicFooter() {
           </div>
         </div>
         <div className="flex flex-col gap-3 pt-7 text-xs sm:flex-row sm:items-center sm:justify-between">
-          <p>© {year} ManoBalam. All rights reserved.</p>
+          <p>© {year} ManoBalamHealthCare. All rights reserved.</p>
           <p className="flex items-center gap-2"><HeartHandshake className="size-4 text-violet-300" /> Technology with a human purpose.</p>
         </div>
       </div>

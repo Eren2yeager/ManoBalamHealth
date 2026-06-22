@@ -30,7 +30,7 @@ export function ContactPage() {
 
   return (
     <div className="min-h-screen bg-[#fcfbff]">
-      <PublicPageHero eyebrow="Contact ManoBalam" title="Let us help you find the right next step" summary="Contact us for platform questions, professional onboarding, partnerships, or general support. Do not use this form for emergencies." icon={MessageSquareText} section="Contact" highlights={["General support", "Professional enquiries", "Partnerships"]} />
+      <PublicPageHero eyebrow="Contact ManoBalamHealthCare" title="Let us help you find the right next step" summary="Contact us for platform questions, professional onboarding, partnerships, or general support. Do not use this form for emergencies." icon={MessageSquareText} section="Contact" highlights={["General support", "Professional enquiries", "Partnerships"]} />
       <main className="px-4 py-14 md:px-8">
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[.72fr_1.28fr]">
           <aside className="rounded-[2rem] bg-[#111631] p-7 text-white shadow-2xl md:p-9">
@@ -52,7 +52,7 @@ export function ContactPage() {
               <label className="grid gap-2 text-sm font-bold text-slate-700">Subject<input required value={form.subject} onChange={(e) => update("subject", e.target.value)} className="h-12 rounded-xl border border-slate-200 px-4 font-normal outline-none transition focus:border-primary focus:ring-4 focus:ring-violet-100" /></label>
             </div>
             <label className="mt-5 grid gap-2 text-sm font-bold text-slate-700">Message<textarea required rows={6} value={form.message} onChange={(e) => update("message", e.target.value)} className="resize-none rounded-xl border border-slate-200 p-4 font-normal outline-none transition focus:border-primary focus:ring-4 focus:ring-violet-100" /></label>
-            <label className="mt-5 flex items-start gap-3 text-sm leading-6 text-slate-600"><input required type="checkbox" checked={form.consent} onChange={(e) => update("consent", e.target.checked)} className="mt-1 size-4 accent-violet-600" /><span>I consent to ManoBalam storing this enquiry to respond to my request.</span></label>
+            <label className="mt-5 flex items-start gap-3 text-sm leading-6 text-slate-600"><input required type="checkbox" checked={form.consent} onChange={(e) => update("consent", e.target.checked)} className="mt-1 size-4 accent-violet-600" /><span>I consent to ManoBalamHealthCare storing this enquiry to respond to my request.</span></label>
             <Button type="submit" disabled={submitting} className="mt-6 h-12 rounded-xl bg-gradient-to-r from-primary to-violet-600 px-7 font-bold shadow-lg shadow-primary/20">
               {submitting ? "Sending..." : "Send message"} <Send className="ml-1 size-4" />
             </Button>
@@ -63,4 +63,3 @@ export function ContactPage() {
     </div>
   );
 }
-

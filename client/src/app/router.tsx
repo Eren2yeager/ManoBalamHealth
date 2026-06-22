@@ -98,9 +98,14 @@ const router = createBrowserRouter([
           { path: "/psychologists", element: <PsychologistListPage /> },
           { path: "/psychologists/:id", element: <PsychologistDetailPage /> },
 
-          // Booking
-          { path: "/book", element: <BookingFlowPage /> },
-          { path: "/book/:psychologistId", element: <BookingFlowPage /> },
+          // Booking is patient-only; the backend enforces the same role boundary.
+          {
+            element: <RoleRoute allowed={["patient"]} />,
+            children: [
+              { path: "/book", element: <BookingFlowPage /> },
+              { path: "/book/:psychologistId", element: <BookingFlowPage /> },
+            ],
+          },
 
           // Appointments
           { path: "/appointments", element: <MyAppointmentsPage /> },

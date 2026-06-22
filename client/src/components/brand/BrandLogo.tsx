@@ -19,7 +19,7 @@ export function BrandLogo({
   return (
     <Link
       to={to}
-      aria-label="ManoBalam home"
+      aria-label="ManoBalamHealthCare home"
       className={cn("group flex items-center gap-2.5", className)}
     >
       <span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white shadow-lg shadow-primary/15 ring-1 ring-slate-200/70 transition-transform group-hover:-rotate-2 group-hover:scale-105">
@@ -33,11 +33,11 @@ export function BrandLogo({
         <span>
           <span
             className={cn(
-              "block text-base font-black tracking-tight",
+              "block whitespace-nowrap text-sm font-black tracking-tight sm:text-base",
               dark ? "text-white" : "text-slate-950",
             )}
           >
-            ManoBalam
+            ManoBalamHealthCare
           </span>
           <span
             className={cn(
@@ -66,7 +66,7 @@ export function BrandMark({
     >
       <img
         src="/images/logo-mark.png"
-        alt="ManoBalam"
+        alt="ManoBalamHealthCare"
         className={cn("size-14 object-contain", imageClassName)}
       />
     </span>

@@ -3,6 +3,7 @@ import { ApiError } from "@/utils/ApiError";
 import { StatusCodes } from "@/constants/statusCodes.constant";
 import { ErrorCodes } from "@/constants/errorCodes.constant";
 import { logger } from "@/utils/logger";
+import multer from "multer";
 
 export const errorMiddleware = (
   err: unknown,
@@ -16,6 +17,18 @@ export const errorMiddleware = (
       message: err.message,
       code: err.code,
       ...(err.details ? { details: err.details } : {}),
+    });
+  }
+
+  if (err instanceof multer.MulterError) {
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "Avatar must be smaller than 5 MB"
+        : "The uploaded avatar could not be processed";
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      success: false,
+      message,
+      code: ErrorCodes.VALIDATION_ERROR,
     });
   }
 

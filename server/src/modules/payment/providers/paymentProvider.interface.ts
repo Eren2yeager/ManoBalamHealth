@@ -18,7 +18,20 @@ export interface VerifyPaymentParams {
   signature: string;
 }
 
+export interface CreateRefundParams {
+  paymentId: string;
+  amount?: number;
+  notes?: Record<string, string>;
+}
+
+export interface PaymentRefund {
+  id: string;
+  amount: number;
+  status: string;
+}
+
 export interface PaymentProvider {
   createOrder(params: CreatePaymentOrderParams): Promise<PaymentOrder>;
   verifyPayment(params: VerifyPaymentParams): boolean;
+  createRefund(params: CreateRefundParams): Promise<PaymentRefund>;
 }

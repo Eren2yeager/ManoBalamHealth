@@ -4,13 +4,13 @@ import type { ContentPage } from "../types/public-site.types";
 export const aboutContent: Record<string, ContentPage> = {
   brief: {
     slug: "brief",
-    eyebrow: "About ManoBalam",
+    eyebrow: "About ManoBalamHealthCare",
     title: "Mental healthcare designed around real life",
-    summary: "ManoBalam is a digital mental-health platform that helps people discover verified professionals, schedule care, join secure online sessions, and use guided self-assessments.",
+    summary: "ManoBalamHealthCare is a digital mental-health platform that helps people discover verified professionals, schedule care, join secure online sessions, and use guided self-assessments.",
     icon: Compass,
     highlights: ["Accessible online support", "Verified professionals", "Privacy-conscious care"],
     sections: [
-      { title: "Why we exist", body: "Finding the right mental-health support can feel confusing, delayed, or inaccessible. ManoBalam brings the essential steps into one clear and supportive experience." },
+      { title: "Why we exist", body: "Finding the right mental-health support can feel confusing, delayed, or inaccessible. ManoBalamHealthCare brings the essential steps into one clear and supportive experience." },
       { title: "What the platform provides", body: "People can explore psychologists, book suitable appointment slots, attend chat, audio, or video sessions, and keep track of their care journey.", points: ["Role-based patient and professional workspaces", "Secure booking and payment flow", "Assessment and urgent-support pathways"] },
     ],
   },
@@ -30,7 +30,7 @@ export const aboutContent: Record<string, ContentPage> = {
     slug: "objectives",
     eyebrow: "Our priorities",
     title: "Practical objectives that guide the platform",
-    summary: "ManoBalam combines accessible technology, responsible clinical pathways, and dependable operations.",
+    summary: "ManoBalamHealthCare combines accessible technology, responsible clinical pathways, and dependable operations.",
     icon: Goal,
     highlights: ["Connect", "Support", "Educate"],
     sections: [
@@ -60,4 +60,3 @@ export const aboutContent: Record<string, ContentPage> = {
     ],
   },
 };
-

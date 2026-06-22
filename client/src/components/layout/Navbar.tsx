@@ -148,7 +148,7 @@ function DesktopPublicNavigation({
                   <div className="rounded-2xl bg-gradient-to-br from-[#17162e] to-violet-950 p-4 text-white">
                     <span className="grid size-10 place-items-center rounded-xl bg-white/10 text-violet-300"><Sparkles className="size-5" /></span>
                     <h3 className="mt-4 text-base font-black">Care that meets you where you are.</h3>
-                    <p className="mt-2 text-[11px] leading-5 text-violet-100/70">Explore ManoBalam's purpose, people, and pathways to mental-health support.</p>
+                    <p className="mt-2 text-[11px] leading-5 text-violet-100/70">Explore ManoBalamHealthCare's purpose, people, and pathways to mental-health support.</p>
                     <div className="mt-4 grid gap-2">
                       {featuredNavCards.map((card) => (
                         <Link key={card.to} to={card.to} onClick={() => setOpenMenu(null)} className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10">

@@ -12,13 +12,22 @@ export const updateMe = async (payload: UpdateProfileDto): Promise<UserProfile> 
   return data.data;
 };
 
-export const uploadAvatar = async (file: File): Promise<{ avatarUrl: string }> => {
+export const uploadAvatar = async (
+  file: File,
+  onProgress?: (percentage: number) => void,
+): Promise<{ avatarUrl: string }> => {
   const form = new FormData();
   form.append("avatar", file);
   const { data } = await axiosInstance.post<ApiSuccessResponse<{ avatarUrl: string }>>(
     "/users/me/avatar",
     form,
-    { headers: { "Content-Type": "multipart/form-data" } }
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (event) => {
+        if (!event.total || !onProgress) return;
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      },
+    },
   );
   return data.data;
 };

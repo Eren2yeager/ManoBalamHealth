@@ -6,6 +6,8 @@ import {
   CreatePaymentOrderParams,
   PaymentOrder,
   VerifyPaymentParams,
+  CreateRefundParams,
+  PaymentRefund,
 } from "./paymentProvider.interface";
 
 class RazorpayProvider implements PaymentProvider {
@@ -26,10 +28,28 @@ class RazorpayProvider implements PaymentProvider {
   }
 
   verifyPayment(params: VerifyPaymentParams): boolean {
-    const hmac = crypto.createHmac("sha256", env.RAZORPAY_WEBHOOK_SECRET);
+    const hmac = crypto.createHmac("sha256", env.RAZORPAY_KEY_SECRET);
     hmac.update(params.orderId + "|" + params.paymentId);
     const generatedSignature = hmac.digest("hex");
-    return generatedSignature === params.signature;
+    const generatedBuffer = Buffer.from(generatedSignature);
+    const receivedBuffer = Buffer.from(params.signature);
+    return (
+      generatedBuffer.length === receivedBuffer.length &&
+      crypto.timingSafeEqual(generatedBuffer, receivedBuffer)
+    );
+  }
+
+  async createRefund(params: CreateRefundParams): Promise<PaymentRefund> {
+    const refund = await razorpayClient.payments.refund(params.paymentId, {
+      ...(params.amount ? { amount: params.amount } : {}),
+      ...(params.notes ? { notes: params.notes } : {}),
+    });
+
+    return {
+      id: refund.id,
+      amount: Number(refund.amount),
+      status: refund.status ?? "processed",
+    };
   }
 }
 

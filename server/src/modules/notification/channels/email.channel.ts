@@ -4,7 +4,7 @@ import { UserModel } from "@/modules/user/user.model";
 import { logger } from "@/utils/logger";
 
 const resend = new Resend(env.RESEND_API_KEY);
-const FROM_ADDRESS = env.EMAIL_FROM ?? "ManoBalam <onboarding@resend.dev>";
+const FROM_ADDRESS = env.EMAIL_FROM ?? "ManoBalamHealthCare <onboarding@resend.dev>";
 
 const escapeHtml = (value: string) =>
   value
@@ -64,7 +64,7 @@ export const sendOtpEmail = async (
 ): Promise<void> => {
   const html = `
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-      <h2>Verify your ManoBalam account</h2>
+      <h2>Verify your ManoBalamHealthCare account</h2>
       <p>Hi ${escapeHtml(userName)},</p>
       <p>Use the code below to verify your account. It expires in <strong>5 minutes</strong>.</p>
       <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; text-align: center;
@@ -72,14 +72,14 @@ export const sendOtpEmail = async (
         ${escapeHtml(otp)}
       </div>
       <p style="color: #6b7280; font-size: 14px;">
-        If you didn't create a ManoBalam account, you can safely ignore this email.
+        If you didn't create a ManoBalamHealthCare account, you can safely ignore this email.
       </p>
     </div>
   `;
 
   await deliverEmail({
     to: toEmail,
-    subject: `${otp} is your ManoBalam verification code`,
+    subject: `${otp} is your ManoBalamHealthCare verification code`,
     html,
     developmentCode: otp,
   });
@@ -92,7 +92,7 @@ export const sendPasswordResetEmail = async (
 ): Promise<void> => {
   const html = `
     <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto;">
-      <h2>Reset your ManoBalam password</h2>
+      <h2>Reset your ManoBalamHealthCare password</h2>
       <p>Hi ${escapeHtml(userName)},</p>
       <p>Use the secure link below to create a new password. It expires in 15 minutes.</p>
       <p style="margin: 28px 0;">
@@ -106,7 +106,7 @@ export const sendPasswordResetEmail = async (
 
   await deliverEmail({
     to: toEmail,
-    subject: "Reset your ManoBalam password",
+    subject: "Reset your ManoBalamHealthCare password",
     html,
   });
 };

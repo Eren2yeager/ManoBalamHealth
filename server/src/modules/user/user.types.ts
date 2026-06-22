@@ -2,9 +2,9 @@ import type { IUser } from "./user.model";
 
 export interface UpdateUserRequest {
   name?: string;
-  age?: number;
-  gender?: "male" | "female" | "other" | "prefer_not_to_say";
-  emergencyContact?: { name: string; phone: string };
+  age?: number | null;
+  gender?: "male" | "female" | "other" | "prefer_not_to_say" | null;
+  emergencyContact?: { name: string; phone: string } | null;
   timezone?: string;
 }
 

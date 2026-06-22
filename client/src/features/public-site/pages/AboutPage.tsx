@@ -10,9 +10,9 @@ export function AboutPage() {
   return (
     <div className="min-h-screen bg-[#fcfbff]">
       <PublicPageHero
-        eyebrow="About ManoBalam"
+        eyebrow="About ManoBalamHealthCare"
         title="Our purpose, direction, and commitment"
-        summary="Discover who ManoBalam is, what we aim to achieve, and how our vision and mission guide accessible mental-health support."
+        summary="Discover who ManoBalamHealthCare is, what we aim to achieve, and how our vision and mission guide accessible mental-health support."
         icon={Compass}
         section="About"
         highlights={["Brief", "Aim", "Objectives", "Vision", "Mission"]}

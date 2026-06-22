@@ -6,17 +6,17 @@ import { PublicPageHero } from "../components/PublicPageHero";
 const legalContent = {
   terms: {
     title: "Terms of Service",
-    summary: "The conditions for using ManoBalam accounts, professional services, assessments, and online communication features.",
+    summary: "The conditions for using ManoBalamHealthCare accounts, professional services, assessments, and online communication features.",
     sections: [
-      ["Use of the platform", "Users must provide accurate account information, protect their credentials, and use ManoBalam lawfully and respectfully."],
-      ["Mental-health services", "ManoBalam facilitates access to independent mental-health professionals. Assessments are informational and are not a diagnosis."],
+      ["Use of the platform", "Users must provide accurate account information, protect their credentials, and use ManoBalamHealthCare lawfully and respectfully."],
+      ["Mental-health services", "ManoBalamHealthCare facilitates access to independent mental-health professionals. Assessments are informational and are not a diagnosis."],
       ["Emergency limitations", "The platform is not a replacement for emergency services. In immediate danger, contact local emergency services; in India, dial 112."],
       ["Professional accounts", "Psychologist features remain restricted until professional details and credentials are reviewed and approved."],
     ],
   },
   privacy: {
     title: "Privacy Policy",
-    summary: "How ManoBalam collects and uses account, booking, professional, assessment, and support information.",
+    summary: "How ManoBalamHealthCare collects and uses account, booking, professional, assessment, and support information.",
     sections: [
       ["Information collected", "We process information needed to create accounts, provide bookings and sessions, verify professionals, deliver assessments, and respond to support requests."],
       ["How information is used", "Information is used to operate the service, protect accounts, coordinate care workflows, meet legal obligations, and improve reliability."],

@@ -9,6 +9,7 @@ import { UpdatePsychologistStatusRequest, ProcessRefundRequest, PsychologistList
 import { Types } from "mongoose";
 import { sendEmail } from "@/modules/notification/channels/email.channel";
 import { logger } from "@/utils/logger";
+import { razorpayProvider } from "@/modules/payment/providers/razorpay.provider";
 
 class AdminService {
   async getPsychologists(query: { page: number; limit: number; status?: "pending" | "approved" | "rejected" }) {
@@ -91,8 +92,8 @@ class AdminService {
     try {
       const subject =
         data.decision === "approved"
-          ? "Your ManoBalam psychologist profile is approved"
-          : "Changes requested for your ManoBalam psychologist profile";
+          ? "Your ManoBalamHealthCare psychologist profile is approved"
+          : "Changes requested for your ManoBalamHealthCare psychologist profile";
       const safeReason = (data.rejectionReason ?? "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -183,20 +184,37 @@ class AdminService {
 
     const refundedAmount = data.amount ?? payment.amount;
 
+    if (!payment.providerPaymentId) {
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        ErrorCodes.VALIDATION_ERROR,
+        "The payment provider ID is missing and the refund cannot be processed",
+      );
+    }
+
+    const refund = await razorpayProvider.createRefund({
+      paymentId: payment.providerPaymentId,
+      amount: refundedAmount,
+      notes: {
+        appointmentId: appointment._id.toString(),
+        reason: data.reason,
+      },
+    });
+
     // Update appointment status
     appointment.status = "refunded";
     await appointment.save();
 
     // Update payment record
-    // NOTE: Razorpay refund API call is not yet integrated — add razorpayProvider.createRefund() here.
     payment.status = "refunded";
     payment.refundReason = data.reason;
+    payment.refundedAmount = refund.amount;
     await payment.save();
 
     return {
       paymentId: payment._id.toString(),
       status: "refunded" as const,
-      refundedAmount,
+      refundedAmount: refund.amount,
     };
   }
 }

@@ -27,7 +27,7 @@ export const RegisterPage = () => {
             <div className="mb-7 lg:hidden"><BrandLogo className="mx-auto" /></div>
             <div className="text-center lg:text-left">
               <span className="inline-flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[.16em] text-primary">
-                <ShieldCheck className="size-3.5" /> Join ManoBalam
+                <ShieldCheck className="size-3.5" /> Join ManoBalamHealthCare
               </span>
               <h1 className="mt-4 text-4xl font-black tracking-[-.04em] text-[#111631] sm:text-5xl">
                 Create your account

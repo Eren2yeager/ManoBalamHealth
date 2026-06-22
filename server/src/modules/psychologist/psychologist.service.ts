@@ -17,6 +17,31 @@ import {
 import type { Role } from "@/constants/roles.constant";
 
 export class PsychologistService {
+  private getMissingFields(profile: IPsychologistProfile): string[] {
+    const missing: string[] = [];
+    if (profile.specialization.length === 0) missing.push("specialization");
+    if (profile.languages.length === 0) missing.push("languages");
+    if (profile.experienceYears < 0) missing.push("experienceYears");
+    if (!profile.consultationFee?.amount || profile.consultationFee.amount <= 0) missing.push("consultationFee");
+    if (!profile.bio || profile.bio.trim().length < 50) missing.push("bio");
+    if (profile.licensedCountries.length === 0) missing.push("licensedCountries");
+    const credentialTypes = new Set(profile.credentials.map((credential) => credential.type));
+    for (const type of ["license", "degree", "id_proof"]) {
+      if (!credentialTypes.has(type)) missing.push(`${type}Credential`);
+    }
+    return missing;
+  }
+
+  private async ensureEditable(profile: IPsychologistProfile): Promise<void> {
+    if (profile.onboardingStatus === "under_review") {
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        ErrorCodes.VALIDATION_ERROR,
+        "Your application is under review and cannot be edited",
+      );
+    }
+  }
+
   async getOrCreateProfile(userId: string): Promise<IPsychologistProfile> {
     let profile = await PsychologistModel.findOne({ userId: new Types.ObjectId(userId) });
     if (!profile) {
@@ -30,12 +55,32 @@ export class PsychologistService {
         credentials: [],
         licensedCountries: [],
         verificationStatus: "pending",
+        onboardingStatus: "profile_incomplete",
         rating: { average: 0, count: 0 },
         isOnline: false,
         isAcceptingEmergency: false,
       });
     }
     return profile;
+  }
+
+  async getMyOnboarding(userId: string) {
+    const profile = await this.getOrCreateProfile(userId);
+    const populated = await profile.populate({
+      path: "userId",
+      select: "name avatarUrl",
+      model: "User",
+    });
+    const profileWithUser: any = populated.toObject();
+    profileWithUser.user = populated.userId;
+    const response = toPsychologistDetailResponse(profileWithUser, true);
+    return {
+      ...response,
+      onboardingStatus: profile.onboardingStatus,
+      verificationStatus: profile.verificationStatus,
+      credentials: profile.credentials,
+      missingFields: this.getMissingFields(profile),
+    };
   }
 
   async getPsychologists(
@@ -158,10 +203,22 @@ export class PsychologistService {
     data: UpdatePsychologistProfileRequest,
   ): Promise<PsychologistDetailResponse> {
     const profile = await this.getOrCreateProfile(userId);
+    await this.ensureEditable(profile);
+
+    const wasApproved = profile.onboardingStatus === "approved";
+    const nextStatus = wasApproved ? "profile_incomplete" : profile.onboardingStatus;
 
     const updatedProfile = await PsychologistModel.findByIdAndUpdate(
       profile._id,
-      { $set: data },
+      {
+        $set: {
+          ...data,
+          onboardingStatus: nextStatus === "rejected" ? "profile_incomplete" : nextStatus,
+          verificationStatus: wasApproved ? "pending" : profile.verificationStatus,
+          isOnline: wasApproved ? false : profile.isOnline,
+        },
+        $unset: { rejectionReason: 1, reviewedAt: 1, reviewedBy: 1 },
+      },
       { returnDocument: "after", runValidators: true },
     ).populate({
       path: "userId",
@@ -185,6 +242,7 @@ export class PsychologistService {
     type: "license" | "degree" | "id_proof",
   ): Promise<UploadCredentialsResponse> {
     const profile = await this.getOrCreateProfile(userId);
+    await this.ensureEditable(profile);
 
     // Upload each file to Cloudinary
     const uploadPromises = files.map(file => {
@@ -226,7 +284,15 @@ export class PsychologistService {
 
     const updatedProfile = await PsychologistModel.findByIdAndUpdate(
       profile._id,
-      { $push: { credentials: { $each: newCredentials } } },
+      {
+        $push: { credentials: { $each: newCredentials } },
+        $set: {
+          onboardingStatus: "documents_pending",
+          verificationStatus: "pending",
+          isOnline: false,
+        },
+        $unset: { rejectionReason: 1, reviewedAt: 1, reviewedBy: 1 },
+      },
       { new: true },
     );
 
@@ -236,6 +302,33 @@ export class PsychologistService {
 
     return {
       credentials: updatedProfile.credentials,
+    };
+  }
+
+  async submitForReview(userId: string) {
+    const profile = await this.getOrCreateProfile(userId);
+    await this.ensureEditable(profile);
+    const missingFields = this.getMissingFields(profile);
+    if (missingFields.length > 0) {
+      throw new ApiError(
+        StatusCodes.UNPROCESSABLE_ENTITY,
+        ErrorCodes.PSYCHOLOGIST_ONBOARDING_INCOMPLETE,
+        "Complete all professional details and credentials before submitting",
+        { missingFields },
+      );
+    }
+
+    profile.onboardingStatus = "under_review";
+    profile.verificationStatus = "pending";
+    profile.submittedAt = new Date();
+    profile.rejectionReason = undefined;
+    profile.isOnline = false;
+    await profile.save();
+
+    return {
+      id: profile._id.toString(),
+      onboardingStatus: profile.onboardingStatus,
+      submittedAt: profile.submittedAt.toISOString(),
     };
   }
 }

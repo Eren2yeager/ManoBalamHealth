@@ -2,12 +2,16 @@ import { Role } from "@/constants/roles.constant";
 
 export interface RegisterRequest {
   name: string;
-  email?: string;
+  email: string;
   phone?: string;
   password: string;
   role: Exclude<Role, "admin">;
   country: string;
   timezone: string;
+}
+
+export interface ResendOtpRequest {
+  userId: string;
 }
 
 export interface RegisterResponse {

@@ -10,6 +10,7 @@ import { useUserStore } from "@/stores/userStore";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { ApiErrorResponse, Role } from "@/types/global.types";
+import { useAuthStore } from "../store/authStore";
 
 const roleHome: Record<Role, string> = {
   patient: "/home",
@@ -22,6 +23,7 @@ export const LoginForm = () => {
   const [searchParams] = useSearchParams();
   const setUser = useUserStore((s) => s.setUser);
   const setAccessToken = useUserStore((s) => s.setAccessToken);
+  const setPendingVerification = useAuthStore((s) => s.setPendingVerification);
 
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -43,6 +45,19 @@ export const LoginForm = () => {
       navigate(safeRedirect ?? roleHome[result.user.role]);
     } catch (error) {
       if (isAxiosError<ApiErrorResponse>(error) && error.response?.data) {
+        const details = error.response.data.details;
+        if (
+          error.response.data.message === "Account not verified" &&
+          typeof details === "object" &&
+          details !== null &&
+          "userId" in details &&
+          typeof details.userId === "string"
+        ) {
+          setPendingVerification(details.userId, "email");
+          navigate("/verify-otp");
+          toast.info("Verify your email before logging in.");
+          return;
+        }
         toast.error(error.response.data.message);
       } else {
         toast.error("Login failed.");
@@ -98,7 +113,7 @@ export const LoginForm = () => {
           <button
             type="button"
             className="text-xs font-semibold text-primary hover:underline"
-            onClick={() => toast.info("Password reset coming soon.")}
+            onClick={() => navigate("/forgot-password")}
           >
             Forgot Password?
           </button>

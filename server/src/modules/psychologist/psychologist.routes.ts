@@ -2,7 +2,7 @@ import { Router } from "express";
 import { psychologistController } from "./psychologist.controller";
 import { requireAuth, requireRole } from "@/middlewares/auth.middleware";
 import { validate } from "@/middlewares/validate.middleware";
-import { upload } from "@/middlewares/upload.middleware";
+import { credentialUpload } from "@/middlewares/upload.middleware";
 import {
   updatePsychologistProfileSchema,
   getPsychologistsQuerySchema,
@@ -10,6 +10,20 @@ import {
 } from "./psychologist.validation";
 
 const router = Router();
+
+router.get(
+  "/me/onboarding",
+  requireAuth,
+  requireRole("psychologist"),
+  psychologistController.getMyOnboarding,
+);
+
+router.post(
+  "/me/submit",
+  requireAuth,
+  requireRole("psychologist"),
+  psychologistController.submitForReview,
+);
 
 router.get(
   "/",
@@ -23,7 +37,7 @@ router.post(
   "/credentials",
   requireAuth,
   requireRole("psychologist"),
-  upload.array("documents", 5), // multer first!
+  credentialUpload.array("documents", 5),
   validate(uploadCredentialsSchema), // then validate!
   psychologistController.uploadCredentials,
 );

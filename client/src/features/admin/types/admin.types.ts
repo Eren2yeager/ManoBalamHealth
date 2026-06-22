@@ -2,10 +2,22 @@ import type { PaginationParams, AppointmentStatus } from "@/types/global.types";
 
 export interface PendingPsychologistItem {
   id: string;
+  userId: string;
   name: string;
   email?: string;
-  credentials: Array<{ docUrl: string; type: string }>;
-  submittedAt: string;
+  phone?: string;
+  verificationStatus: "pending" | "approved" | "rejected";
+  onboardingStatus: "profile_incomplete" | "documents_pending" | "under_review" | "approved" | "rejected";
+  specialization: string[];
+  languages: string[];
+  experienceYears: number;
+  consultationFee: { amount: number; currency: string };
+  licensedCountries: string[];
+  bio: string;
+  credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
+  submittedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
 }
 
 export interface VerifyPsychologistDto {

@@ -1,15 +1,15 @@
 import { z } from "zod";
 
 export const updatePsychologistProfileSchema = z.object({
-  specialization: z.array(z.string()).optional(),
-  languages: z.array(z.string()).optional(),
-  experienceYears: z.number().min(0).optional(),
+  specialization: z.array(z.string().trim().min(2).max(80)).min(1).max(12).optional(),
+  languages: z.array(z.string().trim().min(2).max(50)).min(1).max(12).optional(),
+  experienceYears: z.number().int().min(0).max(70).optional(),
   consultationFee: z.object({
-    amount: z.number().min(0),
-    currency: z.string(),
+    amount: z.number().positive().max(1_000_000),
+    currency: z.string().trim().length(3),
   }).optional(),
-  bio: z.string().optional(),
-  licensedCountries: z.array(z.string()).optional(),
+  bio: z.string().trim().min(50).max(3000).optional(),
+  licensedCountries: z.array(z.string().trim().regex(/^[A-Z]{2}$/)).min(1).max(30).optional(),
   isAcceptingEmergency: z.boolean().optional(),
 });
 

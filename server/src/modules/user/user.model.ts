@@ -14,6 +14,7 @@ export interface IUser extends Document {
   timezone: string;
   isVerified: boolean;
   isActive: boolean;
+  authVersion: number;
   avatarUrl?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -36,6 +37,7 @@ const userSchema = new Schema<IUser>(
     timezone: { type: String, required: true },
     isVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
+    authVersion: { type: Number, default: 0, min: 0 },
     avatarUrl: { type: String },
   },
   { timestamps: true }

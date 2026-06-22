@@ -21,22 +21,6 @@ export const handlePresence = (io: Server, socket: AuthenticatedSocket) => {
     // Store user's socket ID in Redis
     await redis.sadd(`user:sockets:${userId}`, socket.id);
 
-    // If user is a psychologist, update isOnline status and add to online set
-    if (role === "psychologist") {
-      const psychologist = await PsychologistModel.findOne({ userId });
-      if (psychologist) {
-        psychologist.isOnline = true;
-        await psychologist.save();
-        await redis.sadd("psychologists:online", psychologist._id.toString());
-      }
-    }
-
-    // Emit presence update
-    io.emit(SocketEvents.PRESENCE_UPDATE, {
-      userId,
-      role,
-      online: true,
-    });
   };
 
   // When user disconnects
@@ -57,19 +41,40 @@ export const handlePresence = (io: Server, socket: AuthenticatedSocket) => {
           psychologist.isOnline = false;
           await psychologist.save();
           await redis.srem("psychologists:online", psychologist._id.toString());
+          io.emit(SocketEvents.PRESENCE_UPDATE, {
+            psychologistId: psychologist._id.toString(),
+            isOnline: false,
+          });
         }
       }
-
-      // Emit presence update
-      io.emit(SocketEvents.PRESENCE_UPDATE, {
-        userId,
-        role,
-        online: false,
-      });
     }
   };
 
   // Register handlers
   handleConnect();
+  socket.on("presence:set", async (payload: { online?: boolean }) => {
+    if (role !== "psychologist") return;
+    const psychologist = await PsychologistModel.findOne({ userId });
+    if (
+      !psychologist ||
+      psychologist.verificationStatus !== "approved" ||
+      psychologist.onboardingStatus !== "approved"
+    ) {
+      socket.emit("presence:error", { message: "Psychologist approval is required" });
+      return;
+    }
+    const online = payload?.online === true;
+    psychologist.isOnline = online;
+    await psychologist.save();
+    if (online) {
+      await redis.sadd("psychologists:online", psychologist._id.toString());
+    } else {
+      await redis.srem("psychologists:online", psychologist._id.toString());
+    }
+    io.emit(SocketEvents.PRESENCE_UPDATE, {
+      psychologistId: psychologist._id.toString(),
+      isOnline: online,
+    });
+  });
   socket.on("disconnect", handleDisconnect);
 };

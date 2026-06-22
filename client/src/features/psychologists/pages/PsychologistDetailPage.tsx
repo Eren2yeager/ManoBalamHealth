@@ -21,7 +21,7 @@ export const PsychologistDetailPage = () => {
       try {
         const data = await getPsychologistById(id);
         setPsychologist(data);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load psychologist details");
       } finally {
         setIsLoading(false);

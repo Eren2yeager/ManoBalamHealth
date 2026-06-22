@@ -5,6 +5,8 @@ import { LandingPage } from "../features/shared/pages/LandingPage";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { RegisterPage } from "../features/auth/pages/RegisterPage";
 import { VerifyOtpPage } from "../features/auth/pages/VerifyOtpPage";
+import { ForgotPasswordPage } from "../features/auth/pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "../features/auth/pages/ResetPasswordPage";
 import { AboutPage } from "../features/public-site/pages/AboutPage";
 import { AboutDetailPage } from "../features/public-site/pages/AboutDetailPage";
 import { OrganizationDetailPage } from "../features/public-site/pages/OrganizationDetailPage";
@@ -14,6 +16,7 @@ import { EventsAchievementsPage } from "../features/public-site/pages/EventsAchi
 import { FAQPage } from "../features/public-site/pages/FAQPage";
 import { ContactPage } from "../features/public-site/pages/ContactPage";
 import { PublicNotFoundPage } from "../features/public-site/pages/PublicNotFoundPage";
+import { LegalPage } from "../features/public-site/pages/LegalPage";
 
 // Protected (all roles)
 import { HomePage } from "../features/shared/pages/HomePage";
@@ -32,6 +35,7 @@ import { EmergencySessionPage } from "../features/emergency/pages/EmergencySessi
 
 // Psychologist-only
 import { PsychologistDashboard } from "../features/psychologists/pages/PsychologistDashboard";
+import { PsychologistOnboardingPage } from "../features/psychologists/pages/PsychologistOnboardingPage";
 import { AvailabilityPage } from "../features/availability/pages/AvailabilityPage";
 import { PsychologistAppointmentsPage } from "../features/appointments/pages/PsychologistAppointmentsPage";
 
@@ -46,6 +50,7 @@ import { RoleRoute } from "../routes/RoleRoute";
 import { GuestRoute } from "../routes/GuestRoute";
 import { NavbarLayout } from "../components/layout/NavbarLayout";
 import { RouteErrorPage } from "../components/feedback/RouteErrorPage";
+import { ApprovedPsychologistRoute } from "../routes/ApprovedPsychologistRoute";
 
 const router = createBrowserRouter([
   // ── Public (unauthenticated only) ────────────────────────────────────────
@@ -62,6 +67,7 @@ const router = createBrowserRouter([
       { path: "/events-achievements", element: <EventsAchievementsPage /> },
       { path: "/faq", element: <FAQPage /> },
       { path: "/contact", element: <ContactPage /> },
+      { path: "/legal/:document", element: <LegalPage /> },
       { path: "*", element: <PublicNotFoundPage /> },
     ],
   },
@@ -72,6 +78,8 @@ const router = createBrowserRouter([
       { path: "/login", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },
       { path: "/verify-otp", element: <VerifyOtpPage /> },
+      { path: "/forgot-password", element: <ForgotPasswordPage /> },
+      { path: "/reset-password", element: <ResetPasswordPage /> },
     ],
   },
 
@@ -126,11 +134,22 @@ const router = createBrowserRouter([
         element: <NavbarLayout />,
         children: [
           { path: "/psychologist/dashboard", element: <PsychologistDashboard /> },
-          { path: "/psychologist/availability", element: <AvailabilityPage /> },
-          { path: "/psychologist/appointments", element: <PsychologistAppointmentsPage /> },
+          { path: "/psychologist/onboarding", element: <PsychologistOnboardingPage /> },
+          {
+            element: <ApprovedPsychologistRoute />,
+            children: [
+              { path: "/psychologist/availability", element: <AvailabilityPage /> },
+              { path: "/psychologist/appointments", element: <PsychologistAppointmentsPage /> },
+            ],
+          },
         ],
       },
-      { path: "/psychologist/session/:appointmentId", element: <SessionRoomPage /> },
+      {
+        element: <ApprovedPsychologistRoute />,
+        children: [
+          { path: "/psychologist/session/:appointmentId", element: <SessionRoomPage /> },
+        ],
+      },
     ],
   },
 

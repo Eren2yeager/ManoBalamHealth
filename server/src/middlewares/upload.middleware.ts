@@ -23,3 +23,31 @@ export const upload = multer({
   },
   fileFilter,
 });
+
+const credentialFileFilter = (
+  _req: Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
+) => {
+  const allowedMimeTypes = new Set(["application/pdf", "image/png", "image/jpeg"]);
+  if (allowedMimeTypes.has(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(
+      new ApiError(
+        StatusCodes.BAD_REQUEST,
+        ErrorCodes.VALIDATION_ERROR,
+        "Credentials must be PDF, PNG, or JPEG files",
+      ),
+    );
+  }
+};
+
+export const credentialUpload = multer({
+  storage,
+  limits: {
+    fileSize: 8 * 1024 * 1024,
+    files: 5,
+  },
+  fileFilter: credentialFileFilter,
+});

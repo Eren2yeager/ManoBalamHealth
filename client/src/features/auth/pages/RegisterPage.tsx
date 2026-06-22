@@ -23,7 +23,7 @@ export const RegisterPage = () => {
                     Begin Your Journey
                   </h2>
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    Create a secure ManoBalam account to access clinical-grade mental health support
+                    Create a ManoBalam account to access mental-health support
                     and connect with licensed professionals.
                   </p>
                 </div>
@@ -36,7 +36,7 @@ export const RegisterPage = () => {
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Secure &amp; Confidential</h3>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      Your data is encrypted and handled with strict medical-grade confidentiality.
+                      Your account is protected through role-based access and secure authentication.
                     </p>
                   </div>
                 </div>

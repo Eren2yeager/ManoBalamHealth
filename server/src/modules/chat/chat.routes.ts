@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { chatController } from "./chat.controller";
-import { requireAuth } from "@/middlewares/auth.middleware";
+import { requireApprovalIfPsychologist, requireAuth } from "@/middlewares/auth.middleware";
 import { validate } from "@/middlewares/validate.middleware";
 import { getChatHistorySchema } from "./chat.validation";
 
@@ -10,6 +10,7 @@ const router = Router();
 router.get(
   "/:sessionId/history",
   requireAuth,
+  requireApprovalIfPsychologist,
   validate(getChatHistorySchema, "query"),
   chatController.getChatHistory
 );

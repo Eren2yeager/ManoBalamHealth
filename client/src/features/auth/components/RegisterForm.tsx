@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   User,
   Mail,
@@ -73,9 +73,6 @@ export const RegisterForm = () => {
   // Disable tz picker when there's nothing to pick (no country) or only one option
   const isTimezoneDisabled = availableTimezones.length <= 1;
 
-  // Detect if contact is email or phone
-  const isEmail = contact.includes("@");
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreedToTerms) {
@@ -86,7 +83,7 @@ export const RegisterForm = () => {
     try {
       const result = await register({
         name,
-        ...(isEmail ? { email: contact } : { phone: contact }),
+        email: contact,
         password,
         role,
         country: country || "IN",
@@ -171,22 +168,23 @@ export const RegisterForm = () => {
       {/* Email / Phone */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="contact" className="text-xs font-medium text-muted-foreground">
-          Email Address or Phone Number
+          Email Address
         </Label>
         <div className="relative">
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             id="contact"
+            type="email"
             value={contact}
             onChange={(e) => setContact(e.target.value)}
             required
-            placeholder="email@example.com or +1 234 567 8900"
+            placeholder="email@example.com"
             className="pl-10 py-3 h-auto bg-background border-border rounded-lg focus-visible:ring-primary"
           />
         </div>
         <p className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
           <Info className="h-3 w-3 shrink-0" />
-          An OTP will be sent to verify this contact method.
+          A verification code will be sent to this email address.
         </p>
       </div>
 
@@ -288,10 +286,10 @@ export const RegisterForm = () => {
         />
         <span className="text-xs text-muted-foreground leading-relaxed">
           I agree to the{" "}
-          <a href="#" className="text-primary hover:underline font-medium">Terms of Service</a>,{" "}
-          <a href="#" className="text-primary hover:underline font-medium">Privacy Policy</a>, and
+          <Link to="/legal/terms" className="text-primary hover:underline font-medium">Terms of Service</Link>,{" "}
+          <Link to="/legal/privacy" className="text-primary hover:underline font-medium">Privacy Policy</Link>, and
           understand the{" "}
-          <a href="#" className="text-primary hover:underline font-medium">Emergency Protocol</a>.
+          <Link to="/services/first-aid-support" className="text-primary hover:underline font-medium">Emergency Protocol</Link>.
         </span>
       </label>
 

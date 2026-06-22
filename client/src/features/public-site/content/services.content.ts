@@ -39,8 +39,7 @@ export const servicesContent: Record<string, ServicePage> = {
     actionLabel: "Book counselling", actionTo: "/psychologists",
     sections: [
       { title: "A space to be heard", body: "Counselling offers collaborative support without judgement, helping people clarify concerns and develop practical ways forward." },
-      { title: "Flexible online access", body: "ManoBalam supports chat, audio, and video session options depending on professional availability and user preference." },
+      { title: "Flexible online access", body: "ManoBalamHealthCare supports chat, audio, and video session options depending on professional availability and user preference." },
     ],
   },
 };
-

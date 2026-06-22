@@ -47,7 +47,7 @@ const statusDetails = {
   },
   under_review: {
     label: "Under review",
-    description: "Your application is being reviewed by the ManoBalam team.",
+    description: "Your application is being reviewed by the ManoBalamHealthCare team.",
     tone: "border-violet-200 bg-violet-50 text-violet-800",
   },
   approved: {
@@ -119,7 +119,7 @@ export const PsychologistDashboard = () => {
     {
       label: "Clinical verification",
       detail: isApproved
-        ? "Approved by the ManoBalam review team."
+        ? "Approved by the ManoBalamHealthCare review team."
         : onboarding?.onboardingStatus === "under_review"
           ? "Application is currently under review."
           : "Submit the completed profile for review.",

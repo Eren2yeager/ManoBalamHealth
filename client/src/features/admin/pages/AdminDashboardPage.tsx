@@ -218,7 +218,7 @@ export function AdminDashboardPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#151329]/70 via-transparent to-transparent" />
           <div className="relative max-w-2xl animate-in fade-in slide-in-from-left-4 duration-700">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[11px] font-black uppercase tracking-[.18em] backdrop-blur">
-              <Sparkles className="size-3.5 text-violet-200" /> ManoBalam operations
+              <Sparkles className="size-3.5 text-violet-200" /> ManoBalamHealthCare operations
             </span>
             <h1 className="mt-5 text-balance text-4xl font-black tracking-[-.045em] md:text-5xl">
               Care operations, clearly in view.

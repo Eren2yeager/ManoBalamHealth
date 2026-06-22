@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "manobalam-backend-v1",
-    "name": "ManoBalam API",
-    "description": "Full API collection for ManoBalam mental health platform. Base URL is stored in the `baseUrl` collection variable. Access token is stored in `accessToken` and automatically used by the collection-level auth.",
+    "name": "ManoBalamHealthCare API",
+    "description": "Full API collection for ManoBalamHealthCare mental health platform. Base URL is stored in the `baseUrl` collection variable. Access token is stored in `accessToken` and automatically used by the collection-level auth.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {

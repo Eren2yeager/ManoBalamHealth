@@ -19,36 +19,36 @@ const minDateString = () => DateTime.now().setZone(getViewerTimezone()).toFormat
 
 export const AutoTimeWindowPicker = () => {
   const { preferredWindow, specialization, setAutoSelection } = useBookingStore();
-  const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("17:00");
+  const [date, setDate] = useState(() =>
+    preferredWindow
+      ? DateTime.fromISO(preferredWindow.from, { zone: "utc" })
+          .setZone(getViewerTimezone())
+          .toFormat("yyyy-MM-dd")
+      : minDateString(),
+  );
+  const [startTime, setStartTime] = useState(() =>
+    preferredWindow
+      ? DateTime.fromISO(preferredWindow.from, { zone: "utc" })
+          .setZone(getViewerTimezone())
+          .toFormat("HH:mm")
+      : "09:00",
+  );
+  const [endTime, setEndTime] = useState(() =>
+    preferredWindow
+      ? DateTime.fromISO(preferredWindow.to, { zone: "utc" })
+          .setZone(getViewerTimezone())
+          .toFormat("HH:mm")
+      : "17:00",
+  );
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (preferredWindow) {
-      const fromLocal = DateTime.fromISO(preferredWindow.from, { zone: "utc" }).setZone(
-        getViewerTimezone()
-      );
-      const toLocal = DateTime.fromISO(preferredWindow.to, { zone: "utc" }).setZone(
-        getViewerTimezone()
-      );
-
-      setDate(fromLocal.toFormat("yyyy-MM-dd"));
-      setStartTime(fromLocal.toFormat("HH:mm"));
-      setEndTime(toLocal.toFormat("HH:mm"));
-      return;
-    }
-
-    const defaultDate = minDateString();
+    if (preferredWindow) return;
     const zone = getViewerTimezone();
-    const fromLocal = DateTime.fromISO(`${defaultDate}T09:00`, { zone });
-    const toLocal = DateTime.fromISO(`${defaultDate}T17:00`, { zone });
-
-    setDate(defaultDate);
-    setStartTime("09:00");
-    setEndTime("17:00");
+    const fromLocal = DateTime.fromISO(`${date}T${startTime}`, { zone });
+    const toLocal = DateTime.fromISO(`${date}T${endTime}`, { zone });
     setAutoSelection(localToUtcIso(fromLocal), localToUtcIso(toLocal));
-  }, [preferredWindow, setAutoSelection]);
+  }, [date, endTime, preferredWindow, setAutoSelection, startTime]);
 
   const preview = useMemo(() => {
     if (!preferredWindow) return null;

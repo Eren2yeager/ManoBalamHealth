@@ -1,17 +1,28 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
+import {
+  AlertCircle,
+  ArrowLeft,
+  BadgeCheck,
+  CalendarDays,
+  CreditCard,
+  HeartHandshake,
+  LockKeyhole,
+  MessageSquareText,
+  ShieldCheck,
+  Stethoscope,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
-import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBookingStore } from "../store/bookingStore";
 import { createAppointment } from "../api/booking.api";
 import { getBookingErrorMessage } from "../utils/bookingErrors";
 import { createOrder, verifyPayment } from "@/features/payment/api/payment.api";
-import { RazorpayCheckout } from "@/features/payment/components/RazorpayCheckout";
+import { useRazorpayCheckout } from "@/features/payment/components/RazorpayCheckout";
 import { getPsychologistById } from "@/features/psychologists/api/psychologist.api";
 import { formatInViewerTz } from "@/lib/timezone";
 import { useUserStore } from "@/stores/userStore";
@@ -27,21 +38,11 @@ interface PaymentCheckoutState {
   fee: Money;
 }
 
-// const SPECIALIZATIONS: Record<Specialization, string> = {
-//   anxiety: "Anxiety",
-//   depression: "Depression",
-//   relationships: "Relationships",
-//   stress: "Stress",
-//   trauma: "Trauma",
-//   grief: "Grief",
-//   "self-esteem": "Self-esteem",
-//   sleep: "Sleep",
-//   "work-life-balance": "Work-life balance",
-//   other: "Other",
-// };
-
 const formatMoney = (amount: number, currency: string) =>
-  new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount / 100);
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency,
+  }).format(amount / 100);
 
 interface BookingSummaryProps {
   onBack?: () => void;
@@ -50,6 +51,7 @@ interface BookingSummaryProps {
 export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
   const navigate = useNavigate();
   const { user } = useUserStore();
+  const { openPayment, isReady } = useRazorpayCheckout();
   const {
     allocationMode,
     mode,
@@ -67,95 +69,100 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
-  const [paymentCheckout, setPaymentCheckout] = useState<PaymentCheckoutState | null>(null);
-  const [shouldOpenPayment, setShouldOpenPayment] = useState(false);
-  const [assignedPsychologist, setAssignedPsychologist] = useState<PsychologistDetail | null>(null);
-  const [isLoadingPsychologist, setIsLoadingPsychologist] = useState(false);
+  const [paymentCheckout, setPaymentCheckout] =
+    useState<PaymentCheckoutState | null>(null);
+  const [psychologistState, setPsychologistState] = useState<{
+    id: string | null;
+    data: PsychologistDetail | null;
+  }>({ id: null, data: null });
 
-  const resolvedPsychologistId = assignedPsychologistId ?? selectedPsychologistId;
+  const resolvedPsychologistId =
+    assignedPsychologistId ?? selectedPsychologistId;
+  const assignedPsychologist =
+    psychologistState.id === resolvedPsychologistId
+      ? psychologistState.data
+      : null;
+  const isLoadingPsychologist =
+    Boolean(resolvedPsychologistId) &&
+    psychologistState.id !== resolvedPsychologistId;
 
   useEffect(() => {
-    if (!resolvedPsychologistId) {
-      setAssignedPsychologist(null);
+    if (!resolvedPsychologistId) return;
+    let active = true;
+    void getPsychologistById(resolvedPsychologistId)
+      .then((psychologist) => {
+        if (active) {
+          setPsychologistState({ id: resolvedPsychologistId, data: psychologist });
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPsychologistState({ id: resolvedPsychologistId, data: null });
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [resolvedPsychologistId]);
+
+  const launchPayment = (checkout: PaymentCheckoutState) => {
+    const opened = openPayment({
+      options: {
+        key: checkout.order.razorpayKeyId,
+        amount: checkout.order.amount,
+        currency: checkout.order.currency,
+        name: "ManoBalamHealthCare",
+        description: "Confidential mental-health consultation",
+        order_id: checkout.order.razorpayOrderId,
+        prefill: {
+          name: user?.name ?? "",
+          email: user?.email ?? "",
+          contact: "",
+        },
+        notes: { appointment_id: checkout.appointmentId },
+        theme: { color: "#7c3aed" },
+      },
+      onSuccess: async (response) => {
+        setIsProcessing(true);
+        try {
+          await verifyPayment({
+            appointmentId: checkout.appointmentId,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
+          });
+          toast.success("Payment verified. Your session is confirmed.");
+          reset();
+          navigate(`/appointments/${checkout.appointmentId}`);
+        } catch {
+          toast.error(
+            "Payment verification is still pending. You can safely retry from the appointment page.",
+          );
+          navigate(`/appointments/${checkout.appointmentId}`);
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+      onError: () => {
+        toast.error("Payment failed. Your booking remains available for retry.");
+        setIsProcessing(false);
+      },
+      onDismiss: () => {
+        toast.info("Payment window closed. You can retry when you are ready.");
+        setIsProcessing(false);
+      },
+    });
+
+    if (!opened) setIsProcessing(false);
+  };
+
+  const handleConfirm = async () => {
+    if (paymentCheckout) {
+      setIsProcessing(true);
+      launchPayment(paymentCheckout);
       return;
     }
 
-    let cancelled = false;
-    const load = async () => {
-      setIsLoadingPsychologist(true);
-      try {
-        const psychologist = await getPsychologistById(resolvedPsychologistId);
-        if (!cancelled) setAssignedPsychologist(psychologist);
-      } catch {
-        // Non-critical — we still show the rest of the summary
-      } finally {
-        if (!cancelled) setIsLoadingPsychologist(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [resolvedPsychologistId]);
-
-  const { handlePayment, isReady } = RazorpayCheckout({
-    options: paymentCheckout
-      ? {
-          key: paymentCheckout.order.razorpayKeyId,
-          amount: paymentCheckout.order.amount,
-          currency: paymentCheckout.order.currency,
-          name: "ManoBalam",
-          description: "Therapy Session",
-          order_id: paymentCheckout.order.razorpayOrderId,
-          prefill: {
-            name: user?.name ?? "",
-            email: user?.email ?? "",
-            contact: "",
-          },
-          notes: { appointment_id: paymentCheckout.appointmentId },
-          theme: { color: "#9333ea" },
-        }
-      : {
-          key: "",
-          amount: 0,
-          currency: "INR",
-          name: "",
-          description: "",
-          order_id: "",
-          prefill: { name: "", email: "", contact: "" },
-          notes: { appointment_id: "" },
-          theme: { color: "" },
-        },
-    onSuccess: async (response) => {
-      if (!paymentCheckout) return;
-      setIsProcessing(true);
-      try {
-        await verifyPayment({
-          appointmentId: paymentCheckout.appointmentId,
-          razorpayPaymentId: response.razorpay_payment_id,
-          razorpayOrderId: response.razorpay_order_id,
-          razorpaySignature: response.razorpay_signature,
-        });
-        toast.success("Payment successful! Booking confirmed.");
-        reset();
-        navigate("/appointments");
-      } catch {
-        toast.error("Payment verification failed. You can retry from your appointments.");
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    onError: () => {
-      toast.error("Payment failed or cancelled. You can try again.");
-      setIsProcessing(false);
-    },
-  });
-
-  useEffect(() => {
-    if (!shouldOpenPayment || !paymentCheckout || !isReady) return;
-    handlePayment();
-    setShouldOpenPayment(false);
-  }, [shouldOpenPayment, paymentCheckout, isReady, handlePayment]);
-
-  const handleConfirm = async () => {
     if (!mode || !allocationMode) {
       toast.error("Please complete all booking steps.");
       return;
@@ -189,133 +196,220 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
       });
 
       const order = await createOrder(appointment.appointmentId);
-      setPaymentCheckout({
+      const checkout = {
         appointmentId: appointment.appointmentId,
         order,
         fee: appointment.fee,
-      });
-
-      setShouldOpenPayment(true);
+      };
+      setPaymentCheckout(checkout);
+      launchPayment(checkout);
     } catch (error) {
       setBookingError(getBookingErrorMessage(error));
+      setIsProcessing(false);
       if (!(error instanceof AxiosError)) {
         toast.error("Failed to create booking. Please try again.");
       }
-    } finally {
-      setIsProcessing(false);
     }
   };
 
-  // Display fee: from assignment result, or from the fetched psychologist's consultationFee
-  const displayFee = assignedFee ?? assignedPsychologist?.consultationFee ?? null;
+  const displayFee =
+    paymentCheckout?.fee ??
+    assignedFee ??
+    assignedPsychologist?.consultationFee ??
+    null;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Booking Summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Booking mode</span>
-            <Badge variant="secondary" className="capitalize">
-              {allocationMode === "auto" ? "Automatic match" : "Manual selection"}
-            </Badge>
+    <div className="mx-auto max-w-3xl space-y-5">
+      <div>
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-600">
+          Final review
+        </p>
+        <h2 className="mt-2 text-2xl font-black text-slate-950">
+          Everything look right?
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          Review your session details before opening secure payment.
+        </p>
+      </div>
+
+      <div className="overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-sm">
+        <div className="flex items-center gap-4 bg-gradient-to-r from-violet-50 to-blue-50/60 p-5">
+          <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white text-violet-700 shadow-sm">
+            {assignedPsychologist?.avatarUrl ? (
+              <img
+                src={assignedPsychologist.avatarUrl}
+                alt=""
+                className="size-full object-cover"
+              />
+            ) : (
+              <UserRound className="size-5" />
+            )}
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-violet-600">
+              {assignedPsychologistId ? "Your matched psychologist" : "Your psychologist"}
+            </p>
+            {isLoadingPsychologist ? (
+              <Skeleton className="mt-2 h-5 w-44" />
+            ) : (
+              <p className="mt-1 truncate text-lg font-black text-slate-950">
+                {assignedPsychologist?.name ?? "Assigned after confirmation"}
+              </p>
+            )}
           </div>
+          <Badge className="ml-auto hidden rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-100 sm:inline-flex">
+            <BadgeCheck className="mr-1 size-3.5" />
+            Verified
+          </Badge>
+        </div>
 
-          <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Consultation type</span>
-            <Badge className="capitalize">{mode}</Badge>
-          </div>
-
-          {allocationMode === "auto" && preferredWindow && (
-            <>
-              <div className="space-y-1">
-                <div className="text-muted-foreground">Preferred window</div>
-                <div className="text-sm">
-                  {formatInViewerTz(preferredWindow.from, "EEEE, MMMM d · h:mm a")} –{" "}
-                  {formatInViewerTz(preferredWindow.to, "h:mm a")}
-                </div>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Specialization</span>
-                <span className="text-sm">
-                  {specialization
-                    ? SPECIALIZATION_LABEL[specialization as Specialization]
-                    : "Any"}
-                </span>
-              </div>
-            </>
+        <div className="grid gap-px bg-slate-100 sm:grid-cols-2">
+          <SummaryItem
+            icon={HeartHandshake}
+            label="Booking path"
+            value={allocationMode === "auto" ? "Automatic match" : "Chosen professional"}
+          />
+          <SummaryItem
+            icon={MessageSquareText}
+            label="Session type"
+            value={mode ? `${mode[0].toUpperCase()}${mode.slice(1)}` : "—"}
+          />
+          {preferredWindow && (
+            <SummaryItem
+              icon={CalendarDays}
+              label="Preferred window"
+              value={`${formatInViewerTz(preferredWindow.from, "MMM d · h:mm a")} – ${formatInViewerTz(preferredWindow.to, "h:mm a")}`}
+            />
           )}
-
-          {(assignedPsychologistId || selectedPsychologistId) && (
-            <div className="space-y-1">
-              <div className="text-muted-foreground">
-                {assignedPsychologistId ? "Matched psychologist" : "Psychologist"}
-              </div>
-              {isLoadingPsychologist ? (
-                <Skeleton className="h-5 w-40" />
-              ) : (
-                <div className="text-sm font-medium">
-                  {assignedPsychologist?.name ?? "—"}
-                </div>
-              )}
-            </div>
-          )}
-
           {scheduledAt && (
-            <div className="space-y-1">
-              <div className="text-muted-foreground">Scheduled time</div>
-              <div className="text-sm">
-                {formatInViewerTz(scheduledAt, "EEEE, MMMM d · h:mm a")}
-              </div>
-            </div>
+            <SummaryItem
+              icon={CalendarDays}
+              label="Scheduled time"
+              value={formatInViewerTz(scheduledAt, "MMM d · h:mm a")}
+            />
           )}
-
+          {allocationMode === "auto" && (
+            <SummaryItem
+              icon={Stethoscope}
+              label="Specialization"
+              value={
+                specialization
+                  ? SPECIALIZATION_LABEL[specialization as Specialization]
+                  : "Any suitable professional"
+              }
+            />
+          )}
           {displayFee && (
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Session fee</span>
-              <span className="font-medium">
-                {formatMoney(displayFee.amount, displayFee.currency)}
-              </span>
-            </div>
+            <SummaryItem
+              icon={CreditCard}
+              label="Session fee"
+              value={formatMoney(displayFee.amount, displayFee.currency)}
+            />
           )}
+        </div>
 
-          {concernDescription && (
-            <div className="space-y-2">
-              <div className="text-muted-foreground">Concern description</div>
-              <div className="bg-muted p-3 rounded-md text-sm">{concernDescription}</div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {concernDescription && (
+          <div className="border-t border-slate-100 p-5">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+              What you shared
+            </p>
+            <p className="mt-3 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+              {concernDescription}
+            </p>
+          </div>
+        )}
+      </div>
 
       {bookingError && (
-        <Card className="border-destructive/40 bg-destructive/5">
-          <CardContent className="pt-6">
-            <div className="flex gap-3">
-              <AlertCircle className="size-5 text-destructive shrink-0 mt-0.5" />
-              <div className="space-y-3">
-                <p className="text-sm text-foreground">{bookingError}</p>
-                {allocationMode === "auto" && onBack && (
-                  <Button variant="outline" size="sm" onClick={onBack}>
-                    Adjust time window
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-800">
+          <AlertCircle className="mt-0.5 size-5 shrink-0" />
+          <div>
+            <p className="text-sm font-bold">{bookingError}</p>
+            {allocationMode === "auto" && onBack && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onBack}
+                className="mt-3 rounded-xl border-rose-200 bg-white"
+              >
+                Adjust time window
+              </Button>
+            )}
+          </div>
+        </div>
       )}
 
-      <Button
-        className="w-full rounded-full"
-        size="lg"
-        onClick={handleConfirm}
-        disabled={isProcessing || !isReady}
-      >
-        {isProcessing ? "Processing..." : "Proceed to Payment"}
-      </Button>
+      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
+        <p className="flex items-center gap-2 text-sm font-black text-emerald-800">
+          <ShieldCheck className="size-4" />
+          Protected checkout
+        </p>
+        <p className="mt-1 text-xs leading-5 text-emerald-700/80">
+          Payment is confirmed only after secure server-side signature verification.
+          Closing the payment window will not charge you.
+        </p>
+      </div>
+
+      <div className="flex flex-col-reverse gap-3 sm:flex-row">
+        {onBack && !paymentCheckout && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="h-12 rounded-xl px-5 font-bold"
+          >
+            <ArrowLeft className="mr-2 size-4" />
+            Edit details
+          </Button>
+        )}
+        <Button
+          className="h-12 flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 font-black shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-indigo-700"
+          onClick={handleConfirm}
+          disabled={isProcessing || !isReady}
+        >
+          <LockKeyhole className="mr-2 size-4" />
+          {isProcessing
+            ? "Preparing secure checkout..."
+            : paymentCheckout
+              ? "Retry secure payment"
+              : "Proceed to secure payment"}
+        </Button>
+      </div>
+
+      {paymentCheckout && (
+        <p className="text-center text-xs text-slate-500">
+          Your appointment has been created. You can also{" "}
+          <Link
+            to={`/appointments/${paymentCheckout.appointmentId}`}
+            className="font-bold text-violet-700 hover:underline"
+          >
+            retry later from its appointment page
+          </Link>
+          .
+        </p>
+      )}
     </div>
   );
 };
+
+function SummaryItem({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof HeartHandshake;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex gap-3 bg-white p-5">
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700">
+        <Icon className="size-4" />
+      </span>
+      <div>
+        <p className="text-xs font-bold text-slate-400">{label}</p>
+        <p className="mt-1 text-sm font-black text-slate-800">{value}</p>
+      </div>
+    </div>
+  );
+}

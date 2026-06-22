@@ -1,4 +1,4 @@
-# ManoBalam — Design System
+# ManoBalamHealthCare — Design System
 
 This document is the single source of truth for every visual decision in the app: colors, type, spacing, component states, and layout patterns. `FRONTEND_PLAN.md` defines what data each screen needs and how it's wired; this document defines what it looks like. Read both before building any UI. If a component's visual spec isn't covered here, stop and ask rather than inventing a one-off style — consistency across 50+ components only holds if every one of them traces back to this file's tokens, not to local judgment calls made screen-by-screen.
 

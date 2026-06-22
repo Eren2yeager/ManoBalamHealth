@@ -8,6 +8,7 @@ export interface IAvailabilitySlot extends Document {
   isBooked: boolean;
   isBlocked: boolean;
   holdExpiresAt?: Date; // set when reserved pending payment
+  heldByAppointmentId?: Types.ObjectId;
 }
 
 const slotSchema = new Schema<IAvailabilitySlot>(
@@ -19,10 +20,11 @@ const slotSchema = new Schema<IAvailabilitySlot>(
     isBooked: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     holdExpiresAt: { type: Date },
+    heldByAppointmentId: { type: Schema.Types.ObjectId, ref: "Appointment", index: true },
   },
   { timestamps: true }
 );
 
-slotSchema.index({ psychologistId: 1, startTime: 1 });
+slotSchema.index({ psychologistId: 1, startTime: 1, mode: 1 }, { unique: true });
 
 export const AvailabilitySlotModel = model<IAvailabilitySlot>("AvailabilitySlot", slotSchema);

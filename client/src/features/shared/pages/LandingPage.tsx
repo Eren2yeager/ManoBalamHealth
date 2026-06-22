@@ -323,7 +323,7 @@ function HowItWorks() {
       <Reveal className="mx-auto max-w-7xl">
         <div className="grid gap-6 rounded-3xl border border-violet-100 bg-white p-6 shadow-[0_18px_55px_rgba(109,40,217,.06)] lg:grid-cols-[220px_1fr] lg:items-center">
           <div className="border-violet-100 lg:border-r lg:pr-7">
-            <h2 className="text-xl font-black text-[#10152f]">How ManoBalam works</h2>
+            <h2 className="text-xl font-black text-[#10152f]">How ManoBalamHealthCare works</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               Five simple steps towards professional support.
             </p>
@@ -706,7 +706,7 @@ function Footer() {
           </div>
         </div>
         <div className="flex flex-col gap-3 pt-7 text-xs sm:flex-row sm:justify-between">
-          <p>© {year} ManoBalam. All rights reserved.</p>
+          <p>© {year} ManoBalamHealthCare. All rights reserved.</p>
           <p>Empowering your mind with better access to care.</p>
         </div>
       </div>

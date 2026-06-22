@@ -7,12 +7,19 @@ import { ErrorCodes } from "@/constants/errorCodes.constant";
 // Configure multer for memory storage (we'll upload directly to Cloudinary)
 const storage = multer.memoryStorage();
 
-const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  // Allow only image files
-  if (file.mimetype.startsWith("image/")) {
+const avatarMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (avatarMimeTypes.has(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new ApiError(StatusCodes.BAD_REQUEST, ErrorCodes.VALIDATION_ERROR, "Only image files are allowed"));
+    cb(
+      new ApiError(
+        StatusCodes.BAD_REQUEST,
+        ErrorCodes.VALIDATION_ERROR,
+        "Avatar must be a JPEG, PNG, or WebP image",
+      ),
+    );
   }
 };
 

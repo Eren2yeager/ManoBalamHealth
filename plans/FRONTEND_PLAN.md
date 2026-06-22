@@ -1,4 +1,4 @@
-# ManoBalam — Frontend Plan (Client)
+# ManoBalamHealthCare — Frontend Plan (Client)
 
 Stack: React (Vite) + TypeScript + Tailwind CSS + Zustand + Axios + socket.io-client
 

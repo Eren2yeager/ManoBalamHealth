@@ -24,7 +24,7 @@ export function ServiceDetailPage() {
             <div>
               <h2 className="text-xl font-black">{page.urgent ? "Need help right now?" : "Ready to explore support?"}</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-white/80">
-                {user ? "Continue into the secure ManoBalam application." : "Log in or create an account to continue into the secure care experience."}
+                {user ? "Continue into the secure ManoBalamHealthCare application." : "Log in or create an account to continue into the secure care experience."}
               </p>
             </div>
           </div>
@@ -36,4 +36,3 @@ export function ServiceDetailPage() {
     </PublicPageLayout>
   );
 }
-

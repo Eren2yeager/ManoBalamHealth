@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { PaymentModel } from "./payment.model";
 import { AppointmentModel } from "@/modules/appointment/appointment.model";
 import { PsychologistModel } from "@/modules/psychologist/psychologist.model";
+import { AvailabilitySlotModel } from "@/modules/availability/availabilitySlot.model";
 import { ApiError } from "@/utils/ApiError";
 import { StatusCodes } from "@/constants/statusCodes.constant";
 import { ErrorCodes } from "@/constants/errorCodes.constant";
@@ -40,6 +41,37 @@ class PaymentService {
       throw new ApiError(StatusCodes.CONFLICT, ErrorCodes.VALIDATION_ERROR, "Appointment is not in pending payment state");
     }
 
+    if (appointment.slotId) {
+      const holdUntil = new Date(Date.now() + 10 * 60 * 1000);
+      const reservedSlot = await AvailabilitySlotModel.findOneAndUpdate(
+        {
+          _id: appointment.slotId,
+          isBooked: false,
+          isBlocked: false,
+          $or: [
+            { heldByAppointmentId: appointment._id },
+            { holdExpiresAt: { $exists: false } },
+            { holdExpiresAt: { $lt: new Date() } },
+          ],
+        },
+        {
+          $set: {
+            holdExpiresAt: holdUntil,
+            heldByAppointmentId: appointment._id,
+          },
+        },
+        { new: true },
+      );
+
+      if (!reservedSlot) {
+        throw new ApiError(
+          StatusCodes.CONFLICT,
+          ErrorCodes.SLOT_ALREADY_BOOKED,
+          "This appointment slot is no longer available. Please choose another time.",
+        );
+      }
+    }
+
     // Get psychologist to get consultation fee
     const psychologist = await PsychologistModel.findById(appointment.psychologistId);
     if (!psychologist) {
@@ -48,7 +80,7 @@ class PaymentService {
 
     // Check if payment already exists for this appointment
     const existingPayment = await PaymentModel.findOne({ appointmentId: appointment._id });
-    if (existingPayment) {
+    if (existingPayment?.status === "created") {
       // Return existing order if already created
       return {
         razorpayOrderId: existingPayment.providerOrderId,
@@ -107,6 +139,24 @@ class PaymentService {
       throw new ApiError(StatusCodes.FORBIDDEN, ErrorCodes.FORBIDDEN_ROLE, "You are not authorized to verify this payment");
     }
 
+    if (
+      payment.appointmentId.toString() !== data.appointmentId
+    ) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        ErrorCodes.PAYMENT_SIGNATURE_INVALID,
+        "Payment does not belong to the supplied appointment",
+      );
+    }
+
+    if (payment.status === "paid") {
+      return {
+        appointmentId: payment.appointmentId.toString(),
+        status: "confirmed",
+        paymentId: payment._id.toString(),
+      };
+    }
+
     // Verify signature
     const isValid = razorpayProvider.verifyPayment({
       orderId: data.razorpayOrderId,
@@ -118,21 +168,42 @@ class PaymentService {
       // Update payment status to failed
       payment.status = "failed";
       await payment.save();
+      await this.releaseAppointmentHold(payment.appointmentId.toString());
       throw new ApiError(StatusCodes.BAD_REQUEST, ErrorCodes.PAYMENT_SIGNATURE_INVALID, "Payment signature is invalid");
     }
 
-    // Update payment and appointment
+    const appointment = await AppointmentModel.findById(payment.appointmentId);
+    if (!appointment) {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        ErrorCodes.NOT_FOUND,
+        "Appointment not found",
+      );
+    }
+
+    if (appointment.status === "cancelled") {
+      await this.refundLatePayment(
+        payment,
+        data.razorpayPaymentId,
+        "Appointment was cancelled before payment confirmation",
+      );
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        ErrorCodes.PAYMENT_FAILED,
+        "The appointment was cancelled, so this payment has been refunded",
+      );
+    }
+
+    await this.confirmAppointmentSlot(appointment);
+
     payment.status = "paid";
     payment.providerPaymentId = data.razorpayPaymentId;
     await payment.save();
 
-    const appointment = await AppointmentModel.findById(payment.appointmentId);
-    if (appointment) {
-      appointment.status = "confirmed";
-      appointment.paymentId = payment._id;
-      await appointment.save();
-      await this.scheduleAppointmentReminders(appointment);
-    }
+    appointment.status = "confirmed";
+    appointment.paymentId = payment._id;
+    await appointment.save();
+    await this.scheduleAppointmentReminders(appointment);
 
     return {
       appointmentId: payment.appointmentId.toString(),
@@ -178,14 +249,21 @@ class PaymentService {
 
     switch (event) {
       case "payment.captured": {
-        // Payment successful
-        payment.status = "paid";
-        payment.providerPaymentId = paymentEntity.id;
-        await payment.save();
-
-        // Update appointment to confirmed
+        if (payment.status === "paid") break;
         const appointment = await AppointmentModel.findById(payment.appointmentId);
         if (appointment) {
+          if (appointment.status === "cancelled") {
+            await this.refundLatePayment(
+              payment,
+              paymentEntity.id,
+              "Appointment was cancelled before payment capture",
+            );
+            break;
+          }
+          await this.confirmAppointmentSlot(appointment);
+          payment.status = "paid";
+          payment.providerPaymentId = paymentEntity.id;
+          await payment.save();
           appointment.status = "confirmed";
           appointment.paymentId = payment._id;
           await appointment.save();
@@ -197,6 +275,7 @@ class PaymentService {
         // Payment failed
         payment.status = "failed";
         await payment.save();
+        await this.releaseAppointmentHold(payment.appointmentId.toString());
         break;
       }
       // Handle other events as needed (refund, etc.)
@@ -210,7 +289,66 @@ class PaymentService {
     const hmac = crypto.createHmac("sha256", env.RAZORPAY_WEBHOOK_SECRET);
     hmac.update(payload);
     const generatedSignature = hmac.digest("hex");
-    return generatedSignature === signature;
+    const generatedBuffer = Buffer.from(generatedSignature);
+    const receivedBuffer = Buffer.from(signature || "");
+    return (
+      generatedBuffer.length === receivedBuffer.length &&
+      crypto.timingSafeEqual(generatedBuffer, receivedBuffer)
+    );
+  }
+
+  private async confirmAppointmentSlot(appointment: any): Promise<void> {
+    if (!appointment.slotId) return;
+
+    const result = await AvailabilitySlotModel.updateOne(
+      {
+        _id: appointment.slotId,
+        $or: [
+          { heldByAppointmentId: appointment._id },
+          { isBooked: true },
+        ],
+      },
+      {
+        $set: { isBooked: true },
+        $unset: { holdExpiresAt: 1, heldByAppointmentId: 1 },
+      },
+    );
+
+    if (result.matchedCount === 0) {
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        ErrorCodes.SLOT_ALREADY_BOOKED,
+        "The reserved appointment slot could not be confirmed",
+      );
+    }
+  }
+
+  private async releaseAppointmentHold(appointmentId: string): Promise<void> {
+    await AvailabilitySlotModel.updateOne(
+      { heldByAppointmentId: appointmentId, isBooked: false },
+      { $unset: { holdExpiresAt: 1, heldByAppointmentId: 1 } },
+    );
+  }
+
+  private async refundLatePayment(
+    payment: any,
+    providerPaymentId: string,
+    reason: string,
+  ): Promise<void> {
+    const refund = await razorpayProvider.createRefund({
+      paymentId: providerPaymentId,
+      amount: payment.amount,
+      notes: {
+        appointmentId: payment.appointmentId.toString(),
+        reason,
+      },
+    });
+
+    payment.status = "refunded";
+    payment.providerPaymentId = providerPaymentId;
+    payment.refundReason = reason;
+    payment.refundedAmount = refund.amount;
+    await payment.save();
   }
 
   /**

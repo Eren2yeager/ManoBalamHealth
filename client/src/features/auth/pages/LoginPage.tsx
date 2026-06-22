@@ -36,7 +36,7 @@ export const LoginPage = () => {
                 Welcome back
               </h1>
               <p className="mt-3 text-sm leading-6 text-slate-500">
-                Sign in to continue your ManoBalam journey.
+                Sign in to continue your ManoBalamHealthCare journey.
               </p>
             </div>
             <div className="mt-8">

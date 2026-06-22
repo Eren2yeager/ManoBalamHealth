@@ -1,14 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// Razorpay SDK types — not part of the backend contract, defined here where they're used
-interface RazorpaySuccessResponse {
+export interface RazorpaySuccessResponse {
   razorpay_payment_id: string;
   razorpay_order_id: string;
   razorpay_signature: string;
 }
 
-interface RazorpayOptions {
+export interface RazorpayOptions {
   key: string;
   amount: number;
   currency: string;
@@ -22,6 +21,7 @@ interface RazorpayOptions {
   };
   notes?: Record<string, string>;
   theme?: { color?: string };
+  modal?: { ondismiss?: () => void };
   handler: (response: RazorpaySuccessResponse) => void;
 }
 
@@ -34,57 +34,61 @@ declare global {
   }
 }
 
-interface RazorpayCheckoutProps {
+type OpenPaymentArgs = {
   options: Omit<RazorpayOptions, "handler">;
   onSuccess: (response: RazorpaySuccessResponse) => void;
   onError: (error: unknown) => void;
-}
+  onDismiss?: () => void;
+};
 
-export const RazorpayCheckout = ({
-  options,
-  onSuccess,
-  onError,
-}: RazorpayCheckoutProps) => {
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+export const useRazorpayCheckout = () => {
+  const [isReady, setIsReady] = useState(
+    () => typeof window !== "undefined" && Boolean(window.Razorpay),
+  );
 
   useEffect(() => {
-    // Avoid injecting the script twice if already present
-    if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
-      setIsScriptLoaded(true);
-      return;
+    if (window.Razorpay) return;
+
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[src="https://checkout.razorpay.com/v1/checkout.js"]',
+    );
+    if (existing) {
+      const handleLoad = () => setIsReady(true);
+      existing.addEventListener("load", handleLoad);
+      return () => existing.removeEventListener("load", handleLoad);
     }
 
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
-    script.onload = () => setIsScriptLoaded(true);
-    script.onerror = () => toast.error("Failed to load payment gateway");
+    script.onload = () => setIsReady(true);
+    script.onerror = () => toast.error("Failed to load the secure payment gateway.");
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      script.onload = null;
+      script.onerror = null;
     };
   }, []);
 
-  const handlePayment = () => {
-    if (!window.Razorpay || !isScriptLoaded) {
-      toast.error("Payment gateway not available");
-      return;
-    }
+  const openPayment = useCallback(
+    ({ options, onSuccess, onError, onDismiss }: OpenPaymentArgs) => {
+      if (!window.Razorpay || !isReady) {
+        toast.error("Payment gateway is still loading. Please try again.");
+        return false;
+      }
 
-    const rzp = new window.Razorpay({
-      ...options,
-      handler: (response: RazorpaySuccessResponse) => {
-        onSuccess(response);
-      },
-    });
+      const checkout = new window.Razorpay({
+        ...options,
+        handler: onSuccess,
+        modal: { ondismiss: onDismiss },
+      });
+      checkout.on("payment.failed", onError);
+      checkout.open();
+      return true;
+    },
+    [isReady],
+  );
 
-    rzp.on("payment.failed", (error: unknown) => {
-      onError(error);
-    });
-
-    rzp.open();
-  };
-
-  return { handlePayment, isReady: isScriptLoaded };
+  return { openPayment, isReady };
 };

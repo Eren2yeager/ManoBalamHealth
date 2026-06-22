@@ -10,7 +10,7 @@ const placeholderMembers = (group: string) => [
 export const organizationContent: Record<string, OrganizationPage> = {
   "executive-committee": {
     slug: "executive-committee", eyebrow: "Organization", title: "Executive Committee",
-    summary: "Responsible for strategic direction, governance, accountability, and alignment with ManoBalam's purpose.",
+    summary: "Responsible for strategic direction, governance, accountability, and alignment with ManoBalamHealthCare's purpose.",
     icon: Building2, highlights: ["Governance", "Strategy", "Accountability"],
     sections: [{ title: "Committee responsibility", body: "The Executive Committee reviews organizational priorities, responsible growth, service quality, and long-term sustainability." }],
     members: placeholderMembers("Executive Committee"),
@@ -44,4 +44,3 @@ export const organizationContent: Record<string, OrganizationPage> = {
     members: placeholderMembers("Clinical Ambassador"),
   },
 };
-

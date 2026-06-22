@@ -8,6 +8,7 @@ import routes from "@/routes/index";
 import { errorMiddleware } from "@/middlewares/error.middleware";
 import { notFoundMiddleware } from "@/middlewares/notFound.middleware";
 import { requestLoggerMiddleware } from "@/middlewares/requestLogger.middleware";
+import { paymentController } from "@/modules/payment/payment.controller";
 
 export const createApp = (): Application => {
   const app = express();
@@ -16,6 +17,12 @@ export const createApp = (): Application => {
   app.use(compression());
   app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
   app.use(cookieParser());
+
+  app.post(
+    "/api/payments/webhook/razorpay",
+    express.raw({ type: "application/json" }),
+    paymentController.handleWebhook,
+  );
 
   // NOTE: The Razorpay webhook route (/api/payments/webhook/razorpay) is mounted
   // with express.raw({ type: "application/json" }) directly in payment.routes.ts,

@@ -624,7 +624,7 @@ function SupportBanner() {
         <div className="relative text-center md:text-left">
           <h2 className="text-2xl font-black">You do not have to do this alone.</h2>
           <p className="mt-2 text-sm text-white/70">
-            Choose a psychologist or let ManoBalam match you with an available professional.
+            Choose a psychologist or let ManoBalamHealthCare match you with an available professional.
           </p>
         </div>
         <div className="relative flex flex-wrap justify-center gap-3">

@@ -1,27 +1,101 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Activity,
+  AlertCircle,
+  ArrowUpRight,
+  BadgeCheck,
+  CalendarDays,
+  CheckCircle2,
+  CircleDollarSign,
+  Clock3,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
+  Stethoscope,
+  Users,
+  WalletCards,
+} from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
-  getPendingPsychologists,
-  verifyPsychologist,
-  getAdminReports,
   getAdminAppointments,
+  getAdminReports,
+  getPendingPsychologists,
   refundPayment,
+  verifyPsychologist,
 } from "../api/admin.api";
-import { ReportsChart } from "../components/ReportsChart";
 import { PsychologistVerificationCard } from "../components/PsychologistVerificationCard";
 import { RefundModal } from "../components/RefundModal";
+import { ReportsChart } from "../components/ReportsChart";
 import type {
+  AdminAppointmentItem,
+  AdminReport,
   PendingPsychologistItem,
   VerifyPsychologistDto,
-  AdminReport,
-  AdminAppointmentItem,
 } from "../types/admin.types";
-import { toast } from "sonner";
-import { CheckCircle2, AlertCircle, FileText, RefreshCw } from "lucide-react";
+
+const statusTone: Record<string, string> = {
+  completed: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  confirmed: "bg-blue-50 text-blue-700 ring-blue-100",
+  in_progress: "bg-violet-50 text-violet-700 ring-violet-100",
+  cancelled: "bg-rose-50 text-rose-700 ring-rose-100",
+  refunded: "bg-amber-50 text-amber-700 ring-amber-100",
+  pending_payment: "bg-orange-50 text-orange-700 ring-orange-100",
+};
+
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  note,
+  tone,
+  delay,
+}: {
+  icon: typeof Activity;
+  label: string;
+  value: string | number;
+  note: string;
+  tone: string;
+  delay: string;
+}) {
+  return (
+    <article className={`animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-white bg-white p-5 shadow-[0_18px_50px_rgba(45,30,91,.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${delay}`}>
+      <div className="flex items-start justify-between gap-4">
+        <span className={`grid size-12 place-items-center rounded-2xl ${tone}`}>
+          <Icon className="size-5" />
+        </span>
+        <ArrowUpRight className="size-4 text-slate-300" />
+      </div>
+      <p className="mt-5 text-3xl font-black tracking-tight text-[#111631]">{value}</p>
+      <p className="mt-1 text-sm font-black text-slate-800">{label}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-500">{note}</p>
+    </article>
+  );
+}
+
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: typeof CheckCircle2;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-[2rem] border border-dashed border-violet-200 bg-white/70 px-6 py-14 text-center">
+      <span className="mx-auto grid size-16 place-items-center rounded-3xl bg-emerald-50 text-emerald-600">
+        <Icon className="size-8" />
+      </span>
+      <h3 className="mt-5 text-lg font-black text-slate-900">{title}</h3>
+      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">{description}</p>
+    </div>
+  );
+}
 
 export function AdminDashboardPage() {
   const [pendingPsychologists, setPendingPsychologists] = useState<PendingPsychologistItem[]>([]);
@@ -38,8 +112,8 @@ export function AdminDashboardPage() {
     try {
       setIsLoading(true);
       setError(null);
-      const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const to = new Date().toISOString();
+      const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const [psychologists, reportData, appointmentsData] = await Promise.all([
         getPendingPsychologists({ page: 1, limit: 50 }),
         getAdminReports(from, to),
@@ -48,33 +122,32 @@ export function AdminDashboardPage() {
       setPendingPsychologists(psychologists.items);
       setReport(reportData);
       setAppointments(appointmentsData.items);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load dashboard data";
-      setError(errorMessage);
-      toast.error(errorMessage);
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "Failed to load dashboard data";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void fetchData();
-    }, 0);
+    const timeoutId = window.setTimeout(() => void fetchData(), 0);
     return () => window.clearTimeout(timeoutId);
   }, [fetchData]);
+
+  const cancelledAppointments = useMemo(
+    () => appointments.filter((appointment) => appointment.status === "cancelled"),
+    [appointments],
+  );
+  const completedCount = appointments.filter((appointment) => appointment.status === "completed").length;
 
   const handleVerify = async (id: string, payload: VerifyPsychologistDto) => {
     try {
       setIsProcessing(true);
       await verifyPsychologist(id, payload);
-      toast.success(
-        payload.decision === "approved"
-          ? "Psychologist approved!"
-          : "Psychologist rejected!"
-      );
-      fetchData();
+      toast.success(payload.decision === "approved" ? "Psychologist approved" : "Review decision saved");
+      await fetchData();
     } catch {
       toast.error("Failed to process verification");
     } finally {
@@ -86,8 +159,8 @@ export function AdminDashboardPage() {
     try {
       setIsProcessing(true);
       await refundPayment(paymentId, { reason });
-      toast.success("Refund issued successfully!");
-      fetchData();
+      toast.success("Refund issued successfully");
+      await fetchData();
       setShowRefundModal(false);
       setSelectedAppointment(null);
       setSelectedPaymentId(null);
@@ -98,25 +171,15 @@ export function AdminDashboardPage() {
     }
   };
 
-  const openRefundModal = (appointment: AdminAppointmentItem) => {
-    // The payment ID would typically come from the appointment data.
-    // Using the appointment ID as the payment reference until payment details are available.
-    setSelectedAppointment(appointment);
-    setSelectedPaymentId(appointment.id);
-    setShowRefundModal(true);
-  };
-
   if (isLoading) {
     return (
       <DashboardLayout>
         <div className="space-y-6">
-          <Skeleton className="h-10 w-48" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
+          <Skeleton className="h-72 rounded-[2rem]" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-48 rounded-3xl" />)}
           </div>
-          <ReportsChart data={null} isLoading />
+          <Skeleton className="h-96 rounded-3xl" />
         </div>
       </DashboardLayout>
     );
@@ -125,239 +188,142 @@ export function AdminDashboardPage() {
   if (error) {
     return (
       <DashboardLayout>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
-              <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
-              <p className="text-muted-foreground mb-6">{error}</p>
-              <Button onClick={fetchData}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Try Again
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid min-h-[60vh] place-items-center">
+          <Card className="max-w-xl rounded-3xl border-rose-100">
+            <CardContent className="p-9 text-center">
+              <AlertCircle className="mx-auto size-12 text-rose-500" />
+              <h2 className="mt-4 text-xl font-black">Dashboard data could not be loaded</h2>
+              <p className="mt-2 text-sm text-slate-500">{error}</p>
+              <Button onClick={fetchData} className="mt-6 rounded-xl"><RefreshCw className="mr-2 size-4" />Try again</Button>
+            </CardContent>
+          </Card>
+        </div>
       </DashboardLayout>
     );
   }
 
-  const cancelledAppointments = appointments.filter(
-    (a) => a.status === "cancelled"
-  );
+  const metrics = [
+    { icon: BadgeCheck, label: "Awaiting review", value: pendingPsychologists.length, note: "Professional applications", tone: "bg-violet-100 text-violet-700", delay: "" },
+    { icon: CalendarDays, label: "Appointments", value: appointments.length, note: "Current operational window", tone: "bg-blue-100 text-blue-700", delay: "delay-[70ms]" },
+    { icon: CheckCircle2, label: "Completed", value: completedCount, note: "Successfully delivered care", tone: "bg-emerald-100 text-emerald-700", delay: "delay-[140ms]" },
+    { icon: CircleDollarSign, label: "Revenue", value: `₹${(report?.totalRevenue ?? 0).toLocaleString("en-IN")}`, note: "Recorded paid payments", tone: "bg-amber-100 text-amber-700", delay: "delay-[210ms]" },
+  ];
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
-        <Button variant="outline" onClick={fetchData} disabled={isLoading}>
-          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
-      </div>
-
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="mb-6 flex flex-wrap gap-2 w-full">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="verifications">
-            Verifications
-            {pendingPsychologists.length > 0 && (
-              <span className="ml-1.5 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
-                {pendingPsychologists.length}
+      <div className="space-y-7">
+        <section className="relative isolate min-h-72 overflow-hidden rounded-[2.25rem] bg-[#151329] p-7 text-white shadow-[0_30px_90px_rgba(38,24,84,.25)] md:p-10">
+          <img src="/images/admin-operations-illustration.png" alt="" className="absolute inset-0 size-full object-cover object-center opacity-70" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#151329] via-[#151329]/92 to-[#151329]/15" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#151329]/70 via-transparent to-transparent" />
+          <div className="relative max-w-2xl animate-in fade-in slide-in-from-left-4 duration-700">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[11px] font-black uppercase tracking-[.18em] backdrop-blur">
+              <Sparkles className="size-3.5 text-violet-200" /> ManoBalam operations
+            </span>
+            <h1 className="mt-5 text-balance text-4xl font-black tracking-[-.045em] md:text-5xl">
+              Care operations, clearly in view.
+            </h1>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-violet-100/75">
+              Review professionals, monitor appointments, track platform health, and keep every operational decision connected to safer access to care.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Button onClick={fetchData} className="h-11 rounded-xl bg-white px-5 font-black text-primary hover:bg-violet-50">
+                <RefreshCw className="mr-2 size-4" /> Refresh workspace
+              </Button>
+              <span className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/8 px-4 py-2 text-xs font-bold backdrop-blur">
+                <Activity className="size-4 text-emerald-300" /> System overview active
               </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="appointments">Appointments</TabsTrigger>
-          <TabsTrigger value="refunds">
-            Refunds
-            {cancelledAppointments.length > 0 && (
-              <span className="ml-1.5 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
-                {cancelledAppointments.length}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
+            </div>
+          </div>
+        </section>
 
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  Pending Verifications
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{pendingPsychologists.length}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                  Cancelled Appointments
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{cancelledAppointments.length}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-yellow-600" />
-                  Appointments (30d)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{appointments.length}</p>
-              </CardContent>
-            </Card>
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
+        </section>
+
+        <Tabs defaultValue="overview" className="w-full">
+          <div className="sticky top-20 z-20 rounded-2xl border border-violet-100 bg-white/90 p-2 shadow-lg shadow-violet-100/40 backdrop-blur-xl">
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 md:grid-cols-4">
+              {[
+                { value: "overview", label: "Overview", icon: Activity },
+                { value: "verifications", label: "Verifications", icon: BadgeCheck, count: pendingPsychologists.length },
+                { value: "appointments", label: "Appointments", icon: CalendarDays, count: appointments.length },
+                { value: "refunds", label: "Refunds", icon: WalletCards, count: cancelledAppointments.length },
+              ].map(({ value, label, icon: Icon, count }) => (
+                <TabsTrigger key={value} value={value} className="h-11 rounded-xl border-0 font-bold data-active:bg-violet-100 data-active:text-primary">
+                  <Icon className="mr-2 size-4" />{label}
+                  {!!count && <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] text-white">{count}</span>}
+                </TabsTrigger>
+              ))}
+            </TabsList>
           </div>
 
-          <ReportsChart data={report} />
-        </TabsContent>
-
-        <TabsContent value="verifications">
-          {pendingPsychologists.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-12">
-                  <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No pending verifications</h3>
-                  <p className="text-muted-foreground">
-                    Great job keeping up with new signups!
-                  </p>
+          <TabsContent value="overview" className="mt-6 space-y-6">
+            <ReportsChart data={report} />
+            <div className="grid gap-4 md:grid-cols-3">
+              {[
+                { icon: Users, label: "Patients", value: report?.totalPatients ?? 0, tone: "text-blue-600 bg-blue-50" },
+                { icon: Stethoscope, label: "Approved psychologists", value: report?.totalPsychologists ?? 0, tone: "text-violet-600 bg-violet-50" },
+                { icon: ShieldCheck, label: "Completion rate", value: `${report?.totalAppointments ? Math.round((report.completedAppointments / report.totalAppointments) * 100) : 0}%`, tone: "text-emerald-600 bg-emerald-50" },
+              ].map(({ icon: Icon, label, value, tone }) => (
+                <div key={label} className="flex items-center gap-4 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                  <span className={`grid size-12 place-items-center rounded-2xl ${tone}`}><Icon className="size-5" /></span>
+                  <div><p className="text-2xl font-black text-[#111631]">{value}</p><p className="text-xs font-bold text-slate-500">{label}</p></div>
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {pendingPsychologists.map((psych) => (
-                <PsychologistVerificationCard
-                  key={psych.id}
-                  psychologist={psych}
-                  onVerify={handleVerify}
-                  isProcessing={isProcessing}
-                />
               ))}
             </div>
-          )}
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="appointments">
-          <Card>
-            <CardContent className="pt-6">
+          <TabsContent value="verifications" className="mt-6">
+            {pendingPsychologists.length === 0 ? (
+              <EmptyState icon={CheckCircle2} title="Verification queue is clear" description="Every submitted professional application has been reviewed." />
+            ) : (
+              <div className="grid gap-5">{pendingPsychologists.map((psychologist) => <PsychologistVerificationCard key={psychologist.id} psychologist={psychologist} onVerify={handleVerify} isProcessing={isProcessing} />)}</div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="appointments" className="mt-6">
+            <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-[0_18px_50px_rgba(45,30,91,.06)]">
+              <div className="border-b border-slate-100 px-6 py-5"><h2 className="text-lg font-black text-[#111631]">Appointment operations</h2><p className="mt-1 text-xs text-slate-500">Recent care delivery activity across the platform.</p></div>
               <div className="overflow-x-auto">
-                <table className="w-full whitespace-nowrap">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-2">Scheduled</th>
-                      <th className="text-left py-3 px-2">Patient</th>
-                      <th className="text-left py-3 px-2">Psychologist</th>
-                      <th className="text-left py-3 px-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {appointments.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="py-8 text-center text-muted-foreground"
-                        >
-                          No appointments found for this period
-                        </td>
+                <table className="w-full min-w-[720px]">
+                  <thead className="bg-slate-50/80 text-left text-[11px] font-black uppercase tracking-wider text-slate-500"><tr><th className="px-6 py-4">Schedule</th><th className="px-4 py-4">Patient</th><th className="px-4 py-4">Psychologist</th><th className="px-4 py-4">Status</th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {appointments.map((appointment) => (
+                      <tr key={appointment.id} className="transition-colors hover:bg-violet-50/35">
+                        <td className="px-6 py-4"><p className="text-sm font-black text-slate-800">{new Date(appointment.scheduledAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p><p className="mt-1 flex items-center gap-1 text-[11px] text-slate-400"><Clock3 className="size-3" />{new Date(appointment.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p></td>
+                        <td className="px-4 py-4 text-sm font-semibold text-slate-700">{appointment.patient.name}</td>
+                        <td className="px-4 py-4 text-sm font-semibold text-slate-700">{appointment.psychologist.name}</td>
+                        <td className="px-4 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black capitalize ring-1 ${statusTone[appointment.status] ?? "bg-slate-50 text-slate-600 ring-slate-100"}`}>{appointment.status.replaceAll("_", " ")}</span></td>
                       </tr>
-                    ) : (
-                      appointments.map((appt) => (
-                        <tr
-                          key={appt.id}
-                          className="border-b hover:bg-muted/30 transition-colors"
-                        >
-                          <td className="py-3 px-2">
-                            {new Date(appt.scheduledAt).toLocaleDateString(undefined, {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </td>
-                          <td className="py-3 px-2">{appt.patient.name}</td>
-                          <td className="py-3 px-2">{appt.psychologist.name}</td>
-                          <td className="py-3 px-2">
-                            <span
-                              className={`px-2 py-1 rounded text-xs capitalize ${
-                                appt.status === "completed"
-                                  ? "bg-green-100 text-green-800"
-                                  : appt.status === "cancelled"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {appt.status.replace(/_/g, " ")}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
+                {appointments.length === 0 && <div className="p-12 text-center text-sm text-slate-500">No appointments found.</div>}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="refunds">
-          {cancelledAppointments.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-12">
-                  <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No cancelled appointments</h3>
-                  <p className="text-muted-foreground">Looks like everyone's happy!</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {cancelledAppointments.map((appt) => (
-                <Card key={appt.id} className="mb-4">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                      <div className="flex-1">
-                        <p className="font-semibold">{appt.patient.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Psychologist: {appt.psychologist.name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Scheduled:{" "}
-                          {new Date(appt.scheduledAt).toLocaleDateString(undefined, {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button onClick={() => openRefundModal(appt)}>
-                          Issue Refund
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+
+          <TabsContent value="refunds" className="mt-6">
+            {cancelledAppointments.length === 0 ? (
+              <EmptyState icon={CheckCircle2} title="No refunds waiting" description="There are no cancelled appointments requiring refund review." />
+            ) : (
+              <div className="grid gap-4">
+                {cancelledAppointments.map((appointment) => (
+                  <article key={appointment.id} className="flex flex-col justify-between gap-5 rounded-3xl border border-rose-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center">
+                    <div><p className="font-black text-slate-900">{appointment.patient.name}</p><p className="mt-1 text-sm text-slate-500">With {appointment.psychologist.name}</p><p className="mt-2 text-xs text-slate-400">{new Date(appointment.scheduledAt).toLocaleString()}</p></div>
+                    <Button onClick={() => { setSelectedAppointment(appointment); setSelectedPaymentId(appointment.id); setShowRefundModal(true); }} className="rounded-xl bg-rose-600 hover:bg-rose-700"><WalletCards className="mr-2 size-4" />Review refund</Button>
+                  </article>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
 
       <RefundModal
         isOpen={showRefundModal}
-        onClose={() => {
-          setShowRefundModal(false);
-          setSelectedAppointment(null);
-          setSelectedPaymentId(null);
-        }}
+        onClose={() => { setShowRefundModal(false); setSelectedAppointment(null); setSelectedPaymentId(null); }}
         appointment={selectedAppointment}
         paymentId={selectedPaymentId}
         onProcess={handleProcessRefund}

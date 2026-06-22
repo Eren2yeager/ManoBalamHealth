@@ -199,6 +199,14 @@ function GreetingHero({
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary via-violet-600 to-indigo-700 p-6 text-white shadow-2xl shadow-primary/25 md:p-8">
           <div className="pointer-events-none absolute -right-8 -top-12 size-44 rounded-full bg-white/10 blur-sm" />
           <div className="pointer-events-none absolute -bottom-16 right-1/3 size-36 rounded-full bg-blue-300/15" />
+          <div className="pointer-events-none absolute inset-0 overflow-hidden md:inset-y-0 md:left-auto md:right-0 md:w-[52%]">
+            <img
+              src="/images/home-wellness-dashboard.png"
+              alt=""
+              className="size-full object-cover object-center opacity-25 md:opacity-55"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-700 via-violet-700/60 to-violet-800/5" />
+          </div>
 
           <div className="relative grid items-center gap-7 md:grid-cols-[1fr_auto]">
             <div>

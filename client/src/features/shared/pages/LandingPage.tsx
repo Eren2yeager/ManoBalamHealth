@@ -119,8 +119,8 @@ function CalmHeroVisual() {
 
       <div className="relative z-10 h-[390px] w-[310px] overflow-hidden rounded-[2.75rem] border-[6px] border-white bg-violet-50 shadow-[0_32px_80px_-28px_rgba(109,40,217,0.55)] sm:h-[455px] sm:w-[365px]">
         <img
-          src="/images/landing-wellness-woman.png"
-          alt="A woman peacefully meditating"
+          src="/images/landing-care-illustration.png"
+          alt="A luminous mind garden representing emotional wellbeing, secure support, and personal growth"
           className="size-full object-cover object-center transition-transform duration-700 hover:scale-[1.025] motion-reduce:transition-none"
           fetchPriority="high"
         />

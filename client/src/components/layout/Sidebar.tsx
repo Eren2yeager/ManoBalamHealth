@@ -9,6 +9,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -54,9 +55,20 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       `}
     >
       <div className="p-4 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-gray-800">
-          {user.role === "admin" ? "Admin Panel" : "Manobalam"}
-        </h2>
+        <BrandLogo
+          to={
+            user.role === "admin"
+              ? "/admin/dashboard"
+              : user.role === "psychologist"
+                ? "/psychologist/dashboard"
+                : "/home"
+          }
+        />
+        {user.role === "admin" && (
+          <p className="mt-2 pl-13 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Admin panel
+          </p>
+        )}
       </div>
       <nav className="p-4 space-y-2">
         {items.map((item) => {

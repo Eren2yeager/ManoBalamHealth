@@ -5,6 +5,15 @@ import { LandingPage } from "../features/shared/pages/LandingPage";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { RegisterPage } from "../features/auth/pages/RegisterPage";
 import { VerifyOtpPage } from "../features/auth/pages/VerifyOtpPage";
+import { AboutPage } from "../features/public-site/pages/AboutPage";
+import { AboutDetailPage } from "../features/public-site/pages/AboutDetailPage";
+import { OrganizationDetailPage } from "../features/public-site/pages/OrganizationDetailPage";
+import { ServiceDetailPage } from "../features/public-site/pages/ServiceDetailPage";
+import { MentalHealthAssessmentPage } from "../features/public-site/pages/MentalHealthAssessmentPage";
+import { EventsAchievementsPage } from "../features/public-site/pages/EventsAchievementsPage";
+import { FAQPage } from "../features/public-site/pages/FAQPage";
+import { ContactPage } from "../features/public-site/pages/ContactPage";
+import { PublicNotFoundPage } from "../features/public-site/pages/PublicNotFoundPage";
 
 // Protected (all roles)
 import { HomePage } from "../features/shared/pages/HomePage";
@@ -36,15 +45,29 @@ import { ProtectedRoute } from "../routes/ProtectedRoute";
 import { RoleRoute } from "../routes/RoleRoute";
 import { GuestRoute } from "../routes/GuestRoute";
 import { NavbarLayout } from "../components/layout/NavbarLayout";
+import { RouteErrorPage } from "../components/feedback/RouteErrorPage";
 
 const router = createBrowserRouter([
   // ── Public (unauthenticated only) ────────────────────────────────────────
   {
     element: <NavbarLayout />,
-    children: [{ path: "/", element: <LandingPage /> }],
+    errorElement: <RouteErrorPage />,
+    children: [
+      { path: "/", element: <LandingPage /> },
+      { path: "/about", element: <AboutPage /> },
+      { path: "/about/:slug", element: <AboutDetailPage /> },
+      { path: "/organization/:slug", element: <OrganizationDetailPage /> },
+      { path: "/services/:slug", element: <ServiceDetailPage /> },
+      { path: "/mental-health-assessment", element: <MentalHealthAssessmentPage /> },
+      { path: "/events-achievements", element: <EventsAchievementsPage /> },
+      { path: "/faq", element: <FAQPage /> },
+      { path: "/contact", element: <ContactPage /> },
+      { path: "*", element: <PublicNotFoundPage /> },
+    ],
   },
   {
     element: <GuestRoute />,
+    errorElement: <RouteErrorPage />,
     children: [
       { path: "/login", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },
@@ -55,6 +78,7 @@ const router = createBrowserRouter([
   // ── Protected (any authenticated role) ──────────────────────────────────
   {
     element: <ProtectedRoute />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         element: <NavbarLayout />,
@@ -96,6 +120,7 @@ const router = createBrowserRouter([
   // ── Psychologist-only ────────────────────────────────────────────────────
   {
     element: <RoleRoute allowed={["psychologist"]} />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         element: <NavbarLayout />,
@@ -112,6 +137,7 @@ const router = createBrowserRouter([
   // ── Admin-only ───────────────────────────────────────────────────────────
   {
     element: <RoleRoute allowed={["admin"]} />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         element: <NavbarLayout />,

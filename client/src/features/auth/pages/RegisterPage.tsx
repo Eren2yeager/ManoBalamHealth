@@ -1,5 +1,6 @@
-import { ShieldCheck, BrainCircuit } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { RegisterForm } from "../components/RegisterForm";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 export const RegisterPage = () => {
   return (
@@ -16,12 +17,7 @@ export const RegisterPage = () => {
             <div className="relative z-10 flex flex-col gap-8 h-full">
               {/* Top: Brand + headline */}
               <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2">
-                  <BrainCircuit className="h-8 w-8 text-primary" />
-                  <span className="text-xl font-bold text-foreground font-[Manrope,sans-serif]">
-                    ManoBalam
-                  </span>
-                </div>
+                <BrandLogo />
                 <div>
                   <h2 className="text-3xl font-bold leading-tight text-foreground font-[Manrope,sans-serif]">
                     Begin Your Journey
@@ -51,10 +47,7 @@ export const RegisterPage = () => {
           {/* Right: Form */}
           <div className="w-full md:w-7/12 p-6 md:p-10 flex flex-col">
             {/* Mobile brand mark */}
-            <div className="flex items-center gap-2 mb-6 md:hidden">
-              <BrainCircuit className="h-6 w-6 text-primary" />
-              <span className="text-lg font-bold text-foreground">ManoBalam</span>
-            </div>
+            <BrandLogo className="mb-6 md:hidden" />
 
             <div className="mb-6">
               <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight font-[Manrope,sans-serif]">

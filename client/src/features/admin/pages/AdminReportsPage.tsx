@@ -10,11 +10,14 @@ import type { AdminReport, AdminAppointmentItem } from "../types/admin.types";
 import { toast } from "sonner";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
+const initialEndDate = new Date().toISOString().split("T")[0];
+const initialStartDate = new Date(
+  new Date().getTime() - 30 * 24 * 60 * 60 * 1000,
+).toISOString().split("T")[0];
+
 export function AdminReportsPage() {
-  const [startDate, setStartDate] = useState(
-    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-  );
-  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
 
   const [report, setReport] = useState<AdminReport | null>(null);
   const [appointments, setAppointments] = useState<AdminAppointmentItem[]>([]);
@@ -42,7 +45,10 @@ export function AdminReportsPage() {
   }, [startDate, endDate]);
 
   useEffect(() => {
-    fetchData();
+    const timeoutId = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [fetchData]);
 
   if (isLoading) {

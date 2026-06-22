@@ -2,11 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  Award,
   BrainCircuit,
   Calendar,
-  Check,
-  ChevronRight,
+  CheckCircle2,
   Clock3,
   CreditCard,
   HeartHandshake,
@@ -20,12 +18,24 @@ import {
   Users,
   Video,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BrandLogo } from "@/components/brand/BrandLogo";
+import { listPsychologists } from "@/features/psychologists/api/psychologist.api";
+import type { PsychologistListItem } from "@/features/psychologists/types/psychologist.types";
+
+const revealDelays = [
+  "",
+  "delay-[70ms]",
+  "delay-[140ms]",
+  "delay-[210ms]",
+  "delay-[280ms]",
+  "delay-[350ms]",
+];
 
 function useInView() {
   const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(
+  const [visible, setVisible] = useState(
     () =>
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -33,141 +43,188 @@ function useInView() {
 
   useEffect(() => {
     const element = ref.current;
-    if (!element || isVisible) return;
-
+    if (!element || visible) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setIsVisible(true);
+          setVisible(true);
           observer.disconnect();
         }
       },
       { threshold: 0.12 },
     );
-
     observer.observe(element);
     return () => observer.disconnect();
-  }, [isVisible]);
+  }, [visible]);
 
-  return { ref, isVisible };
+  return { ref, visible };
 }
 
-function FadeIn({
+function Reveal({
   children,
-  delay = 0,
+  delayIndex = 0,
   className = "",
 }: {
   children: ReactNode;
-  delay?: number;
+  delayIndex?: number;
   className?: string;
 }) {
-  const { ref, isVisible } = useInView();
-  const delayClass =
-    {
-      0: "",
-      70: "delay-[70ms]",
-      90: "delay-[90ms]",
-      100: "delay-100",
-      140: "delay-[140ms]",
-      180: "delay-[180ms]",
-      210: "delay-[210ms]",
-      270: "delay-[270ms]",
-      280: "delay-[280ms]",
-      350: "delay-[350ms]",
-      360: "delay-[360ms]",
-    }[delay] ?? "";
-
+  const { ref, visible } = useInView();
   return (
     <div
       ref={ref}
-      className={`transition-all duration-700 motion-reduce:transform-none motion-reduce:transition-none ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-      } ${delayClass} ${className}`}
+      className={`transition-all duration-700 motion-reduce:transition-none ${
+        visible ? "translate-y-0 opacity-100" : "translate-y-7 opacity-0"
+      } ${revealDelays[delayIndex % revealDelays.length]} ${className}`}
     >
       {children}
     </div>
   );
 }
 
-function Logo({ compact = false }: { compact?: boolean }) {
-  return (
-    <Link
-      to="/"
-      aria-label="ManoBalam home"
-      className="group flex items-center gap-2.5"
-    >
-      <span className="relative grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-primary text-white shadow-lg shadow-primary/20 transition-transform group-hover:-rotate-3 group-hover:scale-105">
-        <BrainCircuit className="size-5" />
-      </span>
-      <span>
-        <span className="block text-base font-black tracking-tight text-slate-950">
-          ManoBalam
-        </span>
-        {!compact && (
-          <span className="hidden text-[10px] font-medium text-slate-500 sm:block">
-            Strength for your mind
-          </span>
-        )}
-      </span>
-    </Link>
-  );
-}
-
-function HeroArtwork() {
-  const orbitItems = [
-    { icon: HeartPulse, className: "left-2 top-12 text-rose-500", delayClass: "" },
-    { icon: BrainCircuit, className: "right-2 top-8 text-violet-600", delayClass: "animation-delay-500" },
-    { icon: Leaf, className: "bottom-14 right-0 text-emerald-500", delayClass: "animation-delay-1000" },
-    { icon: Star, className: "bottom-8 left-5 text-amber-500", delayClass: "animation-delay-1500" },
+function CalmHeroVisual() {
+  const floatingIcons = [
+    {
+      icon: HeartPulse,
+      className: "left-[3%] top-[18%] text-rose-500 animation-delay-500",
+    },
+    {
+      icon: BrainCircuit,
+      className: "right-[1%] top-[15%] text-primary animation-delay-1000",
+    },
+    {
+      icon: Leaf,
+      className: "right-[0%] bottom-[28%] text-emerald-500 animation-delay-1500",
+    },
+    {
+      icon: Sparkles,
+      className: "left-[0%] bottom-[31%] text-amber-500",
+    },
   ];
 
   return (
-    <div className="relative mx-auto flex min-h-[420px] w-full max-w-[520px] items-center justify-center lg:min-h-[540px]">
-      <div className="absolute size-[340px] rounded-full bg-gradient-to-br from-violet-200/80 via-blue-100/60 to-pink-100/80 blur-sm sm:size-[430px]" />
-      <div className="absolute size-[300px] animate-[spin_28s_linear_infinite] rounded-full border border-dashed border-primary/25 sm:size-[390px]" />
+    <div className="relative mx-auto flex min-h-[390px] w-full max-w-[570px] items-end justify-center lg:min-h-[480px]">
+      <div className="absolute bottom-4 size-[350px] rounded-full bg-gradient-to-br from-violet-200/80 via-purple-100/80 to-blue-100/60 sm:size-[430px]" />
+      <div className="absolute bottom-4 size-[310px] animate-[spin_32s_linear_infinite] rounded-full border border-dashed border-primary/15 sm:size-[390px]" />
+      <div className="absolute bottom-4 h-12 w-[88%] rounded-[50%] bg-violet-300/15 blur-xl" />
 
-      {orbitItems.map(({ icon: Icon, className, delayClass }) => (
-        <div
+      {floatingIcons.map(({ icon: Icon, className }) => (
+        <span
           key={className}
-          className={`absolute z-20 grid size-13 animate-[bounce_3.5s_ease-in-out_infinite] place-items-center rounded-2xl border border-white bg-white/90 shadow-xl backdrop-blur ${className} ${delayClass}`}
+          className={`absolute z-20 grid size-13 animate-[bounce_3.8s_ease-in-out_infinite] place-items-center rounded-full border border-white bg-white/90 shadow-xl backdrop-blur ${className}`}
         >
           <Icon className="size-6" />
-        </div>
+        </span>
       ))}
 
-      <div className="relative z-10 grid size-64 place-items-center rounded-[4rem] bg-gradient-to-br from-violet-600 via-primary to-blue-500 shadow-2xl shadow-primary/25 sm:size-76">
-        <div className="absolute inset-3 rounded-[3.4rem] border border-white/20" />
-        <div className="relative flex flex-col items-center text-center text-white">
-          <span className="mb-5 grid size-24 place-items-center rounded-[2rem] bg-white/15 backdrop-blur-md">
-            <BrainCircuit className="size-13" />
-          </span>
-          <p className="text-2xl font-black">A calmer space</p>
-          <p className="mt-2 max-w-48 text-sm leading-relaxed text-white/75">
-            Professional support, designed around your comfort.
-          </p>
-        </div>
+      <div className="relative z-10 h-[390px] w-[310px] overflow-hidden rounded-[2.75rem] border-[6px] border-white bg-violet-50 shadow-[0_32px_80px_-28px_rgba(109,40,217,0.55)] sm:h-[455px] sm:w-[365px]">
+        <img
+          src="/images/landing-wellness-woman.png"
+          alt="A woman peacefully meditating"
+          className="size-full object-cover object-center transition-transform duration-700 hover:scale-[1.025] motion-reduce:transition-none"
+          fetchPriority="high"
+        />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-violet-950/15 to-transparent" />
       </div>
 
-      <div className="absolute right-3 top-24 z-20 rounded-2xl border border-white bg-white/90 p-3 shadow-xl backdrop-blur sm:right-5">
+      <svg
+        viewBox="0 0 430 455"
+        className="hidden"
+        role="img"
+        aria-label="A calm person sitting in meditation"
+      >
+        <defs>
+          <linearGradient id="sweater" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#a78bfa" />
+            <stop offset="1" stopColor="#6d28d9" />
+          </linearGradient>
+          <linearGradient id="pants" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#ffffff" />
+            <stop offset="1" stopColor="#e8e4f7" />
+          </linearGradient>
+          <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#3f2a28" />
+            <stop offset="1" stopColor="#19131a" />
+          </linearGradient>
+        </defs>
+
+        <path
+          d="M65 330c28-40 49-76 58-115M365 330c-28-40-49-76-58-115"
+          stroke="#a78bfa"
+          strokeWidth="6"
+          strokeLinecap="round"
+          opacity=".35"
+        />
+        <path
+          d="M92 280c-30-22-37-47-27-72 24 8 38 27 40 57M338 280c30-22 37-47 27-72-24 8-38 27-40 57"
+          fill="#c4b5fd"
+          opacity=".55"
+        />
+        <path
+          d="M104 238c-24-13-35-31-31-52 23 3 39 17 47 41M326 238c24-13 35-31 31-52-23 3-39 17-47 41"
+          fill="#ddd6fe"
+          opacity=".8"
+        />
+
+        <ellipse cx="215" cy="421" rx="158" ry="24" fill="#8b5cf6" opacity=".14" />
+        <path
+          d="M176 152c-38 20-51 74-41 137l80 28 80-28c10-63-3-117-41-137z"
+          fill="url(#sweater)"
+        />
+        <path d="M171 177c-31 18-59 54-73 96l30 15 52-75z" fill="#8b5cf6" />
+        <path d="M259 177c31 18 59 54 73 96l-30 15-52-75z" fill="#7c3aed" />
+        <path
+          d="M99 271c-22 5-35 20-39 39 17 7 38-1 53-20M331 271c22 5 35 20 39 39-17 7-38-1-53-20"
+          fill="none"
+          stroke="#d99a72"
+          strokeWidth="16"
+          strokeLinecap="round"
+        />
+        <circle cx="58" cy="313" r="11" fill="#d99a72" />
+        <circle cx="372" cy="313" r="11" fill="#d99a72" />
+
+        <path
+          d="M210 292c-32 27-65 48-105 59-25 7-44 27-49 53 60 13 126-6 171-55z"
+          fill="url(#pants)"
+        />
+        <path
+          d="M220 292c32 27 65 48 105 59 25 7 44 27 49 53-60 13-126-6-171-55z"
+          fill="url(#pants)"
+        />
+        <path
+          d="M75 397c-24 2-41 12-50 31 27 10 52 8 75-5M355 397c24 2 41 12 50 31-27 10-52 8-75-5"
+          fill="#f8fafc"
+          stroke="#d8d5e5"
+          strokeWidth="4"
+        />
+
+        <rect x="196" y="126" width="38" height="43" rx="16" fill="#d99a72" />
+        <ellipse cx="215" cy="105" rx="49" ry="57" fill="#e6a47a" />
+        <path
+          d="M169 113c-7-58 18-88 51-88 42 0 65 34 50 103-6-35-17-58-42-72-12 18-32 32-59 38z"
+          fill="url(#hair)"
+        />
+        <path
+          d="M168 94c-17 40-10 97 13 119-4-39 4-70 25-93M265 83c20 44 14 101-8 129 4-40-5-71-24-94"
+          fill="none"
+          stroke="url(#hair)"
+          strokeWidth="24"
+          strokeLinecap="round"
+        />
+        <path d="M190 110q10 7 20 0M222 110q10 7 20 0" fill="none" stroke="#47302e" strokeWidth="3" strokeLinecap="round" />
+        <path d="M204 132q12 10 24 0" fill="none" stroke="#8b4d45" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="179" cy="118" r="8" fill="#e6a47a" />
+        <circle cx="251" cy="118" r="8" fill="#e6a47a" />
+      </svg>
+
+      <div className="absolute bottom-15 left-[3%] z-20 rounded-2xl border border-white bg-white/90 p-3 shadow-xl backdrop-blur sm:left-[8%]">
         <div className="flex items-center gap-2.5">
           <span className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-600">
             <ShieldCheck className="size-5" />
           </span>
           <div>
             <p className="text-xs font-black text-slate-900">Verified care</p>
-            <p className="text-[10px] text-slate-500">Credential reviewed</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute bottom-20 left-0 z-20 rounded-2xl border border-white bg-white/90 p-3 shadow-xl backdrop-blur sm:left-4">
-        <div className="flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-violet-100 text-primary">
-            <MessageCircle className="size-5" />
-          </span>
-          <div>
-            <p className="text-xs font-black text-slate-900">Your way</p>
-            <p className="text-[10px] text-slate-500">Chat, audio or video</p>
+            <p className="text-[10px] text-slate-500">Profiles reviewed</p>
           </div>
         </div>
       </div>
@@ -177,340 +234,404 @@ function HeroArtwork() {
 
 function Hero() {
   const trustItems = [
-    { icon: ShieldCheck, title: "Verified experts", description: "Admin-reviewed profiles" },
-    { icon: LockKeyhole, title: "Private by design", description: "Protected account access" },
-    { icon: Clock3, title: "Flexible booking", description: "Choose a suitable slot" },
-    { icon: HeartHandshake, title: "Human support", description: "Care built around you" },
+    { icon: ShieldCheck, title: "Verified experts", text: "Credential-reviewed profiles" },
+    { icon: LockKeyhole, title: "Private access", text: "Protected accounts and sessions" },
+    { icon: Clock3, title: "Flexible timing", text: "Appointments that fit your day" },
+    { icon: HeartHandshake, title: "Human support", text: "Care built around your comfort" },
   ];
 
   return (
-    <section className="relative isolate overflow-hidden bg-[linear-gradient(135deg,#fff_0%,#faf7ff_45%,#f1f7ff_100%)]">
-      <div className="pointer-events-none absolute -left-40 -top-40 size-[520px] rounded-full bg-violet-300/20 blur-3xl" />
-      <div className="pointer-events-none absolute -right-32 top-20 size-[430px] rounded-full bg-blue-300/15 blur-3xl" />
-
-      <div className="relative mx-auto grid min-h-[calc(100vh-4.5rem)] max-w-7xl items-center gap-8 px-4 py-16 md:px-8 lg:grid-cols-[1.08fr_.92fr] lg:py-20">
-        <div className="max-w-2xl">
-          <Badge className="mb-7 h-auto rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-xs font-bold text-violet-700 shadow-sm">
-            <Sparkles className="mr-1 size-3.5" />
-            Mental wellness support, wherever you are
-          </Badge>
-
-          <h1 className="text-balance text-5xl font-black leading-[1.04] tracking-[-0.045em] text-slate-950 sm:text-6xl lg:text-7xl">
-            Feel heard.
-            <span className="block bg-gradient-to-r from-primary via-violet-500 to-blue-500 bg-clip-text text-transparent">
-              Grow stronger.
+    <section
+      id="about"
+      className="relative isolate overflow-hidden bg-[radial-gradient(circle_at_70%_35%,#f0e9ff_0%,transparent_36%),linear-gradient(135deg,#fff_0%,#fdfbff_45%,#f7f3ff_100%)] px-4 pb-10 pt-12 md:px-8 lg:pt-16"
+    >
+      <div className="pointer-events-none absolute -left-48 -top-48 size-[520px] rounded-full bg-violet-200/20 blur-3xl" />
+      <div className="mx-auto grid max-w-7xl items-center gap-8 lg:grid-cols-[1.03fr_.97fr]">
+        <div className="animate-in fade-in slide-in-from-left-5 duration-700">
+          <span className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700">
+            <Sparkles className="size-3.5 fill-current" />
+            Thoughtful support for every step
+          </span>
+          <h1 className="mt-6 max-w-3xl text-balance text-5xl font-black leading-[1.04] tracking-[-0.05em] text-[#10152f] sm:text-6xl lg:text-7xl">
+            Your mental wellness,
+            <span className="block bg-gradient-to-r from-primary via-violet-600 to-blue-500 bg-clip-text text-transparent">
+              our priority
             </span>
           </h1>
-
           <p className="mt-6 max-w-xl text-pretty text-lg leading-8 text-slate-600">
-            Connect with verified psychologists for confidential chat, audio, or video
-            consultations—on a schedule that works for you.
+            Connect with verified psychologists through chat, audio, or video.
+            Choose your time, your professional, and the pace that feels right.
           </p>
-
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button
               asChild
-              className="h-14 rounded-2xl bg-gradient-to-r from-primary to-violet-600 px-7 text-base font-bold shadow-xl shadow-primary/25 transition-transform hover:-translate-y-0.5 hover:opacity-90"
+              className="h-13 rounded-xl bg-gradient-to-r from-primary to-violet-600 px-7 text-base font-bold shadow-xl shadow-primary/20 transition-transform hover:-translate-y-0.5"
             >
               <Link to="/register">
-                Start your journey <ArrowRight className="ml-1 size-5" />
+                <Calendar className="mr-1 size-5" />
+                Book a session
               </Link>
             </Button>
             <Button
               asChild
               variant="outline"
-              className="h-14 rounded-2xl border-2 border-slate-200 bg-white/70 px-7 text-base font-bold text-slate-800 hover:border-primary/30 hover:bg-violet-50 hover:text-primary"
+              className="h-13 rounded-xl border-violet-200 bg-white px-7 text-base font-bold text-primary hover:bg-violet-50"
             >
-              <a href="#how-it-works">
-                See how it works <ChevronRight className="ml-1 size-5" />
-              </a>
+              <Link to="/login">
+                <MessageCircle className="mr-1 size-5" />
+                Talk now
+              </Link>
             </Button>
           </div>
 
-          <p className="mt-4 flex items-center gap-2 text-xs font-medium text-slate-500">
-            <Check className="size-4 rounded-full bg-emerald-100 p-0.5 text-emerald-600" />
-            Registration takes only a few minutes.
-          </p>
-
-          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {trustItems.map(({ icon: Icon, title, description }) => (
+          <div className="mt-9 grid grid-cols-2 gap-4 md:grid-cols-4">
+            {trustItems.map(({ icon: Icon, title, text }, index) => (
               <div
                 key={title}
-                className="rounded-2xl border border-white bg-white/65 p-3.5 shadow-sm backdrop-blur transition-transform hover:-translate-y-1"
+                className={`animate-in fade-in slide-in-from-bottom-3 duration-500 ${revealDelays[index]}`}
               >
-                <Icon className="mb-2 size-5 text-primary" />
-                <p className="text-xs font-extrabold text-slate-900">{title}</p>
-                <p className="mt-1 text-[10px] leading-4 text-slate-500">{description}</p>
+                <div className="flex items-start gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-violet-50 text-primary ring-1 ring-violet-100">
+                    <Icon className="size-5" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-black text-slate-900">{title}</p>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500">{text}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </div>
-
-        <HeroArtwork />
+        <CalmHeroVisual />
       </div>
     </section>
   );
 }
 
-function ConfidenceStrip() {
-  const items = [
-    { icon: Award, title: "Credential verification", text: "Psychologists are reviewed before approval." },
-    { icon: Calendar, title: "Simple scheduling", text: "Manual selection or automatic matching." },
-    { icon: CreditCard, title: "Secure checkout", text: "Integrated Razorpay payment flow." },
-    { icon: Video, title: "Flexible sessions", text: "Chat, audio and video consultation modes." },
+function HowItWorks() {
+  const steps = [
+    { icon: Calendar, title: "Choose a time", text: "Select a convenient appointment window.", tone: "bg-violet-100 text-violet-600" },
+    { icon: CreditCard, title: "Book and pay", text: "Confirm securely through Razorpay.", tone: "bg-emerald-100 text-emerald-600" },
+    { icon: Video, title: "Connect", text: "Meet by chat, audio, or video.", tone: "bg-blue-100 text-blue-600" },
+    { icon: HeartPulse, title: "Feel supported", text: "Receive guidance from your psychologist.", tone: "bg-rose-100 text-rose-600" },
+    { icon: Leaf, title: "Grow stronger", text: "Continue your wellness journey.", tone: "bg-teal-100 text-teal-600" },
   ];
 
   return (
-    <section id="about" className="border-y border-slate-100 bg-white py-8">
-      <div className="mx-auto grid max-w-7xl gap-4 px-4 sm:grid-cols-2 md:px-8 lg:grid-cols-4">
-        {items.map(({ icon: Icon, title, text }, index) => (
-          <FadeIn key={title} delay={index * 70}>
-            <div className="flex h-full items-start gap-3 rounded-2xl p-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-violet-50 text-primary">
-                <Icon className="size-5" />
-              </span>
-              <div>
-                <p className="text-sm font-extrabold text-slate-900">{title}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{text}</p>
+    <section id="how-it-works" className="scroll-mt-24 bg-white px-4 py-8 md:px-8">
+      <Reveal className="mx-auto max-w-7xl">
+        <div className="grid gap-6 rounded-3xl border border-violet-100 bg-white p-6 shadow-[0_18px_55px_rgba(109,40,217,.06)] lg:grid-cols-[220px_1fr] lg:items-center">
+          <div className="border-violet-100 lg:border-r lg:pr-7">
+            <h2 className="text-xl font-black text-[#10152f]">How ManoBalam works</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Five simple steps towards professional support.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {steps.map(({ icon: Icon, title, text, tone }, index) => (
+              <div key={title} className="group relative">
+                <div className="flex gap-3 lg:block">
+                  <span className={`grid size-12 shrink-0 place-items-center rounded-full ${tone} transition-transform group-hover:scale-110`}>
+                    <Icon className="size-6" />
+                  </span>
+                  <div className="lg:mt-3">
+                    <p className="text-xs font-black text-slate-900">
+                      {index + 1}. {title}
+                    </p>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500">{text}</p>
+                  </div>
+                </div>
+                {index < steps.length - 1 && (
+                  <ArrowRight className="absolute -right-2 top-4 hidden size-4 text-violet-200 lg:block" />
+                )}
               </div>
-            </div>
-          </FadeIn>
+            ))}
+          </div>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+const services = [
+  { icon: ShieldCheck, title: "First aid support", text: "Immediate guidance and urgent resources.", tone: "bg-rose-100 text-rose-600", to: "/services/first-aid-support" },
+  { icon: Video, title: "Psychiatric consultation", text: "Specialist evaluation and care planning.", tone: "bg-blue-100 text-blue-600", to: "/services/psychiatric-consultation" },
+  { icon: BrainCircuit, title: "Clinical psychology", text: "Evidence-informed psychological support.", tone: "bg-violet-100 text-violet-600", to: "/services/clinical-psychology" },
+  { icon: HeartHandshake, title: "Mental health counselling", text: "A confidential space to talk and grow.", tone: "bg-emerald-100 text-emerald-600", to: "/services/mental-health-counselling" },
+];
+
+function ServiceGrid() {
+  return (
+    <section id="services" className="scroll-mt-24">
+      <div className="mb-5 flex items-end justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[.18em] text-primary">Care options</p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-[#10152f]">
+            Our services
+          </h2>
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {services.map(({ icon: Icon, title, text, tone, to }, index) => (
+          <Reveal key={title} delayIndex={index}>
+            <Link to={to} className="group block">
+              <article className="flex h-full items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-violet-100 hover:shadow-lg">
+                <span className={`grid size-13 shrink-0 place-items-center rounded-xl ${tone}`}>
+                  <Icon className="size-6 transition-transform group-hover:scale-110" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-black text-slate-900">{title}</h3>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500">{text}</p>
+                </div>
+                <ArrowRight className="size-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+              </article>
+            </Link>
+          </Reveal>
         ))}
       </div>
     </section>
   );
 }
 
-function SectionHeading({
-  eyebrow,
-  title,
-  accent,
-  description,
+function PsychologistPreviewCard({
+  psychologist,
+  delayIndex,
 }: {
-  eyebrow: string;
-  title: string;
-  accent: string;
-  description: string;
+  psychologist: PsychologistListItem;
+  delayIndex: number;
 }) {
+  const initials = psychologist.name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
-    <div className="mx-auto mb-14 max-w-3xl text-center">
-      <Badge className="mb-4 h-auto rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-bold text-primary">
-        <Sparkles className="mr-1 size-3.5" />
-        {eyebrow}
-      </Badge>
-      <h2 className="text-balance text-4xl font-black tracking-[-0.035em] text-slate-950 md:text-5xl">
-        {title}{" "}
-        <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
-          {accent}
-        </span>
-      </h2>
-      <p className="mx-auto mt-4 max-w-2xl text-pretty text-base leading-7 text-slate-600 md:text-lg">
-        {description}
-      </p>
-    </div>
+    <Reveal delayIndex={delayIndex}>
+      <Link to={`/psychologists/${psychologist.id}`} className="group block h-full">
+        <article className="h-full rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:-translate-y-2 hover:border-violet-100 hover:shadow-xl">
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-violet-100 to-blue-100">
+            <div className="grid h-28 place-items-center">
+              {psychologist.avatarUrl ? (
+                <img
+                  src={psychologist.avatarUrl}
+                  alt={psychologist.name}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <span className="grid size-17 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 text-lg font-black text-white shadow-lg">
+                  {initials}
+                </span>
+              )}
+            </div>
+            <span
+              className={`absolute bottom-2 right-2 size-3.5 rounded-full border-2 border-white ${
+                psychologist.isOnline ? "bg-emerald-500" : "bg-slate-300"
+              }`}
+            />
+          </div>
+          <h3 className="mt-3 truncate text-sm font-black text-slate-900">
+            {psychologist.name}
+          </h3>
+          <p className="mt-1 truncate text-[10px] capitalize text-slate-500">
+            {psychologist.specialization[0]?.replaceAll("-", " ") || "Psychologist"}
+          </p>
+          <p className="mt-2 flex items-center gap-1 text-[10px] font-bold text-slate-600">
+            <Star className="size-3 fill-amber-400 text-amber-400" />
+            {psychologist.rating.average.toFixed(1)} ({psychologist.rating.count} reviews)
+          </p>
+          <p className="mt-2 text-[10px] font-semibold text-slate-500">
+            {psychologist.experienceYears}+ years experience
+          </p>
+          <div className="mt-3 rounded-lg bg-violet-50 px-2.5 py-2 text-[10px] font-bold text-primary">
+            View profile and availability
+          </div>
+        </article>
+      </Link>
+    </Reveal>
   );
 }
 
-function HowItWorks() {
-  const steps = [
-    { icon: Users, label: "Create your account", description: "Register as a patient and complete verification." },
-    { icon: BrainCircuit, label: "Choose your support", description: "Browse experts or let ManoBalam find a suitable match." },
-    { icon: Calendar, label: "Pick a time", description: "Choose an available slot and consultation mode." },
-    { icon: CreditCard, label: "Confirm securely", description: "Review your booking and complete payment." },
-    { icon: HeartHandshake, label: "Begin your session", description: "Meet through chat, audio, or video from one private room." },
-  ];
+function PsychologistPreview() {
+  const [psychologists, setPsychologists] = useState<PsychologistListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const result = await listPsychologists({
+          page: 1,
+          limit: 4,
+          sortBy: "rating",
+        });
+        if (!cancelled) setPsychologists(result.items);
+      } catch {
+        if (!cancelled) setPsychologists([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
 
   return (
-    <section id="how-it-works" className="scroll-mt-20 bg-slate-50/70 px-4 py-24 md:px-8">
-      <div className="mx-auto max-w-7xl">
-        <FadeIn>
-          <SectionHeading
-            eyebrow="A simple path to support"
-            title="Start feeling supported in"
-            accent="five clear steps"
-            description="ManoBalam keeps the journey straightforward—from creating your account to meeting your psychologist."
-          />
-        </FadeIn>
-
-        <div className="relative grid gap-5 md:grid-cols-3 lg:grid-cols-5">
-          <div className="absolute left-[10%] right-[10%] top-10 hidden border-t-2 border-dashed border-violet-200 lg:block" />
-          {steps.map(({ icon: Icon, label, description }, index) => (
-            <FadeIn key={label} delay={index * 90}>
-              <article className="group relative z-10 h-full rounded-3xl border border-slate-100 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/8">
-                <span className="mx-auto mb-5 grid size-18 place-items-center rounded-3xl bg-gradient-to-br from-violet-500 to-primary text-white shadow-lg shadow-primary/20 transition-transform group-hover:rotate-3 group-hover:scale-105">
-                  <Icon className="size-8" />
-                </span>
-                <span className="absolute right-4 top-4 text-xs font-black text-violet-200">
-                  0{index + 1}
-                </span>
-                <h3 className="font-extrabold text-slate-900">{label}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
-              </article>
-            </FadeIn>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Services() {
-  const services = [
-    { icon: MessageCircle, title: "Online consultation", description: "Speak with a psychologist through chat, audio, or video.", tone: "from-violet-500 to-purple-600" },
-    { icon: BrainCircuit, title: "Self-assessments", description: "Check in with guided anxiety, stress, and depression questionnaires.", tone: "from-emerald-500 to-teal-600" },
-    { icon: Calendar, title: "Smart booking", description: "Select a psychologist manually or use time-based automatic matching.", tone: "from-blue-500 to-cyan-600" },
-    { icon: HeartPulse, title: "Urgent support", description: "Request an immediate session and access crisis resources when needed.", tone: "from-rose-500 to-red-600" },
-    { icon: ShieldCheck, title: "Verified professionals", description: "Credential submission and administrator approval are built into the platform.", tone: "from-amber-500 to-orange-600" },
-    { icon: Leaf, title: "Continuity of care", description: "Track appointments, revisit assessment history, and share session feedback.", tone: "from-lime-500 to-emerald-600" },
-  ];
-
-  return (
-    <section id="services" className="scroll-mt-20 bg-white px-4 py-24 md:px-8">
-      <div className="mx-auto max-w-7xl">
-        <FadeIn>
-          <SectionHeading
-            eyebrow="Care that meets you where you are"
-            title="One platform for your"
-            accent="mental wellness journey"
-            description="From the first check-in to ongoing sessions, each feature is designed to make professional support easier to reach."
-          />
-        </FadeIn>
-
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {services.map(({ icon: Icon, title, description, tone }, index) => (
-            <FadeIn key={title} delay={index * 70}>
-              <article className="group h-full rounded-3xl border border-slate-100 bg-white p-7 shadow-sm transition-all hover:-translate-y-2 hover:border-violet-100 hover:shadow-2xl hover:shadow-primary/8">
-                <span className={`mb-5 grid size-14 place-items-center rounded-2xl bg-gradient-to-br ${tone} text-white shadow-lg transition-transform group-hover:scale-110`}>
-                  <Icon className="size-7" />
-                </span>
-                <h3 className="text-lg font-black text-slate-900">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
-                <Link
-                  to="/register"
-                  className="mt-5 inline-flex items-center gap-1 text-sm font-bold text-primary transition-all group-hover:gap-2"
-                >
-                  Explore ManoBalam <ArrowRight className="size-4" />
-                </Link>
-              </article>
-            </FadeIn>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ForPsychologists() {
-  const benefits = [
-    "Create a professional profile with specializations and languages",
-    "Set recurring availability and manage appointment slots",
-    "Offer chat, audio, and video consultations",
-    "Receive appointment reminders and manage session notes",
-  ];
-
-  return (
-    <section id="for-psychologists" className="scroll-mt-20 overflow-hidden bg-slate-950 px-4 py-24 text-white md:px-8">
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2">
-        <div className="pointer-events-none absolute -right-30 -top-40 size-96 rounded-full bg-violet-600/25 blur-3xl" />
-        <FadeIn>
-          <Badge className="mb-5 h-auto rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold text-violet-200">
-            <Award className="mr-1 size-3.5" />
-            For mental-health professionals
-          </Badge>
-          <h2 className="max-w-xl text-balance text-4xl font-black tracking-[-0.035em] md:text-5xl">
-            Bring your practice closer to the people who need it.
+    <section>
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[.18em] text-primary">
+            Approved professionals
+          </p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-[#10152f]">
+            Meet our psychologists
           </h2>
-          <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">
-            ManoBalam gives psychologists a focused workspace for availability,
-            appointments, realtime sessions, and emergency support.
+        </div>
+        <Link
+          to="/psychologists"
+          className="flex shrink-0 items-center gap-1 text-xs font-bold text-primary transition-all hover:gap-2"
+        >
+          View all <ArrowRight className="size-4" />
+        </Link>
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-64 rounded-2xl" />
+          ))}
+        </div>
+      ) : psychologists.length > 0 ? (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {psychologists.map((psychologist, index) => (
+            <PsychologistPreviewCard
+              key={psychologist.id}
+              psychologist={psychologist}
+              delayIndex={index}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-violet-200 bg-violet-50/50 p-8 text-center">
+          <Users className="mx-auto size-8 text-violet-300" />
+          <p className="mt-3 text-sm font-bold text-slate-700">
+            Psychologist profiles will appear here once available.
+          </p>
+          <Button asChild variant="outline" className="mt-4 rounded-xl">
+            <Link to="/psychologists">Open directory</Link>
+          </Button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ServicesAndExperts() {
+  return (
+    <section className="bg-[#fcfbff] px-4 py-14 md:px-8">
+      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[.78fr_1.42fr]">
+        <ServiceGrid />
+        <PsychologistPreview />
+      </div>
+    </section>
+  );
+}
+
+function ProfessionalSection() {
+  const benefits = [
+    "Verified professional profile",
+    "Recurring availability and slot management",
+    "Chat, audio, and video consultations",
+    "Appointment and session workspace",
+  ];
+
+  return (
+    <section
+      id="for-psychologists"
+      className="scroll-mt-24 overflow-hidden bg-slate-950 px-4 py-18 text-white md:px-8"
+    >
+      <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1fr_.8fr]">
+        <div className="pointer-events-none absolute -right-32 -top-40 size-96 rounded-full bg-violet-600/25 blur-3xl" />
+        <Reveal>
+          <p className="text-xs font-black uppercase tracking-[.18em] text-violet-300">
+            For psychologists
+          </p>
+          <h2 className="mt-3 max-w-2xl text-balance text-4xl font-black tracking-[-.04em]">
+            A focused workspace for thoughtful online care.
+          </h2>
+          <p className="mt-4 max-w-xl text-base leading-7 text-slate-300">
+            Manage your profile, availability, appointments, and realtime sessions from
+            one secure platform.
           </p>
           <Button
             asChild
-            className="mt-8 h-13 rounded-2xl bg-white px-6 font-bold text-slate-950 hover:bg-violet-50"
+            className="mt-7 h-12 rounded-xl bg-white px-6 font-bold text-primary hover:bg-violet-50"
           >
             <Link to="/register">
-              Join as a psychologist <ArrowRight className="ml-1 size-5" />
+              Join as a psychologist <ArrowRight className="ml-1 size-4" />
             </Link>
           </Button>
-        </FadeIn>
-
-        <FadeIn delay={100}>
-          <div className="relative rounded-[2rem] border border-white/10 bg-white/7 p-7 shadow-2xl backdrop-blur">
-            <div className="mb-6 flex items-center gap-3">
-              <span className="grid size-12 place-items-center rounded-2xl bg-violet-500 text-white">
-                <BrainCircuit className="size-6" />
-              </span>
-              <div>
-                <p className="font-black">Professional workspace</p>
-                <p className="text-sm text-slate-400">Tools for thoughtful, flexible care</p>
+        </Reveal>
+        <Reveal delayIndex={1}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {benefits.map((benefit) => (
+              <div
+                key={benefit}
+                className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/6 p-4"
+              >
+                <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-300" />
+                <p className="text-sm leading-6 text-slate-200">{benefit}</p>
               </div>
-            </div>
-            <ul className="grid gap-3">
-              {benefits.map((benefit) => (
-                <li
-                  key={benefit}
-                  className="flex items-start gap-3 rounded-2xl border border-white/8 bg-white/5 p-4 text-sm leading-6 text-slate-200"
-                >
-                  <Check className="mt-0.5 size-5 shrink-0 rounded-full bg-emerald-400/15 p-0.5 text-emerald-300" />
-                  {benefit}
-                </li>
-              ))}
-            </ul>
+            ))}
           </div>
-        </FadeIn>
+        </Reveal>
       </div>
     </section>
   );
 }
 
-function TestimonialSection() {
-  const stories = [
-    {
-      quote: "I could choose the kind of session that felt comfortable and book around my schedule.",
-      name: "A flexible care journey",
-      icon: Calendar,
-    },
-    {
-      quote: "The step-by-step booking flow made reaching out feel less overwhelming.",
-      name: "A gentler first step",
-      icon: HeartHandshake,
-    },
-    {
-      quote: "Having assessments and professional support in one place helped me stay consistent.",
-      name: "Support beyond one session",
-      icon: BrainCircuit,
-    },
+function Resources() {
+  const cards = [
+    { icon: BrainCircuit, title: "Anxiety assessment", text: "Reflect on patterns of worry and tension.", to: "/mental-health-assessment", tone: "bg-violet-100 text-violet-600" },
+    { icon: HeartPulse, title: "Stress assessment", text: "Check how pressure may be affecting you.", to: "/mental-health-assessment", tone: "bg-rose-100 text-rose-600" },
+    { icon: Leaf, title: "Depression assessment", text: "Notice changes in mood and motivation.", to: "/mental-health-assessment", tone: "bg-emerald-100 text-emerald-600" },
   ];
 
   return (
-    <section className="bg-gradient-to-b from-white to-violet-50/50 px-4 py-24 md:px-8">
+    <section id="resources" className="scroll-mt-24 bg-white px-4 py-16 md:px-8">
       <div className="mx-auto max-w-7xl">
-        <FadeIn>
-          <SectionHeading
-            eyebrow="Designed around real needs"
-            title="Small steps can create"
-            accent="meaningful change"
-            description="ManoBalam is built to reduce friction at the moments when asking for support can feel hardest."
-          />
-        </FadeIn>
-        <div className="grid gap-5 md:grid-cols-3">
-          {stories.map(({ quote, name, icon: Icon }, index) => (
-            <FadeIn key={name} delay={index * 90}>
-              <article className="h-full rounded-3xl border border-violet-100/70 bg-white p-7 shadow-sm">
-                <div className="mb-5 flex items-center justify-between">
-                  <span className="grid size-11 place-items-center rounded-2xl bg-violet-50 text-primary">
-                    <Icon className="size-5" />
-                  </span>
-                  <div className="flex gap-0.5 text-amber-400" aria-label="Five-star design goal">
-                    {Array.from({ length: 5 }).map((_, starIndex) => (
-                      <Star key={starIndex} className="size-3.5 fill-current" />
-                    ))}
-                  </div>
+        <Reveal className="text-center">
+          <p className="text-xs font-black uppercase tracking-[.18em] text-primary">
+            Wellness resources
+          </p>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-[#10152f]">
+            Start with a guided check-in
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+            Self-assessments are not a diagnosis, but they can help you notice patterns
+            and decide what support to explore next.
+          </p>
+        </Reveal>
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {cards.map(({ icon: Icon, title, text, to, tone }, index) => (
+            <Reveal key={title} delayIndex={index}>
+              <Link
+                to={to}
+                className="group flex h-full items-center gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
+              >
+                <span className={`grid size-13 shrink-0 place-items-center rounded-xl ${tone}`}>
+                  <Icon className="size-6 group-hover:scale-110 transition-transform" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">{title}</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{text}</p>
                 </div>
-                <p className="text-base leading-7 text-slate-600">“{quote}”</p>
-                <p className="mt-5 text-sm font-black text-slate-900">{name}</p>
-              </article>
-            </FadeIn>
+              </Link>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -520,55 +641,44 @@ function TestimonialSection() {
 
 function CallToAction() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-r from-primary via-violet-600 to-blue-600 px-4 py-20 text-white md:px-8">
-      <div className="pointer-events-none absolute -left-20 -top-28 size-80 rounded-full bg-white/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -right-20 size-96 rounded-full bg-white/10 blur-3xl" />
-      <FadeIn className="relative mx-auto max-w-4xl text-center">
-        <span className="mx-auto mb-6 grid size-18 place-items-center rounded-3xl border border-white/20 bg-white/15 backdrop-blur">
-          <HeartPulse className="size-9" />
-        </span>
-        <h2 className="text-balance text-4xl font-black tracking-[-0.035em] md:text-5xl">
-          You do not have to figure everything out alone.
-        </h2>
-        <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/80">
-          Create your account and take the next step at your own pace.
-        </p>
-        <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button
-            asChild
-            className="h-14 rounded-2xl bg-white px-8 text-base font-bold text-primary shadow-xl hover:bg-violet-50"
-          >
-            <Link to="/register">
-              Create an account <ArrowRight className="ml-1 size-5" />
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="h-14 rounded-2xl border-2 border-white/35 bg-transparent px-8 text-base font-bold text-white hover:bg-white/10 hover:text-white"
-          >
-            <Link to="/login">I already have an account</Link>
-          </Button>
+    <section className="px-4 pb-14 md:px-8">
+      <Reveal className="relative mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-primary to-blue-600 px-7 py-8 text-white shadow-2xl shadow-primary/20 md:flex-row md:px-12">
+        <div className="pointer-events-none absolute -left-16 -top-20 size-56 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative flex items-center gap-5 text-center md:text-left">
+          <span className="hidden size-16 place-items-center rounded-3xl bg-white/15 sm:grid">
+            <HeartHandshake className="size-8" />
+          </span>
+          <div>
+            <h2 className="text-2xl font-black">You are not alone. We are here for you.</h2>
+            <p className="mt-2 text-sm text-white/75">
+              Take the first step towards a healthier, more supported you.
+            </p>
+          </div>
         </div>
-      </FadeIn>
+        <Button
+          asChild
+          className="relative h-12 shrink-0 rounded-xl bg-white px-7 font-bold text-primary hover:bg-violet-50"
+        >
+          <Link to="/register">
+            Get started now <ArrowRight className="ml-1 size-4" />
+          </Link>
+        </Button>
+      </Reveal>
     </section>
   );
 }
 
 function Footer() {
   const year = new Date().getFullYear();
-
   return (
-    <footer className="bg-slate-950 px-4 py-12 text-slate-400 md:px-8">
+    <footer id="contact" className="scroll-mt-24 bg-slate-950 px-4 py-12 text-slate-400 md:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-10 border-b border-white/10 pb-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="grid gap-10 border-b border-white/10 pb-9 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="max-w-sm">
-            <div className="[&_span]:text-white">
-              <Logo />
-            </div>
+            <BrandLogo dark />
             <p className="mt-4 text-sm leading-6">
-              Professional mental-health support through secure booking, flexible
-              consultations, and practical wellness tools.
+              Professional mental-health support through flexible booking,
+              assessments, and online consultations.
             </p>
           </div>
           <div>
@@ -576,7 +686,7 @@ function Footer() {
             <div className="grid gap-2.5 text-sm">
               <a href="#how-it-works" className="hover:text-white">How it works</a>
               <a href="#services" className="hover:text-white">Services</a>
-              <a href="#for-psychologists" className="hover:text-white">For psychologists</a>
+              <a href="#resources" className="hover:text-white">Resources</a>
             </div>
           </div>
           <div>
@@ -584,19 +694,20 @@ function Footer() {
             <div className="grid gap-2.5 text-sm">
               <Link to="/login" className="hover:text-white">Log in</Link>
               <Link to="/register" className="hover:text-white">Create account</Link>
+              <Link to="/register" className="hover:text-white">Join as psychologist</Link>
             </div>
           </div>
           <div>
-            <h3 className="mb-4 text-sm font-bold text-white">Need urgent help?</h3>
+            <h3 className="mb-4 text-sm font-bold text-white">Urgent help</h3>
             <p className="text-sm leading-6">
-              If there is immediate danger, contact your local emergency services.
-              In India, dial 112.
+              If there is immediate danger, contact local emergency services. In India,
+              dial 112.
             </p>
           </div>
         </div>
-        <div className="flex flex-col gap-3 pt-7 text-xs sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 pt-7 text-xs sm:flex-row sm:justify-between">
           <p>© {year} ManoBalam. All rights reserved.</p>
-          <p>Built with care for better access to mental-health support.</p>
+          <p>Empowering your mind with better access to care.</p>
         </div>
       </div>
     </footer>
@@ -608,11 +719,10 @@ export function LandingPage() {
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-950">
       <main>
         <Hero />
-        <ConfidenceStrip />
         <HowItWorks />
-        <Services />
-        <ForPsychologists />
-        <TestimonialSection />
+        <ServicesAndExperts />
+        <ProfessionalSection />
+        <Resources />
         <CallToAction />
       </main>
       <Footer />

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefundModal } from "../components/RefundModal";
-import { getAdminAppointments } from "../api/admin.api";
+import { getAdminAppointments, refundPayment } from "../api/admin.api";
 import type { AdminAppointmentItem } from "../types/admin.types";
 import { formatInViewerTz } from "@/lib/timezone";
 import { toast } from "sonner";
@@ -11,7 +11,9 @@ import { toast } from "sonner";
 export function AdminPaymentsPage() {
   const [appointments, setAppointments] = useState<AdminAppointmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<AdminAppointmentItem | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -65,7 +67,7 @@ export function AdminPaymentsPage() {
                 </span>
                 <button
                   className="text-sm text-primary underline hover:text-primary/80"
-                  onClick={() => setSelectedPaymentId(appt.id)}
+                  onClick={() => setSelectedAppointment(appt)}
                 >
                   Refund
                 </button>
@@ -75,13 +77,27 @@ export function AdminPaymentsPage() {
         </div>
       )}
 
-      {selectedPaymentId && (
+      {selectedAppointment && (
         <RefundModal
-          paymentId={selectedPaymentId}
-          onClose={() => setSelectedPaymentId(null)}
-          onSuccess={() => {
-            toast.success("Refund processed successfully.");
-            setSelectedPaymentId(null);
+          isOpen
+          appointment={selectedAppointment}
+          paymentId={selectedAppointment.id}
+          isProcessing={isProcessing}
+          onClose={() => setSelectedAppointment(null)}
+          onProcess={async (appointmentId, reason) => {
+            try {
+              setIsProcessing(true);
+              await refundPayment(appointmentId, { reason });
+              toast.success("Refund processed successfully.");
+              setAppointments((current) =>
+                current.filter((appointment) => appointment.id !== appointmentId),
+              );
+              setSelectedAppointment(null);
+            } catch {
+              toast.error("Failed to process refund.");
+            } finally {
+              setIsProcessing(false);
+            }
           }}
         />
       )}

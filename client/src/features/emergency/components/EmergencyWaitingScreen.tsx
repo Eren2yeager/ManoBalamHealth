@@ -26,7 +26,7 @@ export function EmergencyWaitingScreen({ onBack }: EmergencyWaitingScreenProps) 
   } = useEmergencyStore();
 
   const { cancelRequest } = useEmergencySocket();
-  const country = useGeoCountry();
+  const { detectedCountryCode } = useGeoCountry();
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [crisisResources, setCrisisResources] = useState<CrisisResource[]>([]);
@@ -63,10 +63,10 @@ export function EmergencyWaitingScreen({ onBack }: EmergencyWaitingScreenProps) 
   // Plan § 7.7: "patient must never be left on a bare spinner with no fallback path"
   useEffect(() => {
     if (!requestTimedOut) return;
-    getCrisisResources(country ?? "").then(setCrisisResources).catch(() => {
+    getCrisisResources(detectedCountryCode ?? "").then(setCrisisResources).catch(() => {
       // Non-fatal — list just stays empty
     });
-  }, [requestTimedOut, country]);
+  }, [requestTimedOut, detectedCountryCode]);
 
   if (requestAlreadyTaken) {
     return (

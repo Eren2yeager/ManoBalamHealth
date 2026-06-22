@@ -35,10 +35,14 @@ import { AdminPaymentsPage } from "../features/admin/pages/AdminPaymentsPage";
 import { ProtectedRoute } from "../routes/ProtectedRoute";
 import { RoleRoute } from "../routes/RoleRoute";
 import { GuestRoute } from "../routes/GuestRoute";
+import { NavbarLayout } from "../components/layout/NavbarLayout";
 
 const router = createBrowserRouter([
   // ── Public (unauthenticated only) ────────────────────────────────────────
-  { path: "/", element: <LandingPage /> },
+  {
+    element: <NavbarLayout />,
+    children: [{ path: "/", element: <LandingPage /> }],
+  },
   {
     element: <GuestRoute />,
     children: [
@@ -52,34 +56,39 @@ const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
-      { path: "/home", element: <HomePage /> },
-      { path: "/profile", element: <ProfilePage /> },
+      {
+        element: <NavbarLayout />,
+        children: [
+          { path: "/home", element: <HomePage /> },
+          { path: "/profile", element: <ProfilePage /> },
 
-      // Psychologist browse
-      { path: "/psychologists", element: <PsychologistListPage /> },
-      { path: "/psychologists/:id", element: <PsychologistDetailPage /> },
+          // Psychologist browse
+          { path: "/psychologists", element: <PsychologistListPage /> },
+          { path: "/psychologists/:id", element: <PsychologistDetailPage /> },
 
-      // Booking
-      { path: "/book", element: <BookingFlowPage /> },
-      { path: "/book/:psychologistId", element: <BookingFlowPage /> },
+          // Booking
+          { path: "/book", element: <BookingFlowPage /> },
+          { path: "/book/:psychologistId", element: <BookingFlowPage /> },
 
-      // Appointments
-      { path: "/appointments", element: <MyAppointmentsPage /> },
-      { path: "/appointments/:id", element: <AppointmentDetailPage /> },
+          // Appointments
+          { path: "/appointments", element: <MyAppointmentsPage /> },
+          { path: "/appointments/:id", element: <AppointmentDetailPage /> },
 
-      // Session
+          // Feedback
+          { path: "/feedback/:appointmentId", element: <FeedbackPage /> },
+
+          // Assessment
+          { path: "/assessment", element: <AssessmentHubPage /> },
+          { path: "/assessment/:type", element: <AssessmentPage /> },
+          { path: "/assessment/:type/result", element: <AssessmentPage /> },
+
+          // Emergency request screen
+          { path: "/emergency", element: <EmergencyPage /> },
+        ],
+      },
+
+      // Full-screen realtime rooms intentionally render without the app navbar.
       { path: "/session/:appointmentId", element: <SessionRoomPage /> },
-
-      // Feedback
-      { path: "/feedback/:appointmentId", element: <FeedbackPage /> },
-
-      // Assessment
-      { path: "/assessment", element: <AssessmentHubPage /> },
-      { path: "/assessment/:type", element: <AssessmentPage /> },
-      { path: "/assessment/:type/result", element: <AssessmentPage /> },
-
-      // Emergency
-      { path: "/emergency", element: <EmergencyPage /> },
       { path: "/emergency/session/:sessionId", element: <EmergencySessionPage /> },
     ],
   },
@@ -88,9 +97,14 @@ const router = createBrowserRouter([
   {
     element: <RoleRoute allowed={["psychologist"]} />,
     children: [
-      { path: "/psychologist/dashboard", element: <PsychologistDashboard /> },
-      { path: "/psychologist/availability", element: <AvailabilityPage /> },
-      { path: "/psychologist/appointments", element: <PsychologistAppointmentsPage /> },
+      {
+        element: <NavbarLayout />,
+        children: [
+          { path: "/psychologist/dashboard", element: <PsychologistDashboard /> },
+          { path: "/psychologist/availability", element: <AvailabilityPage /> },
+          { path: "/psychologist/appointments", element: <PsychologistAppointmentsPage /> },
+        ],
+      },
       { path: "/psychologist/session/:appointmentId", element: <SessionRoomPage /> },
     ],
   },
@@ -99,10 +113,15 @@ const router = createBrowserRouter([
   {
     element: <RoleRoute allowed={["admin"]} />,
     children: [
-      { path: "/admin/dashboard", element: <AdminDashboardPage /> },
-      { path: "/admin/verifications", element: <AdminVerificationsPage /> },
-      { path: "/admin/reports", element: <AdminReportsPage /> },
-      { path: "/admin/payments", element: <AdminPaymentsPage /> },
+      {
+        element: <NavbarLayout />,
+        children: [
+          { path: "/admin/dashboard", element: <AdminDashboardPage /> },
+          { path: "/admin/verifications", element: <AdminVerificationsPage /> },
+          { path: "/admin/reports", element: <AdminReportsPage /> },
+          { path: "/admin/payments", element: <AdminPaymentsPage /> },
+        ],
+      },
     ],
   },
 ]);

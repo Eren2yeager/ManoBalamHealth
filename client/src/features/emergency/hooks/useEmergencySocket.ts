@@ -8,7 +8,6 @@ import type {
   EmergencyIncomingPayload,
   EmergencyMatchedPayload,
   EmergencyAssignedPayload,
-  EmergencyAlreadyTakenPayload,
 } from "../types/emergency.types";
 
 /**
@@ -27,7 +26,7 @@ import type {
 export function useEmergencySocket() {
   const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
-  const country = useGeoCountry();
+  const { detectedCountryCode } = useGeoCountry();
 
   const {
     setIncomingRequest,
@@ -60,7 +59,7 @@ export function useEmergencySocket() {
       navigate(`/session/${payload.sessionId}`);
     };
 
-    const onAlreadyTaken = (_payload: EmergencyAlreadyTakenPayload) => {
+    const onAlreadyTaken = () => {
       setIncomingRequest(null);
       setRequestAlreadyTaken(true);
     };
@@ -92,10 +91,10 @@ export function useEmergencySocket() {
       socket.emit("emergency:request", {
         patientId: user.id,
         concern,
-        country: country ?? "",
+        country: detectedCountryCode ?? "",
       });
     },
-    [user, country, setIsWaiting, setRequestTimedOut, setRequestAlreadyTaken]
+    [user, detectedCountryCode, setIsWaiting, setRequestTimedOut, setRequestAlreadyTaken]
   );
 
   /**

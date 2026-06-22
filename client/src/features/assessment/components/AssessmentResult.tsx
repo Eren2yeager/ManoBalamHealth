@@ -1,16 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CrisisBanner } from "../../crisis/components/CrisisBanner";
 import type { AssessmentResult as AssessmentResultType } from "../types/assessment.types";
+import type { RiskLevel } from "@/types/global.types";
 
 interface AssessmentResultProps {
   result: AssessmentResultType;
 }
 
-const riskLevelColors = {
+const riskLevelColors: Record<RiskLevel, string> = {
   low: "text-green-700 bg-green-50 border-green-200",
   moderate: "text-yellow-700 bg-yellow-50 border-yellow-200",
   high: "text-red-700 bg-red-50 border-red-200",
-  critical: "text-red-800 bg-red-100 border-red-300",
+  severe: "text-red-800 bg-red-100 border-red-300",
 };
 
 export function AssessmentResult({ result }: AssessmentResultProps) {

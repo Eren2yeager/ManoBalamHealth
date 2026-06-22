@@ -17,7 +17,8 @@ import { formatInViewerTz } from "@/lib/timezone";
 import { useUserStore } from "@/stores/userStore";
 import type { CreateOrderResponse } from "@/features/payment/types/payment.types";
 import type { PsychologistDetail } from "@/features/psychologists/types/psychologist.types";
-import { SPECIALIZATIONS } from "@/features/psychologists/constants/psychologist.constants";
+import { SPECIALIZATION_LABEL } from "@/features/psychologists/constants/psychologist.constants";
+import type { Specialization } from "@/features/psychologists/constants/psychologist.constants";
 import type { Money } from "@/types/global.types";
 
 interface PaymentCheckoutState {
@@ -239,7 +240,9 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
               <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">Specialization</span>
                 <span className="text-sm">
-                  {specialization ? SPECIALIZATIONS[specialization] : "Any"}
+                  {specialization
+                    ? SPECIALIZATION_LABEL[specialization as Specialization]
+                    : "Any"}
                 </span>
               </div>
             </>

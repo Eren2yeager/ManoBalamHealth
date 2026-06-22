@@ -11,6 +11,7 @@ import feedbackRoutes from "@/modules/feedback/feedback.routes";
 import assessmentRoutes from "@/modules/assessment/assessment.routes";
 import crisisRoutes from "@/modules/crisis/crisis.routes";
 import adminRoutes from "@/modules/admin/admin.routes";
+import contactRoutes from "@/modules/contact/contact.routes";
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use("/feedback", feedbackRoutes);
 router.use("/assessments", assessmentRoutes);
 router.use("/crisis", crisisRoutes);
 router.use("/admin", adminRoutes);
+router.use("/contact", contactRoutes);
 
 export default router;

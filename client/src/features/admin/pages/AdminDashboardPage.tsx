@@ -59,7 +59,10 @@ export function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    const timeoutId = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [fetchData]);
 
   const handleVerify = async (id: string, payload: VerifyPsychologistDto) => {
@@ -72,7 +75,7 @@ export function AdminDashboardPage() {
           : "Psychologist rejected!"
       );
       fetchData();
-    } catch (err) {
+    } catch {
       toast.error("Failed to process verification");
     } finally {
       setIsProcessing(false);
@@ -88,7 +91,7 @@ export function AdminDashboardPage() {
       setShowRefundModal(false);
       setSelectedAppointment(null);
       setSelectedPaymentId(null);
-    } catch (err) {
+    } catch {
       toast.error("Failed to process refund");
     } finally {
       setIsProcessing(false);

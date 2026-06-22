@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, KeyRound, Eye, EyeOff, LogIn, AlertTriangle, ArrowRight } from "lucide-react";
 import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ const roleHome: Record<Role, string> = {
 
 export const LoginForm = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const setUser = useUserStore((s) => s.setUser);
   const setAccessToken = useUserStore((s) => s.setAccessToken);
 
@@ -34,7 +35,12 @@ export const LoginForm = () => {
       const result = await login({ emailOrPhone, password });
       setAccessToken(result.accessToken);
       setUser(result.user);
-      navigate(roleHome[result.user.role]);
+      const requestedPath = searchParams.get("redirect");
+      const safeRedirect =
+        requestedPath?.startsWith("/") && !requestedPath.startsWith("//")
+          ? requestedPath
+          : null;
+      navigate(safeRedirect ?? roleHome[result.user.role]);
     } catch (error) {
       if (isAxiosError<ApiErrorResponse>(error) && error.response?.data) {
         toast.error(error.response.data.message);

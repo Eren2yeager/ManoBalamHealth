@@ -1,5 +1,6 @@
 import { ShieldCheck } from "lucide-react";
 import { LoginForm } from "../components/LoginForm";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 export const LoginPage = () => {
   return (
@@ -12,6 +13,7 @@ export const LoginPage = () => {
 
       {/* Glass card */}
       <div className="w-full max-w-[440px] bg-card/95 backdrop-blur-[10px] border border-border rounded-xl shadow-[0px_4px_24px_rgba(99,14,212,0.05)] p-8 flex flex-col gap-6">
+        <BrandLogo className="mx-auto" />
         {/* Header */}
         <div className="text-center flex flex-col items-center gap-3">
           <div className="w-12 h-12 bg-muted flex items-center justify-center rounded-full">

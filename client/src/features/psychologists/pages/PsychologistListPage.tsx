@@ -2,7 +2,7 @@ import { PsychologistList } from "../components/PsychologistList";
 
 export const PsychologistListPage = () => {
   return (
-    <div className="flex min-h-[calc(100vh-64px)] bg-background">
+    <div className="min-h-[calc(100vh-4.5rem)] bg-slate-50/60">
       <PsychologistList />
     </div>
   );

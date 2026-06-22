@@ -1,4 +1,4 @@
-import type { PaginationParams, AppointmentStatus, Money } from "@/types/global.types";
+import type { PaginationParams, AppointmentStatus } from "@/types/global.types";
 
 export interface PendingPsychologistItem {
   id: string;
@@ -27,10 +27,10 @@ export interface AdminAppointmentParams extends PaginationParams {
 
 export interface AdminReport {
   totalAppointments: number;
-  totalRevenue: Money;
-  newUsers: number;
-  appointmentsByStatus: Record<string, number>;
-  topSpecializations: Array<{ specialization: string; count: number }>;
+  completedAppointments: number;
+  totalRevenue: number;
+  totalPsychologists: number;
+  totalPatients: number;
 }
 
 export interface RefundDto {

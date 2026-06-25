@@ -19,7 +19,7 @@ interface NavbarProps {
 export function Navbar({ onMenuToggle }: NavbarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const country = useGeoCountry();
+  const { detectedCountryCode } = useGeoCountry();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Crisis banner state — plan §7.8: persistent help icon always accessible
@@ -35,7 +35,7 @@ export function Navbar({ onMenuToggle }: NavbarProps) {
     if (crisisResources.length === 0) {
       setIsCrisisLoading(true);
       try {
-        const resources = await getCrisisResources(country ?? "");
+        const resources = await getCrisisResources(detectedCountryCode ?? "");
         setCrisisResources(resources);
       } catch {
         // Non-fatal — show banner even if resources failed to load

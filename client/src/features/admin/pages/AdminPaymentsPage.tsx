@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefundModal } from "../components/RefundModal";
-import { getAdminAppointments } from "../api/admin.api";
+import { getAdminAppointments, refundPayment } from "../api/admin.api";
 import type { AdminAppointmentItem } from "../types/admin.types";
 import { formatInViewerTz } from "@/lib/timezone";
 import { toast } from "sonner";
@@ -11,7 +11,8 @@ import { toast } from "sonner";
 export function AdminPaymentsPage() {
   const [appointments, setAppointments] = useState<AdminAppointmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<AdminAppointmentItem | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -27,6 +28,22 @@ export function AdminPaymentsPage() {
     };
     load();
   }, []);
+
+  const handleProcessRefund = async (paymentId: string, reason: string) => {
+    try {
+      setIsProcessing(true);
+      await refundPayment(paymentId, { reason });
+      toast.success("Refund processed successfully.");
+      setSelectedAppointment(null);
+      // Refresh the list
+      const { items } = await getAdminAppointments({ status: "completed", limit: 50 });
+      setAppointments(items);
+    } catch {
+      toast.error("Failed to process refund.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -65,7 +82,7 @@ export function AdminPaymentsPage() {
                 </span>
                 <button
                   className="text-sm text-primary underline hover:text-primary/80"
-                  onClick={() => setSelectedPaymentId(appt.id)}
+                  onClick={() => setSelectedAppointment(appt)}
                 >
                   Refund
                 </button>
@@ -75,16 +92,14 @@ export function AdminPaymentsPage() {
         </div>
       )}
 
-      {selectedPaymentId && (
-        <RefundModal
-          paymentId={selectedPaymentId}
-          onClose={() => setSelectedPaymentId(null)}
-          onSuccess={() => {
-            toast.success("Refund processed successfully.");
-            setSelectedPaymentId(null);
-          }}
-        />
-      )}
+      <RefundModal
+        isOpen={selectedAppointment !== null}
+        onClose={() => setSelectedAppointment(null)}
+        appointment={selectedAppointment}
+        paymentId={selectedAppointment?.id ?? null}
+        onProcess={handleProcessRefund}
+        isProcessing={isProcessing}
+      />
     </div>
   );
 }

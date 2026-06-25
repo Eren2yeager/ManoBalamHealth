@@ -44,7 +44,7 @@ class FeedbackService {
     if (existingFeedback) {
       throw new ApiError(
         StatusCodes.CONFLICT,
-        ErrorCodes.VALIDATION_ERROR,
+        ErrorCodes.DUPLICATE_FEEDBACK,
         "Feedback already submitted for this appointment"
       );
     }

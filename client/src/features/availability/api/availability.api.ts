@@ -2,6 +2,11 @@ import { axiosInstance } from "@/lib/axios";
 import type { ApiSuccessResponse } from "@/types/global.types";
 import type { AvailabilityRuleDto, SlotItem } from "../types/availability.types";
 
+export const getRules = async (): Promise<AvailabilityRuleDto[]> => {
+  const { data } = await axiosInstance.get<ApiSuccessResponse<AvailabilityRuleDto[]>>("/availability/me/rules");
+  return data.data;
+};
+
 export const setRecurringRules = async (rules: AvailabilityRuleDto[]): Promise<{ rulesUpdated: number }> => {
   const { data } = await axiosInstance.patch<ApiSuccessResponse<{ rulesUpdated: number }>>(
     "/availability/me/rules",

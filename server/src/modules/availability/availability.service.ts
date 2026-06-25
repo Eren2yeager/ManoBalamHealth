@@ -10,6 +10,23 @@ import { generateSlots } from "@/utils/generateSlots";
 
 class AvailabilityService {
   /**
+   * Get recurring availability rules for a psychologist
+   */
+  async getRules(psychologistUserId: string): Promise<IAvailabilityRule[]> {
+    const psychologist = await PsychologistModel.findOne({ userId: psychologistUserId });
+    if (!psychologist) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Psychologist not found");
+    }
+
+    const rules = await AvailabilityRuleModel.find({ 
+      psychologistId: psychologist._id,
+      isActive: true 
+    }).sort({ createdAt: 1 });
+
+    return rules;
+  }
+
+  /**
    * Set recurring availability rules for a psychologist
    */
   async setRules(psychologistUserId: string, data: SetRulesRequest): Promise<RulesUpdatedResponse> {

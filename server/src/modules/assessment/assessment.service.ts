@@ -21,7 +21,11 @@ export class AssessmentService {
       template = await AssessmentTemplateModel.create(this.getSampleTemplate(templateType));
     }
 
-    return template;
+    return {
+      ...template.toObject(),
+      id: template._id.toString(),
+      templateId: template._id.toString(),
+    };
   }
 
   async submitAssessment(

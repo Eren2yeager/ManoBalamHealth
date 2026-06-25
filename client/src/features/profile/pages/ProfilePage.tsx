@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Award,
@@ -31,6 +31,8 @@ import type { UserProfile } from "../types/profile.types";
 import { toast } from "sonner";
 import { getMyPsychologistOnboarding } from "@/features/psychologists/api/psychologist.api";
 import type { PsychologistOnboarding } from "@/features/psychologists/types/psychologist.types";
+import { useAuth } from "@/hooks/useAuth";
+import { logout as logoutApi } from "@/features/auth/api/auth.api";
 
 const roleDestinations = {
   patient: {
@@ -51,6 +53,8 @@ const roleDestinations = {
 } as const;
 
 export const ProfilePage = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -87,6 +91,17 @@ export const ProfilePage = () => {
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [loadProfile]);
+
+  const handleLogout = async () => {
+    try {
+      await logoutApi();
+    } catch {
+      // Local authentication must still be cleared if the server session expired.
+    }
+    logout();
+    navigate("/");
+    toast.success("Logged out successfully");
+  };
 
   const completion = useMemo(() => {
     if (!profile) return 0;
@@ -228,6 +243,13 @@ export const ProfilePage = () => {
                   {destination.label}
                   <ArrowRight className="ml-auto size-4" />
                 </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                className="mt-3 h-11 w-full rounded-xl font-semibold text-slate-600 hover:bg-rose-50 hover:text-rose-700"
+                onClick={handleLogout}
+              >
+                Log out
               </Button>
             </section>
 

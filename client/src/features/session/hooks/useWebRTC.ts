@@ -38,9 +38,15 @@ export function useWebRTC({
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [callStartedAt, setCallStartedAt] = useState<string | undefined>(undefined);
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
+
+  const markCallStarted = useCallback(() => {
+    setCallStartedAt((prev) => prev ?? new Date().toISOString());
+  }, []);
 
   // ── Media ────────────────────────────────────────────────────────────────
 
@@ -58,9 +64,8 @@ export function useWebRTC({
       const message =
         err instanceof Error ? err.message : "Failed to access camera/microphone";
       setError(message);
-      throw err;
-    } finally {
       setIsConnecting(false);
+      throw err;
     }
   }, [type]);
 
@@ -78,6 +83,8 @@ export function useWebRTC({
     };
 
     const pc = new RTCPeerConnection(config);
+    remoteStreamRef.current = new MediaStream();
+    setRemoteStream(remoteStreamRef.current);
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -89,16 +96,35 @@ export function useWebRTC({
     };
 
     pc.ontrack = (event) => {
-      setRemoteStream(event.streams[0]);
+      if (event.streams[0]) {
+        remoteStreamRef.current = event.streams[0];
+        setRemoteStream(event.streams[0]);
+        return;
+      }
+
+      if (!remoteStreamRef.current) {
+        remoteStreamRef.current = new MediaStream();
+      }
+
+      remoteStreamRef.current.addTrack(event.track);
+      setRemoteStream(new MediaStream(remoteStreamRef.current.getTracks()));
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "connected") {
+      if (
+        pc.connectionState === "new" ||
+        pc.connectionState === "connecting"
+      ) {
+        setIsConnecting(true);
+      } else if (pc.connectionState === "connected") {
+        setIsConnecting(false);
         setIsConnected(true);
       } else if (
         pc.connectionState === "disconnected" ||
-        pc.connectionState === "failed"
+        pc.connectionState === "failed" ||
+        pc.connectionState === "closed"
       ) {
+        setIsConnecting(false);
         setIsConnected(false);
       }
     };
@@ -114,6 +140,11 @@ export function useWebRTC({
     setLocalStream(null);
   }, []);
 
+  const clearRemoteStream = useCallback(() => {
+    remoteStreamRef.current = null;
+    setRemoteStream(null);
+  }, []);
+
   const closePeerConnection = useCallback(() => {
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
@@ -124,6 +155,7 @@ export function useWebRTC({
   const startCall = useCallback(async () => {
     try {
       const socket = connectSocket();
+      markCallStarted();
       const stream = await getMedia();
       const pc = createPeerConnection();
       peerConnectionRef.current = pc;
@@ -136,9 +168,10 @@ export function useWebRTC({
       // § 6.3: field name is "sdp", not "offer"
       socket.emit("webrtc:offer", { sessionId, sdp: pc.localDescription });
     } catch (err) {
+      setIsConnecting(false);
       setError(err instanceof Error ? err.message : "Failed to start call");
     }
-  }, [getMedia, createPeerConnection, sessionId]);
+  }, [getMedia, createPeerConnection, sessionId, markCallStarted]);
 
   // ── Public: end call ─────────────────────────────────────────────────────
 
@@ -149,10 +182,13 @@ export function useWebRTC({
     closePeerConnection();
     setRemoteStream(null);
     setIsConnected(false);
+    setIsConnecting(false);
     setIsMicOn(true);
     setIsCameraOn(true);
     setError(null);
-  }, [sessionId, stopLocalTracks, closePeerConnection]);
+    setCallStartedAt(undefined);
+    clearRemoteStream();
+  }, [sessionId, stopLocalTracks, closePeerConnection, clearRemoteStream]);
 
   // ── Public: media toggles ────────────────────────────────────────────────
 
@@ -172,6 +208,14 @@ export function useWebRTC({
 
   useEffect(() => {
     const socket = connectSocket();
+    const joinRoom = () => {
+      socket.emit("webrtc:join", { sessionId });
+    };
+
+    if (socket.connected) {
+      joinRoom();
+    }
+    socket.on("connect", joinRoom);
 
     // Callee receives offer → create answer
     const onOffer = async (data: {
@@ -179,6 +223,8 @@ export function useWebRTC({
       fromUserId: string;
     }) => {
       try {
+        setIsConnecting(true);
+        markCallStarted();
         // Set up peer connection if not already done (callee path)
         if (!peerConnectionRef.current) {
           const stream = await getMedia();
@@ -233,8 +279,10 @@ export function useWebRTC({
     const onCallEnded = () => {
       stopLocalTracks();
       closePeerConnection();
-      setRemoteStream(null);
+      clearRemoteStream();
       setIsConnected(false);
+      setIsConnecting(false);
+      setCallStartedAt(undefined);
     };
 
     socket.on("webrtc:offer", onOffer);
@@ -245,14 +293,17 @@ export function useWebRTC({
     // CRITICAL cleanup (plan § 7.6): remove only THIS hook's listeners,
     // stop tracks, close pc — never disconnect the shared socket singleton.
     return () => {
+      socket.emit("webrtc:leave", { sessionId });
+      socket.off("connect", joinRoom);
       socket.off("webrtc:offer", onOffer);
       socket.off("webrtc:answer", onAnswer);
       socket.off("webrtc:ice-candidate", onIceCandidate);
       socket.off("webrtc:call-ended", onCallEnded);
       stopLocalTracks();
+      clearRemoteStream();
       closePeerConnection();
     };
-  }, [sessionId, getMedia, createPeerConnection, stopLocalTracks, closePeerConnection]);
+  }, [sessionId, getMedia, createPeerConnection, stopLocalTracks, clearRemoteStream, closePeerConnection, markCallStarted]);
 
   return {
     localStream,
@@ -262,6 +313,7 @@ export function useWebRTC({
     isConnecting,
     isConnected,
     error,
+    callStartedAt,
     startCall,
     toggleMic,
     toggleCamera,

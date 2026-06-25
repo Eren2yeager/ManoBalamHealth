@@ -6,7 +6,7 @@ import { AssessmentProgress } from "../components/AssessmentProgress";
 import { AssessmentResult } from "../components/AssessmentResult";
 import { getAssessmentTemplate, submitAssessment } from "../api/assessment.api";
 import { useAssessmentStore } from "../store/assessmentStore";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import type { AssessmentType } from "../types/assessment.types";
 
 export function AssessmentPage() {
@@ -77,11 +77,11 @@ export function AssessmentPage() {
   };
 
   const handleSubmit = async () => {
-    if (!template) return;
+    if (!template || !type) return;
     setIsSubmitting(true);
     try {
       const payload = {
-        templateId: template.templateId,
+        templateType: type as AssessmentType,
         answers: Object.entries(answers).map(([questionId, selectedScore]) => ({
           questionId,
           selectedScore,
@@ -101,16 +101,30 @@ export function AssessmentPage() {
   // ── Result view (rendered at /assessment/:type/result) ────────────────────
   if (isResultRoute && result) {
     return (
-      <div className="min-h-screen bg-background py-8">
-        <div className="container max-w-3xl mx-auto px-4">
-          <AssessmentResult result={result} />
-          <div className="mt-6 text-center">
+      <div className="min-h-screen bg-slate-50/60">
+        <div className="mx-auto max-w-4xl px-4 py-8">
+          <header className="mb-8">
             <Button
-              variant="outline"
+              variant="ghost"
+              size="icon"
               onClick={() => {
                 reset();
                 navigate("/assessment");
               }}
+              aria-label="Back to assessments"
+              className="rounded-xl"
+            >
+              <ArrowLeft className="size-5" />
+            </Button>
+          </header>
+          <AssessmentResult result={result} />
+          <div className="mt-8 text-center">
+            <Button
+              onClick={() => {
+                reset();
+                navigate("/assessment");
+              }}
+              className="h-11 rounded-xl bg-gradient-to-r from-primary to-violet-600 px-8 font-bold shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-indigo-700"
             >
               Take Another Assessment
             </Button>
@@ -123,19 +137,29 @@ export function AssessmentPage() {
   // ── Loading / error states ────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50/60">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-lg font-semibold text-slate-700">
+            Loading assessment...
+          </p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Error</h2>
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={() => navigate("/assessment")}>Go Back</Button>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50/60">
+        <div className="text-center max-w-md">
+          <h2 className="text-xl font-black mb-2 text-slate-950">Error</h2>
+          <p className="text-slate-600 mb-6">{error}</p>
+          <Button 
+            onClick={() => navigate("/assessment")}
+            className="h-11 rounded-xl bg-gradient-to-r from-primary to-violet-600 font-bold shadow-lg shadow-violet-200"
+          >
+            Go Back to Assessments
+          </Button>
         </div>
       </div>
     );
@@ -149,14 +173,27 @@ export function AssessmentPage() {
   const isLastStep = currentStep === template.questions.length - 1;
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="container max-w-3xl mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{template.title}</h1>
-          <p className="text-muted-foreground">
-            Answer the following questions honestly to get your results
-          </p>
-        </div>
+    <div className="min-h-screen bg-slate-50/60">
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <header className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/assessment")}
+              aria-label="Back to assessments"
+              className="rounded-xl"
+            >
+              <ArrowLeft className="size-5" />
+            </Button>
+          </div>
+          <div>
+            <h1 className="text-3xl font-black mb-2 text-slate-950">{template.title}</h1>
+            <p className="text-sm text-slate-600">
+              Answer the following questions honestly to get your results
+            </p>
+          </div>
+        </header>
 
         <AssessmentProgress
           currentStep={currentStep}
@@ -174,6 +211,7 @@ export function AssessmentPage() {
             variant="outline"
             onClick={handlePrevious}
             disabled={currentStep === 0}
+            className="h-11 rounded-xl px-6 font-bold border-slate-200 hover:bg-slate-50"
           >
             Previous
           </Button>
@@ -182,12 +220,17 @@ export function AssessmentPage() {
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting || selectedScore === null}
+                className="h-11 rounded-xl bg-gradient-to-r from-primary to-violet-600 font-bold shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-indigo-700"
               >
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                 Submit Assessment
               </Button>
             ) : (
-              <Button onClick={handleNext} disabled={selectedScore === null}>
+              <Button
+                onClick={handleNext}
+                disabled={selectedScore === null}
+                className="h-11 rounded-xl bg-gradient-to-r from-primary to-violet-600 font-bold shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-indigo-700"
+              >
                 Next
               </Button>
             )}

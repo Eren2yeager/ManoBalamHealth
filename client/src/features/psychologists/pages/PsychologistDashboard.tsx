@@ -18,11 +18,9 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { EmergencyRequestModal } from "@/features/emergency/components/EmergencyRequestModal";
-import { useEmergencyStore } from "@/features/emergency/store/emergencyStore";
 import { usePsychologistPresenceToggle } from "@/features/psychologists/hooks/usePresence";
 import { useAuth } from "@/hooks/useAuth";
-import { getMyPsychologistOnboarding } from "../api/psychologist.api";
+import { getMyPsychologistOnboarding, updateMyPsychologistProfile } from "../api/psychologist.api";
 import type {
   PsychologistCredential,
   PsychologistOnboarding,
@@ -62,20 +60,23 @@ const statusDetails = {
   },
 } as const;
 
-export const PsychologistDashboard = () => {
+export function PsychologistDashboard() {
   const { user } = useAuth();
   const { toggleOnline } = usePsychologistPresenceToggle();
-  const incomingRequest = useEmergencyStore((state) => state.incomingRequest);
   const [isOnline, setIsOnline] = useState(false);
-  const [onboarding, setOnboarding] =
-    useState<PsychologistOnboarding | null>(null);
+  const [isAcceptingEmergency, setIsAcceptingEmergency] = useState(false);
+  const [isUpdatingEmergency, setIsUpdatingEmergency] = useState(false);
+  const [onboarding, setOnboarding] = useState<PsychologistOnboarding | null>(null);
 
   useEffect(() => {
     let active = true;
 
     void getMyPsychologistOnboarding()
       .then((profile) => {
-        if (active) setOnboarding(profile);
+        if (active) {
+          setOnboarding(profile);
+          setIsAcceptingEmergency(profile.isAcceptingEmergency ?? false);
+        }
       })
       .catch(() => toast.error("Unable to load verification status."));
 
@@ -91,11 +92,11 @@ export const PsychologistDashboard = () => {
 
   const uploadedCredentialTypes = useMemo(
     () => new Set(onboarding?.credentials.map((credential) => credential.type)),
-    [onboarding],
+    [onboarding]
   );
 
   const uploadedCredentials = requiredCredentialTypes.filter((type) =>
-    uploadedCredentialTypes.has(type),
+    uploadedCredentialTypes.has(type)
   ).length;
   const missingFieldCount = onboarding?.missingFields.length ?? 0;
   const profileCompletion = onboarding
@@ -119,7 +120,7 @@ export const PsychologistDashboard = () => {
     {
       label: "Clinical verification",
       detail: isApproved
-        ? "Approved by the ManoBalamHealthCare review team."
+        ? "Approved by the ManoBalamHealthCare team."
         : onboarding?.onboardingStatus === "under_review"
           ? "Application is currently under review."
           : "Submit the completed profile for review.",
@@ -138,8 +139,30 @@ export const PsychologistDashboard = () => {
     toast.success(
       online
         ? "You're now online and visible to patients."
-        : "You're now offline.",
+        : "You're now offline."
     );
+  };
+
+  const handleToggleEmergency = async (accepting: boolean) => {
+    if (!isApproved) {
+      toast.error("Admin approval is required before you can accept emergencies.");
+      return;
+    }
+
+    setIsUpdatingEmergency(true);
+    try {
+      await updateMyPsychologistProfile({ isAcceptingEmergency: accepting });
+      setIsAcceptingEmergency(accepting);
+      toast.success(
+        accepting
+          ? "You're now accepting emergency requests."
+          : "You're no longer accepting emergency requests."
+      );
+    } catch {
+      toast.error("Failed to update emergency settings.");
+    } finally {
+      setIsUpdatingEmergency(false);
+    }
   };
 
   return (
@@ -152,7 +175,7 @@ export const PsychologistDashboard = () => {
             className="absolute inset-y-0 right-0 -z-10 hidden h-full w-[58%] object-cover object-right opacity-85 lg:block"
           />
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_80%_25%,rgba(139,92,246,.3),transparent_32%)]" />
-          <div className="absolute inset-y-0 right-[42%] -z-10 hidden w-48 bg-gradient-to-r from-[#17142f] to-transparent lg:block" />
+          <div className="absolute inset-y-0 right-[43%] -z-10 hidden w-48 bg-gradient-to-r from-[#17142f] via-[#282035] to-transparent lg:block" />
 
           <div className="max-w-2xl animate-in fade-in slide-in-from-bottom-3 duration-700">
             <div className="inline-flex items-center gap-2 rounded-full border border-violet-300/20 bg-violet-300/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-violet-200">
@@ -348,6 +371,42 @@ export const PsychologistDashboard = () => {
                   </span>
                 </button>
               </div>
+              {/* Emergency toggle */}
+              {isApproved && (
+                <div className="mt-6 p-4 rounded-2xl border border-rose-100 bg-rose-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="grid size-10 place-items-center rounded-xl bg-rose-100 text-rose-700">
+                        <HeartHandshake className="size-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900">
+                          Accept emergency requests
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Receive real-time emergency session requests from patients.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEmergency(!isAcceptingEmergency)}
+                      disabled={isUpdatingEmergency}
+                      className={`
+                        relative inline-flex h-8 w-16 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600 focus-visible:ring-offset-2
+                        ${isAcceptingEmergency ? 'bg-rose-600' : 'bg-slate-200'}
+                      `}
+                    >
+                      <span
+                        className={`
+                          pointer-events-none inline-block h-7 w-7 translate-x-0.5 rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out
+                          ${isAcceptingEmergency ? 'translate-x-8' : 'translate-x-0.5'}
+                        `}
+                      />
+                    </button>
+                  </div>
+                </div>
+              )}
               {!isApproved && (
                 <p className="mt-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
                   <AlertCircle className="size-4 shrink-0" />
@@ -440,11 +499,9 @@ export const PsychologistDashboard = () => {
           </div>
         </section>
       </div>
-
-      {incomingRequest && <EmergencyRequestModal request={incomingRequest} />}
     </DashboardLayout>
   );
-};
+}
 
 type MetricCardProps = {
   icon: typeof BadgeCheck;

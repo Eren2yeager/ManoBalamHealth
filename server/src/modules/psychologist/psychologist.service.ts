@@ -213,20 +213,27 @@ export class PsychologistService {
     const profile = await this.getOrCreateProfile(userId);
     await this.ensureEditable(profile);
 
+    // Check if the ONLY isAcceptingEmergency is the only field being updated
+    const isOnlyAcceptingEmergencyUpdate = 
+      Object.keys(data).length === 1 && 
+      "isAcceptingEmergency" in data;
+
     const wasApproved = profile.onboardingStatus === "approved";
-    const nextStatus = wasApproved ? "profile_incomplete" : profile.onboardingStatus;
+    
+    let updateQuery: any = { ...data };
+    
+    // Only reset status fields if it's NOT an isAcceptingEmergency-only update
+    if (!isOnlyAcceptingEmergencyUpdate) {
+      const nextStatus = wasApproved ? "profile_incomplete" : profile.onboardingStatus;
+      updateQuery.onboardingStatus = nextStatus === "rejected" ? "profile_incomplete" : nextStatus;
+      updateQuery.verificationStatus = wasApproved ? "pending" : profile.verificationStatus;
+      updateQuery.isOnline = wasApproved ? false : profile.isOnline;
+      updateQuery.$unset = { rejectionReason: 1, reviewedAt: 1, reviewedBy: 1 };
+    }
 
     const updatedProfile = await PsychologistModel.findByIdAndUpdate(
       profile._id,
-      {
-        $set: {
-          ...data,
-          onboardingStatus: nextStatus === "rejected" ? "profile_incomplete" : nextStatus,
-          verificationStatus: wasApproved ? "pending" : profile.verificationStatus,
-          isOnline: wasApproved ? false : profile.isOnline,
-        },
-        $unset: { rejectionReason: 1, reviewedAt: 1, reviewedBy: 1 },
-      },
+      updateQuery,
       { returnDocument: "after", runValidators: true },
     ).populate({
       path: "userId",

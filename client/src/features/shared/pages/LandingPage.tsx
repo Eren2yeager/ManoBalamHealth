@@ -703,6 +703,9 @@ function Footer() {
               If there is immediate danger, contact local emergency services. In India,
               dial 112.
             </p>
+            <Link to="/crisis" className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-rose-300 hover:text-white">
+              View crisis resources <ArrowRight className="size-3.5" />
+            </Link>
           </div>
         </div>
         <div className="flex flex-col gap-3 pt-7 text-xs sm:flex-row sm:justify-between">

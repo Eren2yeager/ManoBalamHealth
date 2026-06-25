@@ -1,36 +1,68 @@
 /**
- * Emergency types derived from socket event contracts in FRONTEND_PLAN.md § 6.4.
- * The emergency flow is socket-only — there is no REST API layer for triggering
- * or accepting emergency requests. All state is driven by socket events.
+ * Emergency types derived from socket event contracts in backend
  */
 
-/** Payload received on "emergency:incoming" (psychologist side) */
+// Backend sends this to psychologists when a patient requests emergency
 export interface EmergencyIncomingPayload {
-  patientId: string;
-  concern: string;
   requestId: string;
+  patient: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+  };
+  concernDescription?: string;
 }
 
-/** Payload received on "emergency:matched" (patient side) */
-export interface EmergencyMatchedPayload {
-  psychologistId: string;
-  sessionId: string;
+// Backend sends this to patient when a psychologist accepts
+export interface EmergencyAcceptPayload {
+  requestId: string;
+  psychologist: {
+    id: string;
+    userId: string;
+    name: string;
+    avatarUrl?: string;
+    specialization: string[];
+    languages: string[];
+    experienceYears: number;
+    consultationFee: { amount: number; currency: string };
+    rating: { average: number; count: number };
+    bio: string;
+    isOnline: boolean;
+  };
+  appointmentId: string;
 }
 
-/** Payload received on "emergency:assigned" (winning psychologist side) */
-export interface EmergencyAssignedPayload {
-  sessionId: string;
-}
-
-/** Payload received on "emergency:already_taken" (losing psychologist side) */
+// Backend sends this when a request is already taken
 export interface EmergencyAlreadyTakenPayload {
   requestId: string;
 }
 
-/** Local UI representation of a pending incoming request (psychologist side) */
+// Local UI representation of a pending incoming request (psychologist side)
 export interface IncomingEmergencyRequest {
   requestId: string;
-  patientId: string;
-  concern: string;
-  receivedAt: string; // ISO — set locally on receipt
+  patientId: string; // backward compatible but now we have patient object
+  patientName?: string;
+  patientAvatarUrl?: string;
+  concern?: string; // backward compatible, maps to concernDescription
+  concernDescription?: string;
+  receivedAt: string;
+}
+
+// Emergency state phases
+export type EmergencyPhase = "idle" | "requesting" | "waiting" | "matched_waiting_confirm" | "session_ready";
+
+// Matched psychologist info
+export interface MatchedPsychologist {
+  id: string;
+  userId: string;
+  name: string;
+  avatarUrl?: string;
+  specialization: string[];
+  languages: string[];
+  experienceYears: number;
+  consultationFee: { amount: number; currency: string };
+  rating: { average: number; count: number };
+  bio: string;
+  isOnline: boolean;
+  appointmentId: string;
 }

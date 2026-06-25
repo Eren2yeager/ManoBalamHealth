@@ -20,6 +20,10 @@ export const handlePresence = (io: Server, socket: AuthenticatedSocket) => {
   const handleConnect = async () => {
     // Store user's socket ID in Redis
     await redis.sadd(`user:sockets:${userId}`, socket.id);
+    const socketCount = await redis.scard(`user:sockets:${userId}`);
+    if (socketCount === 1) {
+      io.emit(SocketEvents.USER_ONLINE, { userId });
+    }
 
   };
 
@@ -33,6 +37,7 @@ export const handlePresence = (io: Server, socket: AuthenticatedSocket) => {
     if (remainingSockets === 0) {
       // User is offline
       await redis.del(`user:sockets:${userId}`);
+      io.emit(SocketEvents.USER_OFFLINE, { userId });
 
       // If psychologist, update isOnline and remove from online set
       if (role === "psychologist") {

@@ -4,6 +4,9 @@ import { AvailabilitySlotModel } from "@/modules/availability/availabilitySlot.m
 import { PsychologistModel } from "@/modules/psychologist/psychologist.model";
 import { UserModel } from "@/modules/user/user.model";
 import { PaymentModel } from "@/modules/payment/payment.model";
+import { FeedbackModel } from "@/modules/feedback/feedback.model";
+import { appointmentLifecycleService } from "./appointmentLifecycle.service";
+import { resolveAppointmentTiming } from "./appointmentTiming";
 import { ApiError } from "@/utils/ApiError";
 import { StatusCodes } from "@/constants/statusCodes.constant";
 import { ErrorCodes } from "@/constants/errorCodes.constant";
@@ -304,7 +307,7 @@ class AppointmentService {
       filter.status = query.status;
     }
     if (query.upcoming) {
-      filter.scheduledAt = { $gte: new Date() };
+      filter.status = { $nin: ["completed", "cancelled", "no_show", "refunded"] };
     }
 
     // Pagination
@@ -322,12 +325,17 @@ class AppointmentService {
     // Populate psychologist's user data
     for (const appt of appointments) {
       await (appt as any).populate("psychologistId.userId", "name avatarUrl");
+      await appointmentLifecycleService.reconcileAppointmentDocument(appt);
     }
 
     const totalPages = Math.ceil(total / query.limit);
 
     // Convert to response
-    const data = appointments.map((appt) => {
+    const appointmentIds = appointments.map(a => a._id);
+    const existingFeedbacks = await FeedbackModel.find({ appointmentId: { $in: appointmentIds } });
+    const feedbackMap = new Map(existingFeedbacks.map(f => [f.appointmentId.toString(), f]));
+
+    const data = await Promise.all(appointments.map(async (appt) => {
       const apptAny = appt as any;
       let otherParty;
       if (userRole === "patient") {
@@ -345,15 +353,27 @@ class AppointmentService {
         };
       }
 
+      const timing = await resolveAppointmentTiming(appt);
+      const feedback = feedbackMap.get(appt._id.toString());
+
       return {
         id: appt._id.toString(),
         otherParty,
         mode: appt.mode,
         status: appt.status,
         scheduledAt: appt.scheduledAt.toISOString(),
+        scheduledEndsAt: timing.scheduledEndsAt.toISOString(),
+        sessionAccessStartsAt: timing.sessionAccessStartsAt.toISOString(),
+        purchasedDurationSeconds: timing.purchasedDurationSeconds,
         allocationMode: appt.allocationMode,
+        hasFeedback: !!feedback,
+        feedback: feedback ? {
+          rating: feedback.rating,
+          comment: feedback.comment,
+          createdAt: feedback.createdAt.toISOString(),
+        } : undefined,
       };
-    });
+    }));
 
     return { data, meta: { page: query.page, limit: query.limit, total, totalPages } };
   }
@@ -366,10 +386,18 @@ class AppointmentService {
     userId: string,
     userRole: "patient" | "psychologist" | "admin"
   ): Promise<AppointmentDetailResponse> {
-    const appointment = await AppointmentModel.findById(appointmentId)
+    let appointment = await AppointmentModel.findById(appointmentId)
       .populate("patientId", "name avatarUrl")
       .populate("psychologistId");
 
+    if (!appointment) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Appointment not found");
+    }
+
+    await appointmentLifecycleService.reconcileAppointmentDocument(appointment);
+    appointment = await AppointmentModel.findById(appointmentId)
+      .populate("patientId", "name avatarUrl")
+      .populate("psychologistId");
     if (!appointment) {
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Appointment not found");
     }
@@ -402,6 +430,9 @@ class AppointmentService {
 
     // Build response
     const psychUser = apptAny.psychologistId?.userId;
+    const timing = await resolveAppointmentTiming(appointment);
+    const feedback = await FeedbackModel.findOne({ appointmentId: appointment._id });
+
     return {
       id: appointment._id.toString(),
       patient: {
@@ -417,9 +448,18 @@ class AppointmentService {
       mode: appointment.mode,
       status: appointment.status,
       scheduledAt: appointment.scheduledAt.toISOString(),
+      scheduledEndsAt: timing.scheduledEndsAt.toISOString(),
+      sessionAccessStartsAt: timing.sessionAccessStartsAt.toISOString(),
+      purchasedDurationSeconds: timing.purchasedDurationSeconds,
       concernDescription: appointment.concernDescription,
       allocationMode: appointment.allocationMode,
       payment,
+      hasFeedback: !!feedback,
+      feedback: feedback ? {
+        rating: feedback.rating,
+        comment: feedback.comment,
+        createdAt: feedback.createdAt.toISOString(),
+      } : undefined,
     };
   }
 

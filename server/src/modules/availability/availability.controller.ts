@@ -5,6 +5,15 @@ import { availabilityService } from "./availability.service";
 
 class AvailabilityController {
   /**
+   * Get recurring availability rules
+   */
+  getRules = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user?.userId as string;
+    const rules = await availabilityService.getRules(userId);
+    res.status(200).json(ApiResponse.success(rules, "Rules retrieved successfully"));
+  });
+
+  /**
    * Set recurring availability rules
    */
   setRules = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {

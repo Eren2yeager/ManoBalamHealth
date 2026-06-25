@@ -41,13 +41,13 @@ export function RatingStars({
             disabled={readOnly}
             className={`
               ${sizeClasses[size]}
-              ${!readOnly ? "cursor-pointer" : "cursor-default"}
+              ${!readOnly ? "cursor-pointer transition-transform duration-200" : "cursor-default"}
               ${
                 isFilled
-                  ? "text-yellow-400 fill-yellow-400"
-                  : "text-gray-300"
+                  ? "text-amber-400 fill-amber-400"
+                  : "text-amber-200"
               }
-              ${!readOnly ? "hover:text-yellow-300 hover:fill-yellow-300" : ""}
+              ${!readOnly ? "hover:text-amber-300 hover:fill-amber-300 hover:scale-110" : ""}
             `}
           >
             <Star className="w-full h-full" />

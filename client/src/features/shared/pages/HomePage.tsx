@@ -237,7 +237,7 @@ function GreetingHero({
                   variant="ghost"
                   className="h-11 rounded-xl px-4 font-semibold text-white hover:bg-white/10 hover:text-white"
                 >
-                  <Link to="/assessment">View assessment history</Link>
+                  <Link to="/assessment/history">View assessment history</Link>
                 </Button>
               </div>
             </div>

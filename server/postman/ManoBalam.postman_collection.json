@@ -76,6 +76,36 @@
             "header": [],
             "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
           }
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{userId}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/resend-otp", "host": ["{{baseUrl}}"], "path": ["auth", "resend-otp"] }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"emailOrPhone\": \"testuser@example.com\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["auth", "forgot-password"] }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"<reset_token>\",\n  \"newPassword\": \"NewPassword1\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["auth", "reset-password"] }
+          }
         }
       ]
     },
@@ -163,6 +193,23 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"specialization\": [\"anxiety\", \"depression\"],\n  \"languages\": [\"en\", \"ta\"],\n  \"experienceYears\": 5,\n  \"consultationFee\": { \"amount\": 50000, \"currency\": \"INR\" },\n  \"bio\": \"Experienced therapist specializing in anxiety and depression.\",\n  \"licensedCountries\": [\"IN\"],\n  \"isAcceptingEmergency\": true\n}" },
             "url": { "raw": "{{baseUrl}}/psychologists/me/profile", "host": ["{{baseUrl}}"], "path": ["psychologists", "me", "profile"] }
+          }
+        },
+        {
+          "name": "Get My Onboarding Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/psychologists/me/onboarding", "host": ["{{baseUrl}}"], "path": ["psychologists", "me", "onboarding"] }
+          }
+        },
+        {
+          "name": "Submit Profile for Review",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/psychologists/me/submit", "host": ["{{baseUrl}}"], "path": ["psychologists", "me", "submit"] }
           }
         }
       ]
@@ -397,6 +444,14 @@
             "body": { "mode": "raw", "raw": "{\n  \"templateId\": \"{{templateId}}\",\n  \"answers\": [\n    { \"questionId\": \"q1\", \"selectedScore\": 2 },\n    { \"questionId\": \"q2\", \"selectedScore\": 1 },\n    { \"questionId\": \"q3\", \"selectedScore\": 3 }\n  ]\n}" },
             "url": { "raw": "{{baseUrl}}/assessments/submit", "host": ["{{baseUrl}}"], "path": ["assessments", "submit"] }
           }
+        },
+        {
+          "name": "Get Assessment History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assessments/history", "host": ["{{baseUrl}}"], "path": ["assessments", "history"] }
+          }
         }
       ]
     },
@@ -488,6 +543,21 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Patient requested cancellation within refund window.\"\n}" },
             "url": { "raw": "{{baseUrl}}/admin/payments/{{adminPaymentId}}/refund", "host": ["{{baseUrl}}"], "path": ["admin", "payments", "{{adminPaymentId}}", "refund"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contact",
+      "item": [
+        {
+          "name": "Submit Contact Request",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+919876543210\",\n  \"message\": \"I have a question about your services.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/contact", "host": ["{{baseUrl}}"], "path": ["contact"] }
           }
         }
       ]

@@ -22,19 +22,19 @@ export function AuthVisualPanel({
   ];
 
   return (
-    <aside className="relative hidden min-h-[720px] overflow-hidden rounded-[2.25rem] bg-[#17142c] text-white shadow-[0_32px_90px_rgba(41,24,88,.25)] lg:block">
+    <aside className="relative max-h-screen overflow-hidden rounded-b-[2.25rem] bg-[#17142c] text-white shadow-[0_32px_90px_rgba(41,24,88,.25)] lg:rounded-[2.25rem]">
       <img src={image} alt="" className="absolute inset-0 size-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#17142c]/25 via-transparent to-[#17142c]/95" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#17142c]/40 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-b from-[#17142c]/25 via-transparent to-[#17142c]/95" />
+      <div className="absolute inset-0 bg-linear-to-r from-[#17142c]/40 via-transparent to-transparent" />
       <div className="absolute -left-20 top-10 size-52 rounded-full bg-violet-400/25 blur-3xl" />
 
-      <div className="relative z-10 flex h-full min-h-[720px] flex-col justify-between p-8 xl:p-10">
+      <div className="relative z-10 flex h-full flex-col justify-between p-6 lg:min-h-160 lg:p-8 xl:p-10">
         <BrandLogo dark />
 
         {floatingIcons.map(({ icon: Icon, className }) => (
           <span
             key={className}
-            className={`absolute z-10 grid size-11 animate-[bounce_4s_ease-in-out_infinite] place-items-center rounded-2xl border border-white/20 bg-white/15 text-white shadow-xl backdrop-blur-md ${className}`}
+            className={`absolute z-10 hidden size-11 animate-[bounce_4s_ease-in-out_infinite] place-items-center rounded-2xl border border-white/20 bg-white/15 text-white shadow-xl backdrop-blur-md lg:grid ${className}`}
           >
             <Icon className="size-5" />
           </span>
@@ -45,11 +45,11 @@ export function AuthVisualPanel({
             <Sparkles className="size-3.5 text-violet-200" />
             {eyebrow}
           </span>
-          <h2 className="mt-5 max-w-lg text-balance text-4xl font-black leading-tight tracking-[-.04em] xl:text-5xl">
+          <h2 className="mt-5 max-w-lg text-balance text-3xl font-black leading-tight tracking-[-.04em] lg:text-4xl xl:text-5xl">
             {title}
           </h2>
-          <p className="mt-4 max-w-lg text-sm leading-7 text-white/75">{description}</p>
-          <div className="mt-7 flex flex-wrap gap-2">
+          <p className="mt-4 hidden max-w-lg text-sm leading-7 text-white lg:block">{description}</p>
+          <div className="mt-7 hidden flex-wrap gap-2 lg:flex">
             {points.map(({ icon: Icon, label }) => (
               <span key={label} className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold backdrop-blur">
                 <Icon className="size-3.5 text-violet-200" />
@@ -57,7 +57,7 @@ export function AuthVisualPanel({
               </span>
             ))}
           </div>
-          <div className="mt-7 flex items-center gap-3 border-t border-white/15 pt-5 text-xs text-white/65">
+          <div className="mt-7 hidden items-center gap-3  border-white/15 pt-5 text-xs text-white/65 lg:flex">
             <ShieldCheck className="size-5 text-emerald-300" />
             Role-based access and secure account verification
           </div>

@@ -42,6 +42,7 @@ export interface PsychologistDetailResponse {
   credentials?: Array<{ docUrl: string; type: string; verified: boolean }>;
   missingFields?: string[];
   submittedAt?: string;
+  isAcceptingEmergency?: boolean;
 }
 
 export interface UploadCredentialsResponse {
@@ -95,6 +96,7 @@ export function toPsychologistDetailResponse(
     response.rejectionReason = profile.rejectionReason;
     response.credentials = profile.credentials;
     response.submittedAt = profile.submittedAt?.toISOString?.();
+    response.isAcceptingEmergency = profile.isAcceptingEmergency;
   }
   return response;
 }

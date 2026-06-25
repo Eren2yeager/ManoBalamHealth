@@ -16,7 +16,7 @@ function FilterSection({
   title,
   icon,
   children,
-  defaultOpen = true,
+  defaultOpen = false,
 }: {
   title: string;
   icon: ReactNode;

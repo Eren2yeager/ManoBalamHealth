@@ -30,6 +30,22 @@ export function AdminPaymentsPage() {
     load();
   }, []);
 
+  const handleProcessRefund = async (paymentId: string, reason: string) => {
+    try {
+      setIsProcessing(true);
+      await refundPayment(paymentId, { reason });
+      toast.success("Refund processed successfully.");
+      setSelectedAppointment(null);
+      // Refresh the list
+      const { items } = await getAdminAppointments({ status: "completed", limit: 50 });
+      setAppointments(items);
+    } catch {
+      toast.error("Failed to process refund.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div>

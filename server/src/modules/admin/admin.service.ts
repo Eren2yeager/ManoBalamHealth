@@ -6,11 +6,17 @@ import { ApiError } from "../../utils/ApiError";
 import { StatusCodes } from "../../constants/statusCodes.constant";
 import { ErrorCodes } from "../../constants/errorCodes.constant";
 import { UpdatePsychologistStatusRequest, ProcessRefundRequest, PsychologistListItem, AppointmentListItem, ReportsSummary } from "./admin.types";
+import { Types } from "mongoose";
+import { sendEmail } from "@/modules/notification/channels/email.channel";
+import { logger } from "@/utils/logger";
+import { razorpayProvider } from "@/modules/payment/providers/razorpay.provider";
 
 class AdminService {
   async getPsychologists(query: { page: number; limit: number; status?: "pending" | "approved" | "rejected" }) {
     const skip = (query.page - 1) * query.limit;
-    const filter: any = query.status ? { verificationStatus: query.status } : {};
+    const filter: any = query.status
+      ? { verificationStatus: query.status }
+      : { onboardingStatus: "under_review" };
 
     const psychologists = await PsychologistModel.find(filter)
       .populate("userId")
@@ -29,6 +35,16 @@ class AdminService {
         email: user.email,
         phone: user.phone,
         verificationStatus: psychologist.verificationStatus,
+        onboardingStatus: psychologist.onboardingStatus,
+        specialization: psychologist.specialization,
+        languages: psychologist.languages,
+        experienceYears: psychologist.experienceYears,
+        consultationFee: psychologist.consultationFee,
+        licensedCountries: psychologist.licensedCountries,
+        bio: psychologist.bio,
+        credentials: psychologist.credentials,
+        submittedAt: psychologist.submittedAt?.toISOString(),
+        rejectionReason: psychologist.rejectionReason,
         rating: psychologist.rating,
         createdAt: psychologist.createdAt.toISOString(),
       };
@@ -39,18 +55,62 @@ class AdminService {
 
   async updatePsychologistStatus(
     psychologistId: string,
-    data: UpdatePsychologistStatusRequest
+    data: UpdatePsychologistStatusRequest,
+    adminUserId: string,
   ) {
     const psychologist = await PsychologistModel.findById(psychologistId);
     if (!psychologist) {
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Psychologist not found");
     }
 
+    if (psychologist.onboardingStatus !== "under_review") {
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        ErrorCodes.VALIDATION_ERROR,
+        "Only submitted applications can be reviewed",
+      );
+    }
+
     psychologist.verificationStatus = data.decision;
+    psychologist.onboardingStatus = data.decision;
+    psychologist.reviewedAt = new Date();
+    psychologist.reviewedBy = new Types.ObjectId(adminUserId);
+    psychologist.isOnline = false;
     if (data.decision === "rejected" && data.rejectionReason) {
-      (psychologist as any).rejectionReason = data.rejectionReason;
+      psychologist.rejectionReason = data.rejectionReason;
+      psychologist.credentials.forEach((credential) => {
+        credential.verified = false;
+      });
+    } else {
+      psychologist.rejectionReason = undefined;
+      psychologist.credentials.forEach((credential) => {
+        credential.verified = true;
+      });
     }
     await psychologist.save();
+
+    try {
+      const subject =
+        data.decision === "approved"
+          ? "Your ManoBalamHealthCare psychologist profile is approved"
+          : "Changes requested for your ManoBalamHealthCare psychologist profile";
+      const safeReason = (data.rejectionReason ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+      const message =
+        data.decision === "approved"
+          ? "<p>Your professional profile has been approved. You can now publish availability and receive appointments.</p>"
+          : `<p>Your application needs changes before approval.</p><p><strong>Reviewer note:</strong> ${safeReason}</p>`;
+      await sendEmail(psychologist.userId.toString(), subject, message);
+    } catch (error) {
+      logger.error("Failed to send psychologist review notification", {
+        error,
+        metadata: { psychologistId },
+      });
+    }
 
     return { id: psychologistId, verificationStatus: data.decision };
   }
@@ -124,20 +184,37 @@ class AdminService {
 
     const refundedAmount = data.amount ?? payment.amount;
 
+    if (!payment.providerPaymentId) {
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        ErrorCodes.VALIDATION_ERROR,
+        "The payment provider ID is missing and the refund cannot be processed",
+      );
+    }
+
+    const refund = await razorpayProvider.createRefund({
+      paymentId: payment.providerPaymentId,
+      amount: refundedAmount,
+      notes: {
+        appointmentId: appointment._id.toString(),
+        reason: data.reason,
+      },
+    });
+
     // Update appointment status
     appointment.status = "refunded";
     await appointment.save();
 
     // Update payment record
-    // NOTE: Razorpay refund API call is not yet integrated — add razorpayProvider.createRefund() here.
     payment.status = "refunded";
     payment.refundReason = data.reason;
+    payment.refundedAmount = refund.amount;
     await payment.save();
 
     return {
       paymentId: payment._id.toString(),
       status: "refunded" as const,
-      refundedAmount,
+      refundedAmount: refund.amount,
     };
   }
 }

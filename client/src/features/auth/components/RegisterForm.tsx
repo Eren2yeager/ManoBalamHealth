@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   User,
   Mail,
@@ -73,9 +73,6 @@ export const RegisterForm = () => {
   // Disable tz picker when there's nothing to pick (no country) or only one option
   const isTimezoneDisabled = availableTimezones.length <= 1;
 
-  // Detect if contact is email or phone
-  const isEmail = contact.includes("@");
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreedToTerms) {
@@ -86,7 +83,7 @@ export const RegisterForm = () => {
     try {
       const result = await register({
         name,
-        ...(isEmail ? { email: contact } : { phone: contact }),
+        email: contact,
         password,
         role,
         country: country || "IN",
@@ -111,7 +108,7 @@ export const RegisterForm = () => {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {/* Role Selection */}
       <div className="flex flex-col gap-2">
-        <Label className="text-sm font-semibold text-foreground">
+        <Label className="text-xs font-black uppercase tracking-[.12em] text-slate-600">
           I am registering as a:
         </Label>
         <div className="grid grid-cols-2 gap-3">
@@ -120,83 +117,84 @@ export const RegisterForm = () => {
             type="button"
             onClick={() => setRole("patient")}
             className={cn(
-              "flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all cursor-pointer",
+              "group flex items-center justify-center gap-3 rounded-2xl border px-4 py-4 transition-all duration-300 cursor-pointer",
               role === "patient"
-                ? "border-primary bg-primary/5 text-primary"
-                : "border-border bg-background text-muted-foreground hover:bg-muted/40"
+                ? "border-primary bg-gradient-to-br from-violet-50 to-white text-primary shadow-md shadow-violet-100"
+                : "border-slate-200 bg-slate-50/60 text-slate-500 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white"
             )}
           >
             <User
               className={cn("h-5 w-5", role === "patient" ? "fill-primary/20" : "")}
             />
-            <span className="text-sm font-semibold">Patient</span>
+            <span className="text-sm font-black">Patient</span>
           </button>
           {/* Psychologist */}
           <button
             type="button"
             onClick={() => setRole("psychologist")}
             className={cn(
-              "flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all cursor-pointer",
+              "group flex items-center justify-center gap-3 rounded-2xl border px-4 py-4 transition-all duration-300 cursor-pointer",
               role === "psychologist"
-                ? "border-primary bg-primary/5 text-primary"
-                : "border-border bg-background text-muted-foreground hover:bg-muted/40"
+                ? "border-primary bg-gradient-to-br from-violet-50 to-white text-primary shadow-md shadow-violet-100"
+                : "border-slate-200 bg-slate-50/60 text-slate-500 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white"
             )}
           >
             <Stethoscope
               className={cn("h-5 w-5", role === "psychologist" ? "fill-primary/20" : "")}
             />
-            <span className="text-sm font-semibold">Psychologist</span>
+            <span className="text-sm font-black">Psychologist</span>
           </button>
         </div>
       </div>
 
       {/* Full Name */}
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="fullName" className="text-xs font-medium text-muted-foreground">
+        <Label htmlFor="fullName" className="text-xs font-bold text-slate-700">
           Full Name
         </Label>
         <div className="relative">
-          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <User className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-violet-400" />
           <Input
             id="fullName"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
             placeholder="Enter your full legal name"
-            className="pl-10 py-3 h-auto bg-background border-border rounded-lg focus-visible:ring-primary"
+            className="h-12 rounded-xl border-slate-200 bg-slate-50/50 pl-11 transition focus-visible:border-primary focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-violet-100"
           />
         </div>
       </div>
 
       {/* Email / Phone */}
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contact" className="text-xs font-medium text-muted-foreground">
-          Email Address or Phone Number
+        <Label htmlFor="contact" className="text-xs font-bold text-slate-700">
+          Email Address
         </Label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Mail className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-violet-400" />
           <Input
             id="contact"
+            type="email"
             value={contact}
             onChange={(e) => setContact(e.target.value)}
             required
-            placeholder="email@example.com or +1 234 567 8900"
-            className="pl-10 py-3 h-auto bg-background border-border rounded-lg focus-visible:ring-primary"
+            placeholder="email@example.com"
+            className="h-12 rounded-xl border-slate-200 bg-slate-50/50 pl-11 transition focus-visible:border-primary focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-violet-100"
           />
         </div>
         <p className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
           <Info className="h-3 w-3 shrink-0" />
-          An OTP will be sent to verify this contact method.
+          A verification code will be sent to this email address.
         </p>
       </div>
 
       {/* Password */}
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password" className="text-xs font-medium text-muted-foreground">
+        <Label htmlFor="password" className="text-xs font-bold text-slate-700">
           Password
         </Label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Lock className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-violet-400" />
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
@@ -204,31 +202,34 @@ export const RegisterForm = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
             placeholder="Create a strong password"
-            className="pl-10 pr-10 py-3 h-auto bg-background border-border rounded-lg focus-visible:ring-primary"
+            className="h-12 rounded-xl border-slate-200 bg-slate-50/50 pl-11 pr-11 transition focus-visible:border-primary focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-violet-100"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-primary"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          Use at least 8 characters with one uppercase letter and one number.
+        </p>
       </div>
 
       {/* Country & Timezone */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="country" className="text-xs font-medium text-muted-foreground">
+          <Label htmlFor="country" className="text-xs font-bold text-slate-700">
             Country
           </Label>
           <div className="relative">
-            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+            <Globe className="pointer-events-none absolute left-4 top-1/2 z-10 size-4 -translate-y-1/2 text-violet-400" />
             <Select value={country} onValueChange={handleCountryChange}>
               <SelectTrigger
                 id="country"
-                className="w-full h-auto py-3 pl-10 pr-3 rounded-lg border border-input bg-background text-sm data-placeholder:text-muted-foreground focus-visible:ring-primary"
+                className="h-12 w-full rounded-xl border-slate-200 bg-slate-50/50 pl-11 pr-3 text-sm focus-visible:ring-4 focus-visible:ring-violet-100"
               >
                 <SelectValue placeholder="Select Country" />
               </SelectTrigger>
@@ -247,11 +248,11 @@ export const RegisterForm = () => {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="timezone" className="text-xs font-medium text-muted-foreground">
+          <Label htmlFor="timezone" className="text-xs font-bold text-slate-700">
             Timezone
           </Label>
           <div className="relative">
-            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+            <Clock className="pointer-events-none absolute left-4 top-1/2 z-10 size-4 -translate-y-1/2 text-violet-400" />
             <Select
               value={timezone}
               onValueChange={setTimezone}
@@ -259,7 +260,7 @@ export const RegisterForm = () => {
             >
               <SelectTrigger
                 id="timezone"
-                className="w-full h-auto py-3 pl-10 pr-3 rounded-lg border border-input bg-background text-sm data-placeholder:text-muted-foreground focus-visible:ring-primary"
+                className="h-12 w-full rounded-xl border-slate-200 bg-slate-50/50 pl-11 pr-3 text-sm focus-visible:ring-4 focus-visible:ring-violet-100"
               >
                 <SelectValue placeholder={country ? "Select Timezone" : "Select country first"} />
               </SelectTrigger>
@@ -279,19 +280,19 @@ export const RegisterForm = () => {
       </div>
 
       {/* Terms */}
-      <label className="flex items-start gap-3 mt-1 cursor-pointer">
+      <label className="mt-1 flex cursor-pointer items-start gap-3 rounded-2xl border border-violet-100 bg-violet-50/45 p-4">
         <input
           type="checkbox"
           checked={agreedToTerms}
           onChange={(e) => setAgreedToTerms(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-0 bg-background shrink-0 cursor-pointer"
+          className="mt-0.5 size-4 shrink-0 cursor-pointer accent-violet-600"
         />
         <span className="text-xs text-muted-foreground leading-relaxed">
           I agree to the{" "}
-          <a href="#" className="text-primary hover:underline font-medium">Terms of Service</a>,{" "}
-          <a href="#" className="text-primary hover:underline font-medium">Privacy Policy</a>, and
+          <Link to="/legal/terms" className="text-primary hover:underline font-medium">Terms of Service</Link>,{" "}
+          <Link to="/legal/privacy" className="text-primary hover:underline font-medium">Privacy Policy</Link>, and
           understand the{" "}
-          <a href="#" className="text-primary hover:underline font-medium">Emergency Protocol</a>.
+          <Link to="/services/first-aid-support" className="text-primary hover:underline font-medium">Emergency Protocol</Link>.
         </span>
       </label>
 
@@ -299,19 +300,19 @@ export const RegisterForm = () => {
       <Button
         type="submit"
         disabled={isLoading}
-        className="w-full mt-2 py-3 h-auto rounded-lg font-semibold text-sm shadow-[0px_4px_12px_rgba(99,14,212,0.15)] flex items-center justify-center gap-2"
+        className="mt-2 flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary via-violet-600 to-blue-600 text-sm font-black shadow-xl shadow-primary/20 transition-all hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-primary/25"
       >
         {isLoading ? "Creating account..." : "Register Account"}
         {!isLoading && <ArrowRight className="h-4 w-4" />}
       </Button>
 
       {/* Login link */}
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="border-t border-slate-100 pt-5 text-center text-sm text-slate-500">
         Already have an account?{" "}
         <button
           type="button"
           onClick={() => navigate("/login")}
-          className="text-primary font-semibold hover:underline"
+          className="font-black text-primary hover:underline"
         >
           Log in here
         </button>

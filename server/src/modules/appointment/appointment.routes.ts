@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { appointmentController } from "./appointment.controller";
-import { requireAuth, requireRole } from "@/middlewares/auth.middleware";
+import { requireApprovalIfPsychologist, requireAuth, requireRole } from "@/middlewares/auth.middleware";
 import { validate } from "@/middlewares/validate.middleware";
 import { createAppointmentSchema, getMyAppointmentsSchema, cancelAppointmentSchema } from "./appointment.validation";
 
@@ -19,6 +19,7 @@ router.post(
 router.get(
   "/me",
   requireAuth,
+  requireApprovalIfPsychologist,
   validate(getMyAppointmentsSchema, "query"),
   appointmentController.getMyAppointments
 );
@@ -27,6 +28,7 @@ router.get(
 router.get(
   "/:id",
   requireAuth,
+  requireApprovalIfPsychologist,
   appointmentController.getAppointmentById
 );
 
@@ -34,6 +36,7 @@ router.get(
 router.patch(
   "/:id/cancel",
   requireAuth,
+  requireApprovalIfPsychologist,
   validate(cancelAppointmentSchema),
   appointmentController.cancelAppointment
 );

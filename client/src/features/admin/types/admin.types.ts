@@ -1,11 +1,23 @@
-import type { PaginationParams, AppointmentStatus, Money } from "@/types/global.types";
+import type { PaginationParams, AppointmentStatus } from "@/types/global.types";
 
 export interface PendingPsychologistItem {
   id: string;
+  userId: string;
   name: string;
   email?: string;
-  credentials: Array<{ docUrl: string; type: string }>;
-  submittedAt: string;
+  phone?: string;
+  verificationStatus: "pending" | "approved" | "rejected";
+  onboardingStatus: "profile_incomplete" | "documents_pending" | "under_review" | "approved" | "rejected";
+  specialization: string[];
+  languages: string[];
+  experienceYears: number;
+  consultationFee: { amount: number; currency: string };
+  licensedCountries: string[];
+  bio: string;
+  credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
+  submittedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
 }
 
 export interface VerifyPsychologistDto {
@@ -27,10 +39,10 @@ export interface AdminAppointmentParams extends PaginationParams {
 
 export interface AdminReport {
   totalAppointments: number;
-  totalRevenue: Money;
-  newUsers: number;
-  appointmentsByStatus: Record<string, number>;
-  topSpecializations: Array<{ specialization: string; count: number }>;
+  completedAppointments: number;
+  totalRevenue: number;
+  totalPsychologists: number;
+  totalPatients: number;
 }
 
 export interface RefundDto {

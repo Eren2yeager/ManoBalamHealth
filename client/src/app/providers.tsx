@@ -13,9 +13,10 @@ function PresenceWrapper() {
 
 function PresenceInitializer() {
   const isAuthenticated = useUserStore((state) => state.isAuthenticated);
+  const role = useUserStore((state) => state.user?.role);
   
-  // Only render the presence wrapper if user is authenticated
-  if (isAuthenticated) {
+  // Psychologists connect only after approval when they explicitly go online.
+  if (isAuthenticated && role !== "psychologist") {
     return <PresenceWrapper />;
   }
   return null;
@@ -33,9 +34,8 @@ function AuthInit({ children }: { children: React.ReactNode }) {
         setAccessToken(tokenResult.accessToken);
         const userResult = await getMe();
         setUser(userResult);
-      } catch (error) {
-        // Silent refresh failed - user is not logged in
-        console.log("No active session found");
+      } catch {
+        // Silent refresh failed; continue as a guest.
       } finally {
         setIsLoading(false);
       }

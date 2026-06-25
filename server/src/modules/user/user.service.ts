@@ -17,9 +17,21 @@ export class UserService {
   }
 
   async updateMe(userId: string, data: UpdateUserRequest): Promise<UserResponse> {
+    const fieldsToSet: Record<string, unknown> = {};
+    const fieldsToUnset: Record<string, 1> = {};
+
+    for (const [key, value] of Object.entries(data)) {
+      if (value === null) fieldsToUnset[key] = 1;
+      else if (value !== undefined) fieldsToSet[key] = value;
+    }
+
+    const update: Record<string, unknown> = {};
+    if (Object.keys(fieldsToSet).length > 0) update.$set = fieldsToSet;
+    if (Object.keys(fieldsToUnset).length > 0) update.$unset = fieldsToUnset;
+
     const user = await UserModel.findByIdAndUpdate(
       userId,
-      { $set: data },
+      update,
       { new: true, runValidators: true }
     );
     if (!user) {
@@ -37,9 +49,15 @@ export class UserService {
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          folder: "manobalam/avatars",
+          public_id: `manobalam/avatars/${userId}`,
+          overwrite: true,
+          invalidate: true,
+          allowed_formats: ["jpg", "jpeg", "png", "webp"],
           resource_type: "image",
-          transformation: [{ width: 200, height: 200, crop: "fill" }],
+          transformation: [
+            { width: 512, height: 512, crop: "fill", gravity: "face" },
+            { quality: "auto", fetch_format: "auto" },
+          ],
         },
         async (error, result) => {
           if (error || !result?.secure_url) {
@@ -52,20 +70,29 @@ export class UserService {
             );
           }
 
-          // Update user with new avatar URL
-          const user = await UserModel.findByIdAndUpdate(
-            userId,
-            { $set: { avatarUrl: result.secure_url } },
-            { new: true }
-          );
+          try {
+            const user = await UserModel.findByIdAndUpdate(
+              userId,
+              { $set: { avatarUrl: result.secure_url } },
+              { new: true },
+            );
 
-          if (!user) {
-            return reject(
-              new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "User not found")
+            if (!user) {
+              return reject(
+                new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "User not found"),
+              );
+            }
+
+            resolve({ avatarUrl: result.secure_url });
+          } catch {
+            reject(
+              new ApiError(
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                ErrorCodes.INTERNAL_ERROR,
+                "Avatar uploaded but the profile could not be updated",
+              ),
             );
           }
-
-          resolve({ avatarUrl: result.secure_url });
         }
       );
 

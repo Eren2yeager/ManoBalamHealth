@@ -11,7 +11,8 @@ import { toast } from "sonner";
 export function AdminPaymentsPage() {
   const [appointments, setAppointments] = useState<AdminAppointmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedAppointment, setSelectedAppointment] = useState<AdminAppointmentItem | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<AdminAppointmentItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -92,14 +93,30 @@ export function AdminPaymentsPage() {
         </div>
       )}
 
-      <RefundModal
-        isOpen={selectedAppointment !== null}
-        onClose={() => setSelectedAppointment(null)}
-        appointment={selectedAppointment}
-        paymentId={selectedAppointment?.id ?? null}
-        onProcess={handleProcessRefund}
-        isProcessing={isProcessing}
-      />
+      {selectedAppointment && (
+        <RefundModal
+          isOpen
+          appointment={selectedAppointment}
+          paymentId={selectedAppointment.id}
+          isProcessing={isProcessing}
+          onClose={() => setSelectedAppointment(null)}
+          onProcess={async (appointmentId, reason) => {
+            try {
+              setIsProcessing(true);
+              await refundPayment(appointmentId, { reason });
+              toast.success("Refund processed successfully.");
+              setAppointments((current) =>
+                current.filter((appointment) => appointment.id !== appointmentId),
+              );
+              setSelectedAppointment(null);
+            } catch {
+              toast.error("Failed to process refund.");
+            } finally {
+              setIsProcessing(false);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

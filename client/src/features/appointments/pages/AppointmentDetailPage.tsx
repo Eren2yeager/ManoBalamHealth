@@ -17,6 +17,7 @@ import {
 import { CancelAppointmentDialog } from "../components/CancelAppointmentDialog";
 import type { AppointmentDetail } from "../types/appointment.types";
 import type { ConsultationMode } from "@/types/global.types";
+import { RetryPaymentButton } from "@/features/payment/components/RetryPaymentButton";
 
 const MODE_CONFIG: Record<
   ConsultationMode,
@@ -72,7 +73,10 @@ export const AppointmentDetailPage = () => {
   }, [id, navigate]);
 
   useEffect(() => {
-    loadAppointment();
+    const timeoutId = window.setTimeout(() => {
+      void loadAppointment();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadAppointment]);
 
   if (!id) {
@@ -170,6 +174,23 @@ export const AppointmentDetailPage = () => {
                       )}
                     </span>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {appointment.status === "pending_payment" && user?.role === "patient" && (
+              <Card className="border-violet-200 bg-gradient-to-r from-violet-50 to-blue-50/60">
+                <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-black text-slate-900">Complete your booking</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      Your appointment is waiting for secure payment confirmation.
+                    </p>
+                  </div>
+                  <RetryPaymentButton
+                    appointmentId={appointment.id}
+                    onConfirmed={loadAppointment}
+                  />
                 </CardContent>
               </Card>
             )}

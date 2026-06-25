@@ -10,13 +10,16 @@ import type {
 
 export const register = async (payload: RegisterDto): Promise<RegisterResponse> => {
   const { data } = await axiosInstance.post<ApiSuccessResponse<RegisterResponse>>("/auth/register", payload);
-  console.log(data)
   return data.data;
 };
 
 export const verifyOtp = async (payload: VerifyOtpDto): Promise<AuthSuccessResponse> => {
   const { data } = await axiosInstance.post<ApiSuccessResponse<AuthSuccessResponse>>("/auth/verify-otp", payload);
   return data.data;
+};
+
+export const resendOtp = async (userId: string): Promise<void> => {
+  await axiosInstance.post("/auth/resend-otp", { userId });
 };
 
 export const login = async (payload: LoginDto): Promise<AuthSuccessResponse> => {
@@ -31,4 +34,12 @@ export const refreshToken = async (): Promise<{ accessToken: string }> => {
 
 export const logout = async (): Promise<void> => {
   await axiosInstance.post("/auth/logout");
+};
+
+export const requestPasswordReset = async (email: string): Promise<void> => {
+  await axiosInstance.post("/auth/forgot-password", { email });
+};
+
+export const resetPassword = async (token: string, password: string): Promise<void> => {
+  await axiosInstance.post("/auth/reset-password", { token, password });
 };

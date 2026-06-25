@@ -6,9 +6,9 @@ export interface UserProfile {
   email?: string;
   phone?: string;
   role: Role;
-  age?: number;
-  gender?: "male" | "female" | "other" | "prefer_not_to_say";
-  emergencyContact?: { name: string; phone: string };
+  age?: number | null;
+  gender?: "male" | "female" | "other" | "prefer_not_to_say" | null;
+  emergencyContact?: { name: string; phone: string } | null;
   country: string;
   timezone: string;
   avatarUrl?: string;
@@ -18,8 +18,8 @@ export interface UserProfile {
 
 export interface UpdateProfileDto {
   name?: string;
-  age?: number;
-  gender?: "male" | "female" | "other" | "prefer_not_to_say";
-  emergencyContact?: { name: string; phone: string };
+  age?: number | null;
+  gender?: "male" | "female" | "other" | "prefer_not_to_say" | null;
+  emergencyContact?: { name: string; phone: string } | null;
   timezone?: string;
 }

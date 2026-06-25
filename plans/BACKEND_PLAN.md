@@ -1,4 +1,4 @@
-# ManoBalam — Backend Plan (Server)
+# ManoBalamHealthCare — Backend Plan (Server)
 
 Stack: Node.js + Express + TypeScript + MongoDB (Mongoose) + Socket.io + WebRTC (signaling only) + Cloudinary + Razorpay + Resend + BullMQ + Redis + Zod + JWT + bcrypt
 
@@ -1776,7 +1776,7 @@ export const CrisisResourceModel = model<ICrisisResource>("CrisisResource", cris
 Create `postman/ManoBalam.postman_collection.json` with folders mirroring the route modules. Use Postman environment variables, not hardcoded values, so the agent (and you) can switch between local/staging without editing every request:
 
 ```
-Environment variables (create a "ManoBalam Local" Postman environment):
+Environment variables (create a "ManoBalamHealthCare Local" Postman environment):
   base_url        = http://localhost:5000/api
   access_token     = (auto-filled by a login request's post-response script)
   patient_id       = (set manually after first register/login)
@@ -1786,7 +1786,7 @@ Environment variables (create a "ManoBalam Local" Postman environment):
 
 Collection folder structure:
 ```
-ManoBalam/
+ManoBalamHealthCare/
 ├── Auth/
 │   ├── Register Patient
 │   ├── Register Psychologist

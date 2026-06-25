@@ -25,6 +25,11 @@ export class AuthController {
     res.status(200).json(ApiResponse.success(responseData, "OTP verified successfully"));
   });
 
+  resendOtp = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    await authService.resendOtp(req.body);
+    res.status(200).json(ApiResponse.success(null, "Verification code sent"));
+  });
+
   login = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const { refreshToken, ...result } = await authService.login(req.body);
 
@@ -37,6 +42,18 @@ export class AuthController {
     });
 
     res.status(200).json(ApiResponse.success(result, "Login successful"));
+  });
+
+  forgotPassword = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    await authService.forgotPassword(req.body.email);
+    res.status(200).json(
+      ApiResponse.success(null, "If the account exists, a password reset link has been sent"),
+    );
+  });
+
+  resetPassword = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    await authService.resetPassword(req.body.token, req.body.password);
+    res.status(200).json(ApiResponse.success(null, "Password reset successfully"));
   });
 
   refreshToken = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
@@ -62,7 +79,8 @@ export class AuthController {
     res.status(200).json(ApiResponse.success(result, "Token refreshed successfully"));
   });
 
-  logout = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
+  logout = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    await authService.logout(req.cookies.refreshToken);
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: env.NODE_ENV === "production",

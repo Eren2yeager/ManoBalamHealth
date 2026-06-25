@@ -1,3 +1,9 @@
+import {
+  CalendarCheck2,
+  CircleDollarSign,
+  Stethoscope,
+  Users,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AdminReport } from "../types/admin.types";
@@ -7,83 +13,110 @@ interface ReportsChartProps {
   isLoading?: boolean;
 }
 
+const formatRevenue = (amountInSmallestUnit: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amountInSmallestUnit / 100);
+
 export function ReportsChart({ data, isLoading = false }: ReportsChartProps) {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="pb-2">
-          <Skeleton className="h-7 w-32" />
+        <CardHeader>
+          <Skeleton className="h-7 w-40" />
         </CardHeader>
-        <CardContent className="space-y-6">
-          <Skeleton className="h-64 w-full rounded-lg" />
-          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
+        <CardContent className="space-y-5">
+          <Skeleton className="h-4 w-full rounded-full" />
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} className="h-24 rounded-2xl" />
+            ))}
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center text-sm text-muted-foreground">
+          Report data is not available.
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const statusEntries = Object.entries(data.appointmentsByStatus);
-  const maxCount = Math.max(...statusEntries.map(([, count]) => count), 1);
+  const totalAppointments = Number(data.totalAppointments) || 0;
+  const completedAppointments = Number(data.completedAppointments) || 0;
+  const completionRate =
+    totalAppointments > 0
+      ? Math.min(100, Math.round((completedAppointments / totalAppointments) * 100))
+      : 0;
+
+  const metrics = [
+    {
+      label: "Total appointments",
+      value: totalAppointments.toLocaleString("en-IN"),
+      icon: CalendarCheck2,
+      tone: "bg-violet-50 text-violet-700",
+    },
+    {
+      label: "Total revenue",
+      value: formatRevenue(Number(data.totalRevenue) || 0),
+      icon: CircleDollarSign,
+      tone: "bg-emerald-50 text-emerald-700",
+    },
+    {
+      label: "Approved psychologists",
+      value: (Number(data.totalPsychologists) || 0).toLocaleString("en-IN"),
+      icon: Stethoscope,
+      tone: "bg-blue-50 text-blue-700",
+    },
+    {
+      label: "Registered patients",
+      value: (Number(data.totalPatients) || 0).toLocaleString("en-IN"),
+      icon: Users,
+      tone: "bg-amber-50 text-amber-700",
+    },
+  ];
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Report Overview</CardTitle>
+        <CardTitle>Report overview</CardTitle>
       </CardHeader>
-      <CardContent>
-        {statusEntries.length > 0 && (
-          <div className="h-48 sm:h-64 flex items-end gap-2 mb-4">
-            {statusEntries.map(([status, count]) => (
-              <div key={status} className="flex-1 flex flex-col items-center gap-1 sm:gap-2">
-                <div
-                  className="w-full bg-primary rounded-t-lg transition-all duration-500"
-                  style={{ height: `${(count / maxCount) * 100}%`, minHeight: "4px" }}
-                  title={`${status}: ${count}`}
-                />
-                <span className="text-[10px] sm:text-xs text-muted-foreground capitalize">
-                  {status.replace("_", " ")}
-                </span>
-              </div>
-            ))}
+      <CardContent className="space-y-7">
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+            <span className="font-semibold text-foreground">Appointment completion</span>
+            <span className="font-bold text-primary">{completionRate}%</span>
           </div>
-        )}
-
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-6 pt-4 border-t border-border">
-          <div className="text-center">
-            <p className="text-xl sm:text-2xl font-bold">{data.totalAppointments}</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Total Appointments</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl sm:text-2xl font-bold">
-              ₹{(data.totalRevenue.amount / 100).toLocaleString()}
-            </p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Total Revenue</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl sm:text-2xl font-bold">{data.newUsers}</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">New Users</p>
-          </div>
+          <progress
+            className="h-3 w-full overflow-hidden rounded-full accent-primary"
+            max={100}
+            value={completionRate}
+            aria-label={`${completionRate}% of appointments completed`}
+          />
+          <p className="mt-2 text-xs text-muted-foreground">
+            {completedAppointments.toLocaleString("en-IN")} of{" "}
+            {totalAppointments.toLocaleString("en-IN")} appointments completed
+          </p>
         </div>
 
-        {data.topSpecializations.length > 0 && (
-          <div className="mt-6 pt-4 border-t border-border">
-            <p className="text-sm font-semibold mb-3 text-muted-foreground">Top Specializations</p>
-            <div className="space-y-2">
-              {data.topSpecializations.map((item) => (
-                <div key={item.specialization} className="flex justify-between text-sm">
-                  <span className="capitalize">{item.specialization}</span>
-                  <span className="font-medium">{item.count}</span>
-                </div>
-              ))}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {metrics.map(({ label, value, icon: Icon, tone }) => (
+            <div key={label} className="rounded-2xl border bg-card p-4">
+              <span className={`mb-4 grid size-10 place-items-center rounded-xl ${tone}`}>
+                <Icon className="size-5" />
+              </span>
+              <p className="text-xl font-black text-foreground">{value}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{label}</p>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

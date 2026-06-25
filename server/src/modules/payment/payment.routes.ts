@@ -1,5 +1,4 @@
 import { Router } from "express";
-import express from "express";
 import { paymentController } from "./payment.controller";
 import { requireAuth, requireRole } from "@/middlewares/auth.middleware";
 import { validate } from "@/middlewares/validate.middleware";
@@ -26,10 +25,4 @@ router.post(
 );
 
 // Razorpay webhook (no auth, uses raw body parser)
-router.post(
-  "/webhook/razorpay",
-  express.raw({ type: "application/json" }), // Raw body parser
-  paymentController.handleWebhook
-);
-
 export default router;

@@ -20,6 +20,7 @@ interface BookingState {
   assignedFee: Money | null;
   scheduledAt: string | null;
   setAllocationMode: (mode: "manual" | "auto") => void;
+  setSelectedPsychologist: (psychologistId: string | null) => void;
   setManualSelection: (psychologistId: string, slotId: string) => void;
   setAutoSelection: (from: string, to: string, specialization?: string) => void;
   setMode: (mode: ConsultationMode) => void;
@@ -43,7 +44,24 @@ const initialState = {
 
 export const useBookingStore = create<BookingState>((set) => ({
   ...initialState,
-  setAllocationMode: (allocationMode) => set({ allocationMode }),
+  setAllocationMode: (allocationMode) =>
+    set({
+      allocationMode,
+      selectedPsychologistId: null,
+      selectedSlotId: null,
+      preferredWindow: null,
+      assignedPsychologistId: null,
+      assignedFee: null,
+      scheduledAt: null,
+    }),
+  setSelectedPsychologist: (selectedPsychologistId) =>
+    set({
+      selectedPsychologistId,
+      selectedSlotId: null,
+      assignedPsychologistId: null,
+      assignedFee: null,
+      scheduledAt: null,
+    }),
   setManualSelection: (selectedPsychologistId, selectedSlotId) =>
     set({ selectedPsychologistId, selectedSlotId }),
   setAutoSelection: (from, to, specialization) =>

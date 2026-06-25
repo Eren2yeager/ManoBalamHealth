@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { sessionController } from "./session.controller";
-import { requireAuth, requireRole } from "@/middlewares/auth.middleware";
+import { requireApprovalIfPsychologist, requireApprovedPsychologist, requireAuth, requireRole } from "@/middlewares/auth.middleware";
 import { validate } from "@/middlewares/validate.middleware";
 import { updateSessionNotesSchema } from "./session.validation";
 
@@ -10,6 +10,7 @@ const router = Router();
 router.get(
   "/:appointmentId",
   requireAuth,
+  requireApprovalIfPsychologist,
   sessionController.getSessionByAppointmentId
 );
 
@@ -18,6 +19,7 @@ router.patch(
   "/:sessionId/notes",
   requireAuth,
   requireRole("psychologist"),
+  requireApprovedPsychologist,
   validate(updateSessionNotesSchema),
   sessionController.updateSessionNotes
 );

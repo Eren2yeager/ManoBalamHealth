@@ -10,7 +10,16 @@ export interface IPsychologistProfile extends Document {
   credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
   licensedCountries: string[];
   verificationStatus: "pending" | "approved" | "rejected";
+  onboardingStatus:
+    | "profile_incomplete"
+    | "documents_pending"
+    | "under_review"
+    | "approved"
+    | "rejected";
   rejectionReason?: string;
+  submittedAt?: Date;
+  reviewedAt?: Date;
+  reviewedBy?: Types.ObjectId;
   rating: { average: number; count: number };
   isOnline: boolean;
   isAcceptingEmergency: boolean;
@@ -38,7 +47,16 @@ const psychologistSchema = new Schema<IPsychologistProfile>(
     ],
     licensedCountries: [{ type: String }],
     verificationStatus: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
+    onboardingStatus: {
+      type: String,
+      enum: ["profile_incomplete", "documents_pending", "under_review", "approved", "rejected"],
+      default: "profile_incomplete",
+      index: true,
+    },
     rejectionReason: { type: String },
+    submittedAt: { type: Date },
+    reviewedAt: { type: Date },
+    reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
     rating: {
       average: { type: Number, default: 0 },
       count: { type: Number, default: 0 },

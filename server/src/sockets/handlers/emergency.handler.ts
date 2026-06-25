@@ -77,7 +77,12 @@ export const handleEmergency = (io: Server, socket: AuthenticatedSocket) => {
     if (!socket.user || socket.user.role !== "psychologist") return;
 
     const psychologist = await PsychologistModel.findOne({ userId: socket.user.userId });
-    if (!psychologist) return;
+    if (
+      !psychologist ||
+      psychologist.verificationStatus !== "approved" ||
+      psychologist.onboardingStatus !== "approved" ||
+      !psychologist.isAcceptingEmergency
+    ) return;
 
     // Try to acquire a distributed lock — first psychologist to call SET NX wins
     const lockKey = `emergency:lock:${data.requestId}`;

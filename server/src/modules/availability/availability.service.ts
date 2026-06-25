@@ -52,6 +52,16 @@ class AvailabilityService {
     if (!psychologist) {
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Psychologist not found");
     }
+    if (
+      psychologist.verificationStatus !== "approved" ||
+      psychologist.onboardingStatus !== "approved"
+    ) {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        ErrorCodes.NOT_FOUND,
+        "Psychologist availability is not published",
+      );
+    }
 
     const user = psychologist.userId as any;
     if (!user?.timezone) {

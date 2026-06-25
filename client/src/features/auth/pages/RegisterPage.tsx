@@ -1,76 +1,47 @@
-import { ShieldCheck, BrainCircuit } from "lucide-react";
+import { CheckCircle2, HeartHandshake, ShieldCheck, Stethoscope } from "lucide-react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
+import { AuthVisualPanel } from "../components/AuthVisualPanel";
 import { RegisterForm } from "../components/RegisterForm";
 
 export const RegisterPage = () => {
   return (
-    <div className="min-h-screen bg-muted/30 flex flex-col">
-      {/* Main content */}
-      <main className="flex-1 flex items-center justify-center py-10 px-4 md:px-8">
-        <div className="w-full max-w-4xl flex flex-col md:flex-row bg-card rounded-2xl border border-border shadow-[0px_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_8%_8%,rgba(221,214,254,.55),transparent_27%),radial-gradient(circle_at_95%_55%,rgba(219,234,254,.45),transparent_30%),#fbfaff] px-4 py-5 md:px-7 lg:py-7">
+      <div className="pointer-events-none absolute right-[35%] top-24 size-80 animate-pulse rounded-full bg-violet-200/20 blur-3xl" />
+      <main className="mx-auto grid max-w-[1420px] items-start gap-0 overflow-hidden rounded-[2.5rem] border border-white/80 bg-white/85 shadow-[0_35px_100px_rgba(67,44,119,.13)] backdrop-blur-xl lg:grid-cols-[.9fr_1.1fr] lg:gap-6 lg:overflow-visible lg:border-0 lg:bg-transparent lg:shadow-none">
+        <div className="lg:sticky lg:top-7">
+          <AuthVisualPanel
+            image="/images/auth-register-journey.png"
+            eyebrow="A new beginning"
+            title="Take the first step toward feeling more supported."
+            description="Create one secure account for professional care, guided self-reflection, and flexible online sessions."
+            points={[
+              { icon: CheckCircle2, label: "Simple onboarding" },
+              { icon: HeartHandshake, label: "Care at your pace" },
+              { icon: Stethoscope, label: "Professional pathway" },
+            ]}
+          />
+        </div>
 
-          {/* Left: Branding panel */}
-          <div className="hidden md:flex w-5/12 bg-secondary/30 p-10 flex-col justify-between relative overflow-hidden">
-            {/* Gradient backdrop */}
-            <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-secondary/20 to-background/80 pointer-events-none" />
-
-            <div className="relative z-10 flex flex-col gap-8 h-full">
-              {/* Top: Brand + headline */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2">
-                  <BrainCircuit className="h-8 w-8 text-primary" />
-                  <span className="text-xl font-bold text-foreground font-[Manrope,sans-serif]">
-                    ManoBalam
-                  </span>
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold leading-tight text-foreground font-[Manrope,sans-serif]">
-                    Begin Your Journey
-                  </h2>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    Create a secure ManoBalam account to access clinical-grade mental health support
-                    and connect with licensed professionals.
-                  </p>
-                </div>
-              </div>
-
-              {/* Bottom: Trust badge */}
-              <div className="mt-auto bg-background/70 backdrop-blur-sm p-4 rounded-xl border border-border/50">
-                <div className="flex items-start gap-3">
-                  <ShieldCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">Secure &amp; Confidential</h3>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      Your data is encrypted and handled with strict medical-grade confidentiality.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Form */}
-          <div className="w-full md:w-7/12 p-6 md:p-10 flex flex-col">
-            {/* Mobile brand mark */}
-            <div className="flex items-center gap-2 mb-6 md:hidden">
-              <BrainCircuit className="h-6 w-6 text-primary" />
-              <span className="text-lg font-bold text-foreground">ManoBalam</span>
-            </div>
-
-            <div className="mb-6">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight font-[Manrope,sans-serif]">
-                Create an Account
+        <section className="px-5 py-8 sm:px-9 lg:rounded-[2.25rem] lg:bg-white lg:px-12 lg:py-11 lg:shadow-[0_25px_80px_rgba(52,35,98,.1)] xl:px-16">
+          <div className="mx-auto w-full max-w-[620px] animate-in fade-in slide-in-from-right-5 duration-700">
+            <div className="mb-7 lg:hidden"><BrandLogo className="mx-auto" /></div>
+            <div className="text-center lg:text-left">
+              <span className="inline-flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[.16em] text-primary">
+                <ShieldCheck className="size-3.5" /> Join ManoBalamHealthCare
+              </span>
+              <h1 className="mt-4 text-4xl font-black tracking-[-.04em] text-[#111631] sm:text-5xl">
+                Create your account
               </h1>
-              <p className="text-sm text-muted-foreground mt-1.5">
-                Join our serene clinical community.
+              <p className="mt-3 text-sm leading-6 text-slate-500">
+                Choose your role and we will guide you through the right onboarding path.
               </p>
             </div>
-
-            <RegisterForm />
+            <div className="mt-8">
+              <RegisterForm />
+            </div>
           </div>
-        </div>
+        </section>
       </main>
-
-
     </div>
   );
 };

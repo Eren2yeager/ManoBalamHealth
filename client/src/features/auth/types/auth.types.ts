@@ -2,7 +2,7 @@ import type { Role } from "@/types/global.types";
 
 export interface RegisterDto {
   name: string;
-  email?: string;
+  email: string;
   phone?: string;
   password: string;
   role: "patient" | "psychologist";

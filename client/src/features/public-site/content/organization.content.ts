@@ -2,9 +2,27 @@ import { BadgeCheck, Building2, Handshake, Laptop, Stethoscope } from "lucide-re
 import type { OrganizationPage } from "../types/public-site.types";
 
 const placeholderMembers = (group: string) => [
-  { name: "Committee leadership", role: `${group} Chair`, description: "Guides priorities, standards, and committee coordination." },
-  { name: "Professional representative", role: "Member", description: "Brings domain experience and stakeholder perspectives." },
-  { name: "Community representative", role: "Member", description: "Supports inclusive decisions grounded in community needs." },
+  {
+    name: "Committee leadership",
+    role: `${group} Chair`,
+    credentials: "Leadership profile to be added",
+    description: "Guides priorities, standards, and committee coordination.",
+    focusAreas: ["Direction", "Accountability"],
+  },
+  {
+    name: "Professional representative",
+    role: "Committee Member",
+    credentials: "Professional profile to be added",
+    description: "Brings domain experience and stakeholder perspectives to committee decisions.",
+    focusAreas: ["Professional practice", "Quality"],
+  },
+  {
+    name: "Community representative",
+    role: "Committee Member",
+    credentials: "Community profile to be added",
+    description: "Supports inclusive decisions grounded in community needs and lived experience.",
+    focusAreas: ["Community needs", "Inclusion"],
+  },
 ];
 
 export const organizationContent: Record<string, OrganizationPage> = {

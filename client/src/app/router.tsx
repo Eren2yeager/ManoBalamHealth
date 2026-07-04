@@ -9,6 +9,7 @@ import { ForgotPasswordPage } from "../features/auth/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "../features/auth/pages/ResetPasswordPage";
 import { AboutPage } from "../features/public-site/pages/AboutPage";
 import { AboutDetailPage } from "../features/public-site/pages/AboutDetailPage";
+import { OrganizationPage } from "../features/public-site/pages/OrganizationPage";
 import { OrganizationDetailPage } from "../features/public-site/pages/OrganizationDetailPage";
 import { ServiceDetailPage } from "../features/public-site/pages/ServiceDetailPage";
 import { MentalHealthAssessmentPage } from "../features/public-site/pages/MentalHealthAssessmentPage";
@@ -74,6 +75,7 @@ const router = createBrowserRouter([
       { path: "/", element: <LandingPage /> },
       { path: "/about", element: <AboutPage /> },
       { path: "/about/:slug", element: <AboutDetailPage /> },
+      { path: "/organization", element: <OrganizationPage /> },
       { path: "/organization/:slug", element: <OrganizationDetailPage /> },
       { path: "/services/:slug", element: <ServiceDetailPage /> },
       { path: "/mental-health-assessment", element: <MentalHealthAssessmentPage /> },

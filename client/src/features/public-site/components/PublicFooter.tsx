@@ -20,7 +20,7 @@ export function PublicFooter() {
             <h3 className="mb-4 text-sm font-black text-white">Organization</h3>
             <div className="grid gap-3 text-sm">
               <Link to="/about" className="hover:text-white">About us</Link>
-              <Link to="/organization/executive-committee" className="hover:text-white">Committees</Link>
+              <Link to="/organization" className="hover:text-white">Committees</Link>
               <Link to="/events-achievements" className="hover:text-white">Events & achievements</Link>
               <Link to="/faq" className="hover:text-white">FAQ</Link>
             </div>

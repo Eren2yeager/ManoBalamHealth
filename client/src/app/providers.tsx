@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "./ThemeProvider";
+import { ManoBalamLoadingScreen } from "@/components/feedback/ManoBalamLoadingScreen";
 import { Toaster } from "@/components/ui/sonner";
 import { refreshToken } from "@/features/auth/api/auth.api";
 import { getMe } from "@/features/profile/api/profile.api";
@@ -25,9 +26,14 @@ function PresenceInitializer() {
 function AuthInit({ children }: { children: React.ReactNode }) {
   const setAccessToken = useUserStore((s) => s.setAccessToken);
   const setUser = useUserStore((s) => s.setUser);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
 
   useEffect(() => {
+    const splashTimer = window.setTimeout(() => {
+      setIsSplashVisible(false);
+    }, 3000);
+
     const initAuth = async () => {
       try {
         const tokenResult = await refreshToken();
@@ -37,17 +43,20 @@ function AuthInit({ children }: { children: React.ReactNode }) {
       } catch {
         // Silent refresh failed; continue as a guest.
       } finally {
-        setIsLoading(false);
+        setIsAuthLoading(false);
       }
     };
     initAuth();
+
+    return () => window.clearTimeout(splashTimer);
   }, [setAccessToken, setUser]);
 
-  if (isLoading) {
+  if (isAuthLoading || isSplashVisible) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
+      <ManoBalamLoadingScreen
+        message="Getting things ready for you..."
+        estimatedDurationMs={3000}
+      />
     );
   }
 

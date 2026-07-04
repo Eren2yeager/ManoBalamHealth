@@ -26,6 +26,9 @@ export interface CommitteeMember {
   name: string;
   role: string;
   description: string;
+  imageUrl?: string;
+  credentials?: string;
+  focusAreas?: string[];
 }
 
 export interface OrganizationPage extends ContentPage {

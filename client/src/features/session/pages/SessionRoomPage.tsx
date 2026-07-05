@@ -1,37 +1,34 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChatPanel } from "../components/ChatPanel";
-import { AudioCallRoom } from "../components/AudioCallRoom";
-import { VideoCallRoom } from "../components/VideoCallRoom";
+import { CallRoom } from "../components/CallRoom";
 import { getSession } from "../api/session.api";
 import { useSessionStore } from "../store/sessionStore";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  ArrowLeft,
-  LoaderCircle,
-  MessageSquareText,
-  Phone,
-  ShieldCheck,
-  Sparkles,
-  Video,
-} from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { CheckCircle2, LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import { connectSocket } from "@/lib/socket";
 import { useUserStore } from "@/stores/userStore";
+
+const useIsDesktop = () => {
+  const [isDesktop, setIsDesktop] = useState(
+    () => window.matchMedia("(min-width: 1024px)").matches,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  return isDesktop;
+};
 
 export function SessionRoomPage() {
   const { appointmentId } = useParams<{ appointmentId: string }>();
   const navigate = useNavigate();
   const [chatOpen, setChatOpen] = useState(false);
+  const isDesktop = useIsDesktop();
   const [sessionPresence, setSessionPresence] = useState<{
     patientOnline: boolean;
     psychologistOnline: boolean;
@@ -52,8 +49,8 @@ export function SessionRoomPage() {
         setIsLoading(true);
         const sessionData = await getSession(appointmentId);
         setSession(sessionData);
-      } catch (err: any) {
-        const msg = err.message || "Failed to load session";
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Failed to load session";
         setError(msg);
         toast.error("Failed to load session");
       } finally {
@@ -118,10 +115,7 @@ export function SessionRoomPage() {
       });
     };
 
-    const handleSessionEnded = (payload: {
-      sessionId: string;
-      endedAt?: string;
-    }) => {
+    const handleSessionEnded = (payload: { sessionId: string; endedAt?: string }) => {
       if (payload.sessionId !== session.sessionId) return;
 
       patchSession({
@@ -152,14 +146,10 @@ export function SessionRoomPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen flex-col bg-[radial-gradient(circle_at_top,#2b234f_0%,#151127_50%,#0b0b13_100%)]">
-        <div className="border-b border-white/10 px-4 py-4 sm:px-6">
-          <Skeleton className="mb-2 h-8 w-56 rounded-xl bg-white/10" />
-          <Skeleton className="h-4 w-40 rounded-xl bg-white/10" />
-        </div>
-        <div className="flex flex-1 gap-4 p-4 sm:p-6">
-          <Skeleton className="flex-1 rounded-[2rem] bg-white/10" />
-          <Skeleton className="hidden w-[360px] rounded-[2rem] bg-white/10 xl:block" />
+      <div className="flex h-dvh items-center justify-center bg-neutral-950">
+        <div className="flex flex-col items-center gap-3 text-white/60">
+          <LoaderCircle className="size-8 animate-spin" />
+          <p className="text-sm">Preparing your session</p>
         </div>
       </div>
     );
@@ -167,13 +157,14 @@ export function SessionRoomPage() {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[radial-gradient(circle_at_top,#2b234f_0%,#151127_55%,#0b0b16_100%)] p-6">
-        <div className="max-w-md rounded-[2rem] border border-white/10 bg-white/8 p-8 text-center text-white shadow-2xl backdrop-blur">
-          <h2 className="text-2xl font-black">Session unavailable</h2>
-          <p className="mt-3 text-sm leading-6 text-white/70">{error}</p>
+      <div className="flex h-dvh items-center justify-center bg-neutral-950 p-4">
+        <div className="w-full max-w-sm text-center text-white">
+          <h2 className="text-lg font-semibold">Session unavailable</h2>
+          <p className="mt-2 text-sm leading-6 text-white/60">{error}</p>
           <Button
+            variant="outline"
             onClick={() => navigate(-1)}
-            className="mt-6 rounded-xl bg-white text-slate-950 hover:bg-slate-100"
+            className="mt-6 border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
           >
             Go back
           </Button>
@@ -182,204 +173,117 @@ export function SessionRoomPage() {
     );
   }
 
-  const mode = session?.mode ?? "video";
-  const modeLabel = mode.charAt(0).toUpperCase() + mode.slice(1);
-  const modeIcon = mode === "audio" ? <Phone className="size-4" /> : <Video className="size-4" />;
-  const roomIdLabel = session?.roomId ? session.roomId.slice(-8).toUpperCase() : "SESSION";
+  const mode = session?.mode === "audio" ? "audio" : "video";
   const patientOnline = sessionPresence.patientOnline;
   const psychologistOnline = sessionPresence.psychologistOnline;
   const sessionEnded = session?.status === "ended";
-  const bothParticipantsOnline =
-    Boolean(session) && patientOnline && psychologistOnline && !sessionEnded;
   const counterpartRole = user?.role === "psychologist" ? "patient" : "psychologist";
+  const counterpartOnline =
+    counterpartRole === "patient" ? patientOnline : psychologistOnline;
+  const chatDisabled = !(patientOnline && psychologistOnline) || sessionEnded;
+  const sessionId = session?.sessionId ?? appointmentId ?? "";
 
-  return (
-    <div className="flex h-screen flex-col bg-[#07070c] text-white">
-      <div className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(19,18,33,.95)_0%,rgba(12,12,20,.88)_100%)] px-4 py-4 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-[1700px] items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="rounded-xl text-white hover:bg-white/10 hover:text-white"
-              onClick={() => navigate(-1)}
-            >
-              <ArrowLeft className="size-4" />
-            </Button>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-lg font-black tracking-tight sm:text-xl">
-                  Session Room
-                </h1>
-                <Badge className="rounded-full bg-white/10 px-2.5 py-1 text-white">
-                  {modeIcon}
-                  {modeLabel}
-                </Badge>
-                <Badge className="hidden rounded-full bg-emerald-500/20 px-2.5 py-1 text-emerald-100 sm:inline-flex">
-                  <ShieldCheck className="mr-1 size-3.5" />
-                  Protected
-                </Badge>
-              </div>
-              <p className="mt-1 text-xs text-white/60 sm:text-sm">
-                Room {roomIdLabel} · secure realtime care space
-              </p>
-            </div>
+  if (sessionEnded) {
+    const usedMin = Math.floor((session?.durationSeconds ?? 0) / 60);
+    const purchasedMin = Math.floor((session?.purchasedDurationSeconds ?? 0) / 60);
+    return (
+      <div className="flex h-dvh items-center justify-center bg-neutral-950 p-4">
+        <div className="w-full max-w-sm text-center text-white">
+          <div className="mx-auto grid size-14 place-items-center rounded-full bg-success/15">
+            <CheckCircle2 className="size-7 text-success" />
           </div>
-
-          <div className="flex items-center gap-2">
-            <Badge className="hidden rounded-full bg-white/10 px-3 py-1 text-white xl:inline-flex">
-              <Sparkles className="mr-1 size-3.5 text-amber-300" />
-              Live session
-            </Badge>
+          <h2 className="mt-4 text-xl font-semibold">Session completed</h2>
+          <p className="mt-2 text-sm text-white/60">
+            {usedMin} of {purchasedMin} purchased minutes used.
+          </p>
+          {user?.role === "patient" && appointmentId ? (
+            <div className="mt-6 space-y-2">
+              <Button
+                onClick={() => navigate(`/feedback/${appointmentId}`)}
+                className="w-full rounded-full"
+              >
+                Share feedback
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => navigate(-1)}
+                className="w-full rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+              >
+                Back to appointments
+              </Button>
+            </div>
+          ) : (
             <Button
               variant="outline"
-              className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white xl:hidden"
-              onClick={() => setChatOpen(true)}
+              onClick={() => navigate(-1)}
+              className="mt-6 rounded-full border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
             >
-              <MessageSquareText className="mr-2 size-4" />
-              Chat
+              Back to appointments
             </Button>
-          </div>
+          )}
         </div>
       </div>
+    );
+  }
 
-      <div className="min-h-0 flex-1">
-        {sessionEnded ? (
-          <div className="mx-auto flex h-full max-w-4xl items-center justify-center p-6">
-            <div className="w-full max-w-lg rounded-[2rem] border border-white/10 bg-white/8 p-8 text-center text-white shadow-2xl backdrop-blur">
-              <div className="mx-auto grid size-16 place-items-center rounded-3xl bg-emerald-500/15">
-                <ShieldCheck className="size-7 text-emerald-200" />
-              </div>
-              <h2 className="mt-5 text-2xl font-black tracking-tight">Session completed</h2>
-              <p className="mt-3 text-sm leading-7 text-white/70">
-                The session time has been fully used and the meeting is now closed.
-              </p>
-              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-left text-sm">
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-white/70">Used time</span>
-                  <span className="font-medium text-white">
-                    {Math.floor((session?.durationSeconds ?? 0) / 60)} min
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-white/70">Purchased time</span>
-                  <span className="font-medium text-white">
-                    {Math.floor((session?.purchasedDurationSeconds ?? 0) / 60)} min
-                  </span>
-                </div>
-              </div>
-              {user?.role === "patient" && appointmentId ? (
-                <Button
-                  onClick={() => navigate(`/feedback/${appointmentId}`)}
-                  className="mt-6 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-600 hover:to-green-700"
-                >
-                  Leave Feedback
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => navigate(-1)}
-                  className="mt-6 rounded-xl bg-white text-slate-950 hover:bg-slate-100"
-                >
-                  Back to appointments
-                </Button>
-              )}
-            </div>
-          </div>
-        ) : bothParticipantsOnline ? (
-          <div className="mx-auto flex h-full max-w-[1700px] gap-4 p-4 sm:gap-5 sm:p-6">
-            <div className="min-h-0 flex-1 overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 shadow-2xl shadow-black/30">
-              {mode === "audio" ? (
-                <AudioCallRoom
-                  sessionId={session?.sessionId ?? appointmentId ?? ""}
-                  iceServers={session?.iceServers}
-                  elapsedSeconds={session?.durationSeconds}
-                  activeTimingStartedAt={session?.activeTimingStartedAt}
-                  purchasedDurationSeconds={session?.purchasedDurationSeconds}
-                  onEndCall={() => navigate(-1)}
-                />
-              ) : (
-                <VideoCallRoom
-                  sessionId={session?.sessionId ?? appointmentId ?? ""}
-                  iceServers={session?.iceServers}
-                  elapsedSeconds={session?.durationSeconds}
-                  activeTimingStartedAt={session?.activeTimingStartedAt}
-                  purchasedDurationSeconds={session?.purchasedDurationSeconds}
-                  onEndCall={() => navigate(-1)}
-                />
-              )}
-            </div>
-
-            <aside className="hidden w-[360px] overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl shadow-black/20 xl:block">
-              <ChatPanel sessionId={session?.sessionId ?? appointmentId ?? ""} />
-            </aside>
-          </div>
-        ) : (
-          <div className="mx-auto flex h-full max-w-4xl items-center justify-center p-6">
-            <div className="w-full max-w-lg rounded-[2rem] border border-white/10 bg-white/8 p-8 text-center text-white shadow-2xl backdrop-blur">
-              <div className="mx-auto grid size-16 place-items-center rounded-3xl bg-white/10">
-                <LoaderCircle className="size-7 animate-spin text-violet-200" />
-              </div>
-              <h2 className="mt-5 text-2xl font-black tracking-tight">
-                Waiting for the other participant
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-white/70">
-                The session will unlock only when both participants are online. This
-                helps protect the time purchased for the appointment.
-              </p>
-              <div className="mt-4 text-xs uppercase tracking-[0.25em] text-white/45">
-                {Math.max(0, Math.ceil((session?.remainingSeconds ?? 0) / 60))} minutes protected
-              </div>
-              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-left text-sm">
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-white/70">You</span>
-                  <span
-                    className={
-                      (user?.role === "psychologist" ? psychologistOnline : patientOnline)
-                        ? "text-emerald-300"
-                        : "text-amber-300"
-                    }
-                  >
-                    {(user?.role === "psychologist" ? psychologistOnline : patientOnline)
-                      ? "In room"
-                      : "Joining..."}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="capitalize text-white/70">{counterpartRole}</span>
-                  <span
-                    className={
-                      (counterpartRole === "patient" ? patientOnline : psychologistOnline)
-                        ? "text-emerald-300"
-                        : "text-amber-300"
-                    }
-                  >
-                    {(counterpartRole === "patient" ? patientOnline : psychologistOnline)
-                      ? "In room"
-                      : "Waiting..."}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+  return (
+    <div className="flex h-dvh bg-neutral-950">
+      <div className="min-w-0 flex-1">
+        <CallRoom
+          sessionId={sessionId}
+          mode={mode}
+          iceServers={session?.iceServers}
+          elapsedSeconds={session?.durationSeconds}
+          activeTimingStartedAt={session?.activeTimingStartedAt}
+          purchasedDurationSeconds={session?.purchasedDurationSeconds}
+          counterpartLabel={counterpartRole === "patient" ? "Patient" : "Psychologist"}
+          counterpartOnline={counterpartOnline}
+          chatOpen={chatOpen}
+          onToggleChat={() => setChatOpen((open) => !open)}
+          onLeave={() => navigate(-1)}
+        />
       </div>
 
-      <Sheet open={chatOpen && bothParticipantsOnline} onOpenChange={setChatOpen}>
-        <SheetContent
-          side="right"
-          className="w-[min(100vw,420px)] border-l border-slate-200 bg-white p-0 sm:max-w-none"
+      {/* Desktop: collapsible side panel, Meet-style floating card */}
+      {isDesktop && (
+        <aside
+          className={`hidden overflow-hidden transition-[width] duration-300 ease-in-out lg:block ${
+            chatOpen ? "w-[344px]" : "w-0"
+          }`}
         >
-          <SheetHeader className="border-b border-slate-200">
-            <SheetTitle>Session Chat</SheetTitle>
-            <SheetDescription>
-              Stay connected while the session continues.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="min-h-0 flex-1">
-            <ChatPanel sessionId={session?.sessionId ?? appointmentId ?? ""} />
+          <div className="dark h-full py-2 pr-2">
+            <div className="h-full w-[336px] overflow-hidden rounded-xl border border-border">
+              <ChatPanel
+                sessionId={sessionId}
+                disabled={chatDisabled}
+                onClose={() => setChatOpen(false)}
+              />
+            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        </aside>
+      )}
+
+      {/* Mobile: bottom sheet */}
+      {!isDesktop && (
+        <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+          <SheetContent
+            side="bottom"
+            className="dark flex h-[80dvh] flex-col gap-0 rounded-t-2xl border-border bg-card p-0"
+            showCloseButton={false}
+          >
+            <SheetHeader className="sr-only">
+              <SheetTitle>In-session messages</SheetTitle>
+            </SheetHeader>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <ChatPanel
+                sessionId={sessionId}
+                disabled={chatDisabled}
+                onClose={() => setChatOpen(false)}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   );
 }

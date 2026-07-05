@@ -12,3 +12,17 @@ export const getChatHistory = async (
   );
   return { items: data.data, meta: data.meta as PaginationMeta };
 };
+
+export const uploadChatAttachment = async (
+  sessionId: string,
+  file: File
+): Promise<{ url: string; mimeType: string }> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await axiosInstance.post<
+    ApiSuccessResponse<{ url: string; mimeType: string }>
+  >(`/chat/${sessionId}/attachment`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data.data;
+};

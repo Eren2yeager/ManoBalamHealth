@@ -58,3 +58,37 @@ export const credentialUpload = multer({
   },
   fileFilter: credentialFileFilter,
 });
+
+const chatAttachmentMimeTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "application/pdf",
+]);
+
+const chatAttachmentFileFilter = (
+  _req: Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
+) => {
+  if (chatAttachmentMimeTypes.has(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(
+      new ApiError(
+        StatusCodes.BAD_REQUEST,
+        ErrorCodes.VALIDATION_ERROR,
+        "Attachments must be JPEG, PNG, WebP, GIF, or PDF files",
+      ),
+    );
+  }
+};
+
+export const chatAttachmentUpload = multer({
+  storage,
+  limits: {
+    fileSize: 8 * 1024 * 1024, // 8MB
+  },
+  fileFilter: chatAttachmentFileFilter,
+});

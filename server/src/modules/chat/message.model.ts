@@ -12,8 +12,8 @@ export interface IMessage extends Document {
 const messageSchema = new Schema<IMessage>({
   sessionId: { type: Schema.Types.ObjectId, ref: "Session", required: true, index: true },
   senderId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  content: { type: String, required: true },
-  attachmentUrl: { type: String },
+  content: { type: String, default: "", maxlength: 2000 },
+  attachmentUrl: { type: String, maxlength: 1024 },
   sentAt: { type: Date, default: Date.now },
   readAt: { type: Date },
 });

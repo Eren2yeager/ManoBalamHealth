@@ -8,8 +8,11 @@ export interface UseChatMessagesOptions {
   initialLimit?: number;
 }
 
+const TYPING_THROTTLE_MS = 2000;
+const TYPING_INDICATOR_TIMEOUT_MS = 3000;
+
 /**
- * Matches socket event contracts from FRONTEND_PLAN.md § 6.2 exactly.
+ * Socket event contracts (FRONTEND_PLAN.md § 6.2):
  *
  * emit   "chat:join"    { sessionId }
  * emit   "chat:message" { sessionId, content, attachmentUrl? }
@@ -25,7 +28,10 @@ export function useChatMessages({
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isPeerTyping, setIsPeerTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastTypingEmitRef = useRef(0);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,13 +59,13 @@ export function useChatMessages({
   );
 
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (!content.trim() || isSending) return;
+    async (content: string, attachmentUrl?: string) => {
+      const trimmed = content.trim();
+      if ((!trimmed && !attachmentUrl) || isSending) return;
       setIsSending(true);
       try {
         const socket = connectSocket();
-        // Plan § 6.2: emit "chat:message" with { sessionId, content }
-        socket.emit("chat:message", { sessionId, content });
+        socket.emit("chat:message", { sessionId, content: trimmed, attachmentUrl });
       } finally {
         setIsSending(false);
       }
@@ -67,42 +73,65 @@ export function useChatMessages({
     [sessionId, isSending]
   );
 
+  // Throttled so keystrokes don't flood the socket.
   const sendTyping = useCallback(() => {
-    const socket = connectSocket();
-    // Plan § 6.2: emit "chat:typing" with { sessionId }
-    socket.emit("chat:typing", { sessionId });
+    const now = Date.now();
+    if (now - lastTypingEmitRef.current < TYPING_THROTTLE_MS) return;
+    lastTypingEmitRef.current = now;
+    connectSocket().emit("chat:typing", { sessionId });
   }, [sessionId]);
 
   useEffect(() => {
     const socket = connectSocket();
 
-    // Plan § 6.2: join with object payload { sessionId }
-    socket.emit("chat:join", { sessionId });
+    const joinRoom = () => {
+      socket.emit("chat:join", { sessionId });
+    };
 
-    // Plan § 6.2: incoming payload is { message: ChatMessage }
+    // Join now AND on every reconnect — room membership is lost when the
+    // socket drops, and messages silently stop arriving otherwise.
+    if (socket.connected) joinRoom();
+    socket.on("connect", joinRoom);
+
     const handleMessage = (payload: { message: ChatMessage }) => {
-      setMessages((prev) => [...prev, payload.message]);
+      setMessages((prev) =>
+        prev.some((m) => m.id === payload.message.id) ? prev : [...prev, payload.message]
+      );
+      setIsPeerTyping(false);
+    };
+
+    const handleTyping = () => {
+      setIsPeerTyping(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(
+        () => setIsPeerTyping(false),
+        TYPING_INDICATOR_TIMEOUT_MS
+      );
     };
 
     socket.on("chat:message", handleMessage);
+    socket.on("chat:typing", handleTyping);
 
     fetchHistory(1);
 
     return () => {
+      socket.off("connect", joinRoom);
       socket.off("chat:message", handleMessage);
-      // No explicit leave event defined in the plan
+      socket.off("chat:typing", handleTyping);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, [sessionId, fetchHistory]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, scrollToBottom]);
+  }, [messages, isPeerTyping, scrollToBottom]);
 
   return {
     messages,
     isLoading,
     hasMore,
     isSending,
+    isPeerTyping,
     sendMessage,
     sendTyping,
     fetchHistory,

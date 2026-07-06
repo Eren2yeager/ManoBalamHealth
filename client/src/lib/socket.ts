@@ -5,7 +5,8 @@ let socket: Socket | null = null;
 
 export const getSocket = (): Socket => {
   if (!socket) {
-    socket = io(import.meta.env.VITE_SOCKET_URL, {
+    // Empty/unset VITE_SOCKET_URL connects to the same origin (combined deployment)
+    socket = io(import.meta.env.VITE_SOCKET_URL || "/", {
       autoConnect: false,
       auth: (cb) => cb({ token: useUserStore.getState().accessToken }),
     });

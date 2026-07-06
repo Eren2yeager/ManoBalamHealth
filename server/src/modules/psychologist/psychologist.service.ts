@@ -13,7 +13,15 @@ import {
   UploadCredentialsResponse,
   toPsychologistListResponse,
   toPsychologistDetailResponse,
+  toCredentialResponse,
 } from "./psychologist.types";
+import {
+  SPECIALIZATIONS,
+  LANGUAGES,
+  COUNTRIES,
+  CREDENTIAL_TYPES,
+  FEE_MULTIPLIERS,
+} from "./psychologist.constants";
 import type { Role } from "@/constants/roles.constant";
 
 export class PsychologistService {
@@ -78,8 +86,18 @@ export class PsychologistService {
       ...response,
       onboardingStatus: profile.onboardingStatus,
       verificationStatus: profile.verificationStatus,
-      credentials: profile.credentials,
+      credentials: profile.credentials.map(toCredentialResponse),
       missingFields: this.getMissingFields(profile),
+    };
+  }
+
+  getMeta() {
+    return {
+      specializations: SPECIALIZATIONS,
+      languages: LANGUAGES,
+      countries: COUNTRIES,
+      credentialTypes: CREDENTIAL_TYPES,
+      feeMultipliers: FEE_MULTIPLIERS,
     };
   }
 
@@ -214,20 +232,40 @@ export class PsychologistService {
     await this.ensureEditable(profile);
 
     // Check if the ONLY isAcceptingEmergency is the only field being updated
-    const isOnlyAcceptingEmergencyUpdate = 
-      Object.keys(data).length === 1 && 
+    const isOnlyAcceptingEmergencyUpdate =
+      Object.keys(data).length === 1 &&
       "isAcceptingEmergency" in data;
 
-    const wasApproved = profile.onboardingStatus === "approved";
-    
-    let updateQuery: any = { ...data };
-    
-    // Only reset status fields if it's NOT an isAcceptingEmergency-only update
-    if (!isOnlyAcceptingEmergencyUpdate) {
-      const nextStatus = wasApproved ? "profile_incomplete" : profile.onboardingStatus;
-      updateQuery.onboardingStatus = nextStatus === "rejected" ? "profile_incomplete" : nextStatus;
-      updateQuery.verificationStatus = wasApproved ? "pending" : profile.verificationStatus;
-      updateQuery.isOnline = wasApproved ? false : profile.isOnline;
+    const isApproved = profile.onboardingStatus === "approved";
+
+    let updateQuery: any;
+
+    if (isOnlyAcceptingEmergencyUpdate) {
+      updateQuery = { ...data };
+    } else if (isApproved) {
+      // Approved profiles stay live: edits are held in pendingChanges until an
+      // admin approves them. Re-editing while pending merges over the pending set.
+      const { isAcceptingEmergency, ...professionalFields } = data;
+      updateQuery = {
+        $set: {
+          ...(isAcceptingEmergency !== undefined ? { isAcceptingEmergency } : {}),
+          ...Object.fromEntries(
+            Object.entries(professionalFields).map(([key, value]) => [
+              `pendingChanges.${key}`,
+              value,
+            ]),
+          ),
+          changeReviewStatus: "pending",
+          changeSubmittedAt: new Date(),
+        },
+        $unset: { changeRejectionReason: 1 },
+      };
+    } else {
+      // First-time onboarding flow: edit live fields directly.
+      updateQuery = { ...data };
+      const nextStatus =
+        profile.onboardingStatus === "rejected" ? "profile_incomplete" : profile.onboardingStatus;
+      updateQuery.onboardingStatus = nextStatus;
       updateQuery.$unset = { rejectionReason: 1, reviewedAt: 1, reviewedBy: 1 };
     }
 
@@ -295,19 +333,33 @@ export class PsychologistService {
       docUrl,
       type,
       verified: false,
+      uploadedAt: new Date(),
     }));
+
+    const isApproved = profile.onboardingStatus === "approved";
+
+    const updateQuery: any = isApproved
+      ? {
+          // Approved profiles stay live; new documents just flag the profile
+          // for admin re-review alongside any pending field changes.
+          $push: { credentials: { $each: newCredentials } },
+          $set: { changeReviewStatus: "pending", changeSubmittedAt: new Date() },
+          $unset: { changeRejectionReason: 1 },
+        }
+      : {
+          $push: { credentials: { $each: newCredentials } },
+          $set: {
+            onboardingStatus: "documents_pending",
+            verificationStatus: "pending",
+            isOnline: false,
+            presenceIntendedOnline: false,
+          },
+          $unset: { rejectionReason: 1, reviewedAt: 1, reviewedBy: 1 },
+        };
 
     const updatedProfile = await PsychologistModel.findByIdAndUpdate(
       profile._id,
-      {
-        $push: { credentials: { $each: newCredentials } },
-        $set: {
-          onboardingStatus: "documents_pending",
-          verificationStatus: "pending",
-          isOnline: false,
-        },
-        $unset: { rejectionReason: 1, reviewedAt: 1, reviewedBy: 1 },
-      },
+      updateQuery,
       { new: true },
     );
 
@@ -316,8 +368,38 @@ export class PsychologistService {
     }
 
     return {
-      credentials: updatedProfile.credentials,
+      credentials: updatedProfile.credentials.map(toCredentialResponse),
     };
+  }
+
+  async deleteCredential(userId: string, credentialId: string) {
+    const profile = await this.getOrCreateProfile(userId);
+    await this.ensureEditable(profile);
+
+    if (profile.onboardingStatus === "approved") {
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        ErrorCodes.VALIDATION_ERROR,
+        "Approved credentials cannot be deleted. Upload a replacement instead.",
+      );
+    }
+
+    const credential = profile.credentials.id(credentialId);
+    if (!credential) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Credential not found");
+    }
+    if (credential.verified) {
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        ErrorCodes.VALIDATION_ERROR,
+        "Verified credentials cannot be deleted",
+      );
+    }
+
+    credential.deleteOne();
+    await profile.save();
+
+    return { credentials: profile.credentials.map(toCredentialResponse) };
   }
 
   async submitForReview(userId: string) {
@@ -338,6 +420,7 @@ export class PsychologistService {
     profile.submittedAt = new Date();
     profile.rejectionReason = undefined;
     profile.isOnline = false;
+    profile.presenceIntendedOnline = false;
     await profile.save();
 
     return {

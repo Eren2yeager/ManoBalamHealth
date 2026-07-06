@@ -8,6 +8,11 @@ import { psychologistService } from "./psychologist.service";
 import { UserModel } from "../user/user.model";
 
 export class PsychologistController {
+  getMeta = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.status(200).json(ApiResponse.success(psychologistService.getMeta(), "Psychologist metadata"));
+  });
+
   getMyOnboarding = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const result = await psychologistService.getMyOnboarding(req.user!.userId);
     res.status(200).json(ApiResponse.success(result, "Onboarding profile retrieved"));
@@ -66,6 +71,14 @@ export class PsychologistController {
     const result = await psychologistService.uploadCredentials(userId, files, type);
 
     res.status(201).json(ApiResponse.success(result, "Credentials uploaded successfully"));
+  });
+
+  deleteCredential = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const credentialId = Array.isArray(req.params.credentialId)
+      ? req.params.credentialId[0]
+      : req.params.credentialId;
+    const result = await psychologistService.deleteCredential(req.user!.userId, credentialId);
+    res.status(200).json(ApiResponse.success(result, "Credential deleted"));
   });
 
   submitForReview = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {

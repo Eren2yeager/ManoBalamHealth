@@ -26,6 +26,17 @@ export const verifyPsychologist = async (
   return data.data;
 };
 
+export const reviewPsychologistChanges = async (
+  id: string,
+  payload: VerifyPsychologistDto
+): Promise<{ id: string; changeReviewStatus: "approved" | "rejected" }> => {
+  const { data } = await axiosInstance.patch<ApiSuccessResponse<{ id: string; changeReviewStatus: "approved" | "rejected" }>>(
+    `/admin/psychologists/${id}/changes`,
+    payload
+  );
+  return data.data;
+};
+
 export const getAdminAppointments = async (
   params: AdminAppointmentParams
 ): Promise<{ items: AdminAppointmentItem[]; meta: PaginationMeta }> => {

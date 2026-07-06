@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PsychologistVerificationCard } from "../components/PsychologistVerificationCard";
-import { getPendingPsychologists, verifyPsychologist } from "../api/admin.api";
+import { getPendingPsychologists, verifyPsychologist, reviewPsychologistChanges } from "../api/admin.api";
 import type { PendingPsychologistItem, VerifyPsychologistDto } from "../types/admin.types";
 import { toast } from "sonner";
 import { CheckCircle2, AlertCircle, RefreshCw, Sparkles } from "lucide-react";
@@ -36,14 +36,29 @@ export function AdminVerificationsPage() {
   }, [fetchPsychologists]);
 
   const handleVerify = async (id: string, payload: VerifyPsychologistDto) => {
+    const psychologist = psychologists.find((item) => item.id === id);
+    // Approved psychologists with pending edits go through the change-review
+    // endpoint; everyone else is a first-time verification.
+    const isChangeReview =
+      psychologist?.changeReviewStatus === "pending" &&
+      psychologist?.onboardingStatus === "approved";
     try {
       setIsProcessing(true);
-      await verifyPsychologist(id, payload);
-      toast.success(
-        payload.decision === "approved"
-          ? "Psychologist approved!"
-          : "Psychologist rejected!"
-      );
+      if (isChangeReview) {
+        await reviewPsychologistChanges(id, payload);
+        toast.success(
+          payload.decision === "approved"
+            ? "Profile changes approved and published!"
+            : "Profile changes rejected — the live profile is unchanged."
+        );
+      } else {
+        await verifyPsychologist(id, payload);
+        toast.success(
+          payload.decision === "approved"
+            ? "Psychologist approved!"
+            : "Psychologist rejected!"
+        );
+      }
       fetchPsychologists();
     } catch (err) {
       toast.error("Failed to process verification");

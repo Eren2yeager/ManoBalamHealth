@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertCircle,
@@ -62,8 +62,16 @@ const statusDetails = {
 
 export function PsychologistDashboard() {
   const { user } = useAuth();
-  const { toggleOnline } = usePsychologistPresenceToggle();
   const [isOnline, setIsOnline] = useState(false);
+  // The server pushes "presence:state" on every (re)connect with the persisted
+  // availability intent, so the toggle survives refreshes and navigation.
+  const handlePresenceState = useCallback(
+    (state: { isOnline: boolean; intendedOnline: boolean }) => {
+      setIsOnline(state.intendedOnline);
+    },
+    [],
+  );
+  const { toggleOnline } = usePsychologistPresenceToggle(handlePresenceState);
   const [isAcceptingEmergency, setIsAcceptingEmergency] = useState(false);
   const [isUpdatingEmergency, setIsUpdatingEmergency] = useState(false);
   const [onboarding, setOnboarding] = useState<PsychologistOnboarding | null>(null);
@@ -76,6 +84,7 @@ export function PsychologistDashboard() {
         if (active) {
           setOnboarding(profile);
           setIsAcceptingEmergency(profile.isAcceptingEmergency ?? false);
+          setIsOnline(profile.presenceIntendedOnline ?? profile.isOnline ?? false);
         }
       })
       .catch(() => toast.error("Unable to load verification status."));
@@ -139,7 +148,7 @@ export function PsychologistDashboard() {
     toast.success(
       online
         ? "You're now online and visible to patients."
-        : "You're now offline."
+        : "You're now Offline."
     );
   };
 
@@ -321,7 +330,7 @@ export function PsychologistDashboard() {
                     isOnline ? "animate-pulse bg-emerald-500" : "bg-slate-400"
                   }`}
                 />
-                {isOnline ? "Online now" : "Currently offline"}
+                {isOnline ? "Online" : "Offline"}
               </span>
             </div>
             <div className="p-6">
@@ -363,7 +372,7 @@ export function PsychologistDashboard() {
                   </span>
                   <span>
                     <span className="block font-black text-slate-900">
-                      Go offline
+                      Go Offline
                     </span>
                     <span className="mt-1 block text-xs leading-5 text-slate-500">
                       Pause discovery without changing your schedule.

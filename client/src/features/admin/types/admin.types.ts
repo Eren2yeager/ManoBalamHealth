@@ -17,7 +17,19 @@ export interface PendingPsychologistItem {
   credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
   submittedAt?: string;
   rejectionReason?: string;
+  pendingChanges?: PsychologistPendingChanges;
+  changeReviewStatus?: "pending" | "approved" | "rejected";
+  changeSubmittedAt?: string;
   createdAt: string;
+}
+
+export interface PsychologistPendingChanges {
+  specialization?: string[];
+  languages?: string[];
+  experienceYears?: number;
+  consultationFee?: { amount: number; currency: string };
+  bio?: string;
+  licensedCountries?: string[];
 }
 
 export interface VerifyPsychologistDto {

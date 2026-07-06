@@ -1,5 +1,7 @@
 import type { Money, PaginationParams } from "@/types/global.types";
 
+export type PriceMatrix = Record<"chat" | "audio" | "video", Record<30 | 45 | 60, number>>;
+
 export interface PsychologistListItem {
   id: string;
   name: string;
@@ -8,6 +10,7 @@ export interface PsychologistListItem {
   languages: string[];
   experienceYears: number;
   consultationFee: Money;
+  priceMatrix?: PriceMatrix;
   rating: { average: number; count: number };
   isOnline: boolean;
   bio: string;
@@ -22,6 +25,20 @@ export interface PsychologistDetail extends PsychologistListItem {
   missingFields?: string[];
   submittedAt?: string;
   isAcceptingEmergency?: boolean;
+  presenceIntendedOnline?: boolean;
+  pendingChanges?: PsychologistPendingChanges;
+  changeReviewStatus?: "pending" | "approved" | "rejected";
+  changeRejectionReason?: string;
+  changeSubmittedAt?: string;
+}
+
+export interface PsychologistPendingChanges {
+  specialization?: string[];
+  languages?: string[];
+  experienceYears?: number;
+  consultationFee?: Money;
+  bio?: string;
+  licensedCountries?: string[];
 }
 
 export type PsychologistOnboardingStatus =
@@ -32,9 +49,11 @@ export type PsychologistOnboardingStatus =
   | "rejected";
 
 export interface PsychologistCredential {
+  id: string;
   docUrl: string;
   type: "license" | "degree" | "id_proof";
   verified: boolean;
+  uploadedAt?: string;
 }
 
 export interface PsychologistOnboarding extends PsychologistDetail {

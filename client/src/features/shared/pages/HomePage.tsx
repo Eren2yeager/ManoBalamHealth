@@ -545,7 +545,7 @@ function DashboardStats({
     },
     {
       icon: Activity,
-      label: "Online now",
+      label: "Online",
       value: onlineCount.toString(),
       gradient: "from-emerald-500 to-teal-600",
       surface: "bg-emerald-50",

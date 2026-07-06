@@ -40,10 +40,11 @@ export const PsychologistProfileView = ({
   psychologist,
 }: PsychologistProfileViewProps) => {
   const role = useUserStore((state) => state.user?.role);
-  const fee = formatFee(
-    psychologist.consultationFee.amount,
-    psychologist.consultationFee.currency,
-  );
+  const currency = psychologist.consultationFee.currency;
+  // Cheapest option from the server-derived price matrix (chat / 30 min).
+  const startingPaise =
+    psychologist.priceMatrix?.chat?.[30] ?? psychologist.consultationFee.amount;
+  const fee = formatFee(startingPaise, currency);
   const initials = psychologist.name
     .split(" ")
     .filter(Boolean)
@@ -103,7 +104,7 @@ export const PsychologistProfileView = ({
                       : "bg-slate-300"
                   }`}
                 />
-                {psychologist.isOnline ? "Online now" : "Currently offline"}
+                {psychologist.isOnline ? "Online" : "Offline"}
               </span>
             </div>
 
@@ -168,9 +169,9 @@ export const PsychologistProfileView = ({
           />
           <TrustMetric
             icon={Banknote}
-            label="Session fee"
+            label="Sessions from"
             value={fee}
-            detail="Per consultation"
+            detail="Varies by mode & duration"
             color="emerald"
           />
           <TrustMetric
@@ -275,8 +276,34 @@ export const PsychologistProfileView = ({
                   Book a consultation
                 </p>
                 <p className="mt-3 text-3xl font-black">{fee}</p>
-                <p className="mt-1 text-xs text-violet-100/75">per session</p>
+                <p className="mt-1 text-xs text-violet-100/75">starting price — varies by session type</p>
               </div>
+              {psychologist.priceMatrix && (
+                <div className="border-b border-slate-100 px-6 pt-5">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-left font-black uppercase tracking-wide text-slate-400">
+                        <th className="pb-2">Mode</th>
+                        <th className="pb-2">30 min</th>
+                        <th className="pb-2">45 min</th>
+                        <th className="pb-2">60 min</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(["chat", "audio", "video"] as const).map((mode) => (
+                        <tr key={mode} className="border-t border-slate-100">
+                          <td className="py-2 font-black capitalize text-slate-700">{mode}</td>
+                          {([30, 45, 60] as const).map((duration) => (
+                            <td key={duration} className="py-2 font-semibold text-slate-600">
+                              {formatFee(psychologist.priceMatrix![mode][duration], currency)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               <div className="p-6">
                 <BookingBenefit
                   icon={CalendarCheck2}

@@ -16,7 +16,7 @@ class AdminService {
     const skip = (query.page - 1) * query.limit;
     const filter: any = query.status
       ? { verificationStatus: query.status }
-      : { onboardingStatus: "under_review" };
+      : { $or: [{ onboardingStatus: "under_review" }, { changeReviewStatus: "pending" }] };
 
     const psychologists = await PsychologistModel.find(filter)
       .populate("userId")
@@ -45,6 +45,9 @@ class AdminService {
         credentials: psychologist.credentials,
         submittedAt: psychologist.submittedAt?.toISOString(),
         rejectionReason: psychologist.rejectionReason,
+        pendingChanges: psychologist.pendingChanges,
+        changeReviewStatus: psychologist.changeReviewStatus,
+        changeSubmittedAt: psychologist.changeSubmittedAt?.toISOString(),
         rating: psychologist.rating,
         createdAt: psychologist.createdAt.toISOString(),
       };
@@ -76,6 +79,7 @@ class AdminService {
     psychologist.reviewedAt = new Date();
     psychologist.reviewedBy = new Types.ObjectId(adminUserId);
     psychologist.isOnline = false;
+    psychologist.presenceIntendedOnline = false;
     if (data.decision === "rejected" && data.rejectionReason) {
       psychologist.rejectionReason = data.rejectionReason;
       psychologist.credentials.forEach((credential) => {
@@ -113,6 +117,89 @@ class AdminService {
     }
 
     return { id: psychologistId, verificationStatus: data.decision };
+  }
+
+  /**
+   * Review pending profile changes from an already-approved psychologist.
+   * The live profile kept serving while the changes waited; approval merges
+   * them in, rejection discards them with a reason. Either way the
+   * psychologist stays approved and online status is untouched.
+   */
+  async reviewPendingChanges(
+    psychologistId: string,
+    data: UpdatePsychologistStatusRequest,
+    adminUserId: string,
+  ) {
+    const psychologist = await PsychologistModel.findById(psychologistId);
+    if (!psychologist) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Psychologist not found");
+    }
+
+    if (psychologist.changeReviewStatus !== "pending") {
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        ErrorCodes.VALIDATION_ERROR,
+        "This psychologist has no pending changes to review",
+      );
+    }
+
+    if (data.decision === "approved") {
+      // pendingChanges is a Mongoose subdocument — convert to a plain object
+      // and merge only the known editable fields onto the live profile.
+      const changes: Record<string, unknown> =
+        (psychologist.pendingChanges as any)?.toObject?.() ?? psychologist.pendingChanges ?? {};
+      const editableFields = [
+        "specialization",
+        "languages",
+        "experienceYears",
+        "consultationFee",
+        "bio",
+        "licensedCountries",
+      ] as const;
+      for (const key of editableFields) {
+        if (changes[key] !== undefined && changes[key] !== null) {
+          (psychologist as any)[key] = changes[key];
+        }
+      }
+      // Newly uploaded documents were part of the reviewed change set
+      psychologist.credentials.forEach((credential) => {
+        credential.verified = true;
+      });
+      psychologist.changeRejectionReason = undefined;
+    } else {
+      psychologist.changeRejectionReason = data.rejectionReason;
+    }
+
+    psychologist.pendingChanges = undefined;
+    psychologist.changeReviewStatus = data.decision;
+    psychologist.reviewedAt = new Date();
+    psychologist.reviewedBy = new Types.ObjectId(adminUserId);
+    await psychologist.save();
+
+    try {
+      const subject =
+        data.decision === "approved"
+          ? "Your ManoBalamHealthCare profile changes are live"
+          : "Your ManoBalamHealthCare profile changes were not approved";
+      const safeReason = (data.rejectionReason ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+      const message =
+        data.decision === "approved"
+          ? "<p>Your requested profile changes have been approved and are now visible to patients.</p>"
+          : `<p>Your requested profile changes were rejected. Your previously approved profile remains live.</p><p><strong>Reviewer note:</strong> ${safeReason}</p>`;
+      await sendEmail(psychologist.userId.toString(), subject, message);
+    } catch (error) {
+      logger.error("Failed to send pending-changes review notification", {
+        error,
+        metadata: { psychologistId },
+      });
+    }
+
+    return { id: psychologistId, changeReviewStatus: data.decision };
   }
 
   async getAppointments(query: { page: number; limit: number; status?: IAppointment["status"] }) {

@@ -17,6 +17,7 @@ router.use(requireAuth, requireRole("admin"));
 // Psychologist management
 router.get("/psychologists/pending", validate(getPsychologistsSchema, "query"), adminController.getPsychologists);
 router.patch("/psychologists/:id/verify", validate(updatePsychologistStatusSchema), adminController.updatePsychologistStatus);
+router.patch("/psychologists/:id/changes", validate(updatePsychologistStatusSchema), adminController.reviewPendingChanges);
 
 // Appointment oversight
 router.get("/appointments", validate(getAppointmentsSchema, "query"), adminController.getAppointments);

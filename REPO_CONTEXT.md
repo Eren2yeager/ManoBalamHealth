@@ -113,7 +113,7 @@ There is no root package/workspace configuration and no root project README. Cli
 
 ### Real-time contracts
 
-- Presence: online/offline and presence updates.
+- Presence: online/Offline and presence updates.
 - Chat: message and read events.
 - WebRTC: join, leave, signal, and ICE candidate events.
 - Emergency: request, accept, decline, and already-taken events.

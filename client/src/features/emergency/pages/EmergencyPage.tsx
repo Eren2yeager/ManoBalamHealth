@@ -167,7 +167,7 @@ export function EmergencyPage() {
                       matchedPsychologist.isOnline ? "bg-emerald-500" : "bg-slate-300"
                     }`}
                     title={
-                      matchedPsychologist.isOnline ? "Online now" : "Currently offline"
+                      matchedPsychologist.isOnline ? "Online" : "Offline"
                     }
                   />
                 </div>

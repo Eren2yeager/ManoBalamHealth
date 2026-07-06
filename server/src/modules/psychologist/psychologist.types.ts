@@ -1,5 +1,5 @@
-import type { IPsychologistProfile } from "./psychologist.model";
-import type { IUser } from "../user/user.model";
+import type { IPsychologistProfile, IPsychologistPendingChanges } from "./psychologist.model";
+import { buildPriceMatrix, SessionMode, SessionDuration } from "./psychologist.constants";
 
 export interface UpdatePsychologistProfileRequest {
   specialization?: string[];
@@ -11,6 +11,16 @@ export interface UpdatePsychologistProfileRequest {
   isAcceptingEmergency?: boolean;
 }
 
+export interface CredentialResponse {
+  id: string;
+  docUrl: string;
+  type: string;
+  verified: boolean;
+  uploadedAt?: string;
+}
+
+export type PriceMatrix = Record<SessionMode, Record<SessionDuration, number>>;
+
 export interface PsychologistListResponse {
   id: string;
   name: string;
@@ -19,6 +29,7 @@ export interface PsychologistListResponse {
   languages: string[];
   experienceYears: number;
   consultationFee: { amount: number; currency: string };
+  priceMatrix: PriceMatrix;
   rating: { average: number; count: number };
   isOnline: boolean;
   bio: string;
@@ -32,6 +43,7 @@ export interface PsychologistDetailResponse {
   languages: string[];
   experienceYears: number;
   consultationFee: { amount: number; currency: string };
+  priceMatrix: PriceMatrix;
   bio: string;
   rating: { average: number; count: number };
   isOnline: boolean;
@@ -39,21 +51,38 @@ export interface PsychologistDetailResponse {
   verificationStatus?: "pending" | "approved" | "rejected"; // only for self or admin
   onboardingStatus?: IPsychologistProfile["onboardingStatus"];
   rejectionReason?: string;
-  credentials?: Array<{ docUrl: string; type: string; verified: boolean }>;
+  credentials?: CredentialResponse[];
   missingFields?: string[];
   submittedAt?: string;
   isAcceptingEmergency?: boolean;
+  presenceIntendedOnline?: boolean;
+  pendingChanges?: IPsychologistPendingChanges;
+  changeReviewStatus?: "pending" | "approved" | "rejected";
+  changeRejectionReason?: string;
+  changeSubmittedAt?: string;
 }
 
 export interface UploadCredentialsResponse {
-  credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
+  credentials: CredentialResponse[];
 }
 
 export interface PsychologistOnboardingResponse extends PsychologistDetailResponse {
   onboardingStatus: IPsychologistProfile["onboardingStatus"];
   verificationStatus: "pending" | "approved" | "rejected";
-  credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
+  credentials: CredentialResponse[];
   missingFields: string[];
+}
+
+export function toCredentialResponse(credential: any): CredentialResponse {
+  return {
+    id: credential._id?.toString?.() ?? "",
+    docUrl: credential.docUrl,
+    type: credential.type,
+    verified: credential.verified,
+    uploadedAt: credential.uploadedAt
+      ? new Date(credential.uploadedAt).toISOString()
+      : undefined,
+  };
 }
 
 export function toPsychologistListResponse(
@@ -67,6 +96,7 @@ export function toPsychologistListResponse(
     languages: profile.languages,
     experienceYears: profile.experienceYears,
     consultationFee: profile.consultationFee,
+    priceMatrix: buildPriceMatrix(profile.consultationFee?.amount ?? 0),
     rating: profile.rating,
     isOnline: profile.isOnline,
     bio: profile.bio,
@@ -85,6 +115,7 @@ export function toPsychologistDetailResponse(
     languages: profile.languages,
     experienceYears: profile.experienceYears,
     consultationFee: profile.consultationFee,
+    priceMatrix: buildPriceMatrix(profile.consultationFee?.amount ?? 0),
     bio: profile.bio,
     rating: profile.rating,
     isOnline: profile.isOnline,
@@ -94,9 +125,14 @@ export function toPsychologistDetailResponse(
     response.verificationStatus = profile.verificationStatus;
     response.onboardingStatus = profile.onboardingStatus;
     response.rejectionReason = profile.rejectionReason;
-    response.credentials = profile.credentials;
+    response.credentials = (profile.credentials ?? []).map(toCredentialResponse);
     response.submittedAt = profile.submittedAt?.toISOString?.();
     response.isAcceptingEmergency = profile.isAcceptingEmergency;
+    response.presenceIntendedOnline = profile.presenceIntendedOnline;
+    response.pendingChanges = profile.pendingChanges;
+    response.changeReviewStatus = profile.changeReviewStatus;
+    response.changeRejectionReason = profile.changeRejectionReason;
+    response.changeSubmittedAt = profile.changeSubmittedAt?.toISOString?.();
   }
   return response;
 }

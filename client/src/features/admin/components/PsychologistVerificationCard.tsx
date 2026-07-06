@@ -12,6 +12,30 @@ interface PsychologistVerificationCardProps {
   isProcessing: boolean;
 }
 
+const formatFee = (fee?: { amount: number; currency: string }) =>
+  fee
+    ? new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: fee.currency || "INR",
+        maximumFractionDigits: 0,
+      }).format(fee.amount / 100)
+    : "—";
+
+const pendingChangeLabels: Record<string, string> = {
+  specialization: "Specializations",
+  languages: "Languages",
+  experienceYears: "Experience (years)",
+  consultationFee: "Base fee",
+  bio: "Bio",
+  licensedCountries: "Licensed countries",
+};
+
+function renderChangeValue(key: string, value: unknown): string {
+  if (key === "consultationFee") return formatFee(value as { amount: number; currency: string });
+  if (Array.isArray(value)) return value.join(", ");
+  return String(value ?? "—");
+}
+
 export function PsychologistVerificationCard({
   psychologist,
   onVerify,
@@ -19,6 +43,15 @@ export function PsychologistVerificationCard({
 }: PsychologistVerificationCardProps) {
   const [showReject, setShowReject] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+
+  // A card can represent a first-time application (under_review) or a
+  // change-review request from an already-approved psychologist.
+  const isChangeReview =
+    psychologist.changeReviewStatus === "pending" &&
+    psychologist.onboardingStatus === "approved";
+  const pendingEntries = Object.entries(psychologist.pendingChanges ?? {}).filter(
+    ([, value]) => value !== undefined && value !== null,
+  );
 
   return (
     <Card className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm transition-all hover:border-violet-100 hover:shadow-xl hover:shadow-primary/8">
@@ -37,8 +70,8 @@ export function PsychologistVerificationCard({
               )}
             </div>
           </div>
-          <Badge className="rounded-full bg-violet-100 text-violet-700 px-3 py-1 text-xs font-black">
-            Pending
+          <Badge className={`rounded-full px-3 py-1 text-xs font-black ${isChangeReview ? "bg-amber-100 text-amber-700" : "bg-violet-100 text-violet-700"}`}>
+            {isChangeReview ? "Profile changes" : "Pending"}
           </Badge>
         </div>
       </CardHeader>
@@ -108,7 +141,8 @@ export function PsychologistVerificationCard({
                 Fee
               </p>
               <p className="text-sm font-semibold text-slate-700">
-                {psychologist.consultationFee.currency} {psychologist.consultationFee.amount}
+                {formatFee(psychologist.consultationFee)}
+                <span className="ml-1 text-xs font-normal text-slate-400">base, 30-min video</span>
               </p>
             </div>
           </div>
@@ -131,6 +165,28 @@ export function PsychologistVerificationCard({
             ))}
           </div>
         </div>
+
+        {isChangeReview && pendingEntries.length > 0 && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <h4 className="text-sm font-black text-amber-900">Requested changes</h4>
+            <p className="mt-1 text-xs text-amber-700">The live profile above keeps serving patients until these changes are approved.</p>
+            <div className="mt-3 space-y-2">
+              {pendingEntries.map(([key, value]) => (
+                <div key={key} className="flex items-start gap-3 text-sm">
+                  <p className="min-w-[130px] text-xs font-bold uppercase tracking-wider text-amber-700 mt-0.5">
+                    {pendingChangeLabels[key] ?? key}
+                  </p>
+                  <div className="min-w-0">
+                    <p className="text-xs text-slate-400 line-through">
+                      {renderChangeValue(key, (psychologist as unknown as Record<string, unknown>)[key])}
+                    </p>
+                    <p className="font-semibold text-slate-800">{renderChangeValue(key, value)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {showReject && (
           <div className="space-y-3 rounded-2xl border border-rose-100 bg-rose-50 p-4">

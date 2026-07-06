@@ -11,6 +11,8 @@ import {
 
 const router = Router();
 
+router.get("/meta", psychologistController.getMeta);
+
 router.get(
   "/me/onboarding",
   requireAuth,
@@ -40,6 +42,13 @@ router.post(
   credentialUpload.array("documents", 5),
   validate(uploadCredentialsSchema), // then validate!
   psychologistController.uploadCredentials,
+);
+
+router.delete(
+  "/me/credentials/:credentialId",
+  requireAuth,
+  requireRole("psychologist"),
+  psychologistController.deleteCredential,
 );
 
 router.patch(

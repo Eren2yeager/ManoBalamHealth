@@ -25,6 +25,16 @@ export interface PsychologistListItem {
   credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
   submittedAt?: string;
   rejectionReason?: string;
+  pendingChanges?: {
+    specialization?: string[];
+    languages?: string[];
+    experienceYears?: number;
+    consultationFee?: { amount: number; currency: string };
+    bio?: string;
+    licensedCountries?: string[];
+  };
+  changeReviewStatus?: "pending" | "approved" | "rejected";
+  changeSubmittedAt?: string;
   rating: { average: number; count: number };
   createdAt: string;
 }

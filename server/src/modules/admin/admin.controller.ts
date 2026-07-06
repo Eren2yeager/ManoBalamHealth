@@ -20,6 +20,16 @@ export class AdminController {
     res.status(StatusCodes.OK).json(ApiResponse.success(result, "Psychologist status updated"));
   });
 
+  // PATCH /admin/psychologists/:id/changes — body: { decision, rejectionReason? }
+  reviewPendingChanges = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.reviewPendingChanges(
+      req.params.id as string,
+      req.body,
+      req.user!.userId,
+    );
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "Pending changes reviewed"));
+  });
+
   getAppointments = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const result = await adminService.getAppointments(req.query as any);
     res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Appointments retrieved successfully", result.meta));

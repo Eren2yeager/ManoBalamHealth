@@ -18,10 +18,19 @@ export const getPsychologistById = async (id: string): Promise<PsychologistDetai
   return data.data;
 };
 
+export const deleteCredential = async (
+  credentialId: string
+): Promise<{ credentials: PsychologistCredential[] }> => {
+  const { data } = await axiosInstance.delete<ApiSuccessResponse<{ credentials: PsychologistCredential[] }>>(
+    `/psychologists/me/credentials/${credentialId}`
+  );
+  return data.data;
+};
+
 export const uploadCredentials = async (
   files: File[],
   type: "license" | "degree" | "id_proof"
-): Promise<{ credentials: Array<{ docUrl: string; type: string; verified: boolean }> }> => {
+): Promise<{ credentials: PsychologistCredential[] }> => {
   const form = new FormData();
   files.forEach((f) => form.append("documents", f));
   form.append("type", type);

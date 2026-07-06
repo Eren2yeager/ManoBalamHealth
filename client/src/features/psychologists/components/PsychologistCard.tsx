@@ -29,11 +29,15 @@ export const PsychologistCard = ({
   psychologist,
   animationClass = "",
 }: PsychologistCardProps) => {
+  // Cheapest option (chat / 30 min) from the server-derived price matrix,
+  // falling back to the base fee (paise, per 30-min video session).
+  const startingPaise =
+    psychologist.priceMatrix?.chat?.[30] ?? psychologist.consultationFee.amount;
   const fee = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: psychologist.consultationFee.currency || "INR",
     maximumFractionDigits: 0,
-  }).format(psychologist.consultationFee.amount / 100);
+  }).format(startingPaise / 100);
 
   return (
     <article
@@ -57,7 +61,7 @@ export const PsychologistCard = ({
               className={`absolute bottom-0 right-0 size-4 rounded-full border-[3px] border-white ${
                 psychologist.isOnline ? "bg-emerald-500" : "bg-slate-300"
               }`}
-              title={psychologist.isOnline ? "Online now" : "Currently offline"}
+              title={psychologist.isOnline ? "Online" : "Offline"}
             />
           </div>
 
@@ -123,7 +127,7 @@ export const PsychologistCard = ({
           <div className="rounded-2xl bg-slate-50 p-3">
             <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
               <IndianRupee className="size-3.5" />
-              Session fee
+              Sessions from
             </p>
             <p className="mt-1 text-sm font-black text-slate-800">{fee}</p>
           </div>

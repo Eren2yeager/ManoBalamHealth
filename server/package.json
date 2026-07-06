@@ -9,8 +9,7 @@
     "lint": "eslint src --ext .ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "migrate:psychologist-onboarding": "ts-node -r tsconfig-paths/register src/scripts/migratePsychologistOnboarding.ts"
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "",

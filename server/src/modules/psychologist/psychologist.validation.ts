@@ -1,15 +1,40 @@
 import { z } from "zod";
+import {
+  SPECIALIZATIONS,
+  LANGUAGES,
+  CREDENTIAL_TYPES,
+  COUNTRY_CODES,
+} from "./psychologist.constants";
 
 export const updatePsychologistProfileSchema = z.object({
-  specialization: z.array(z.string().trim().min(2).max(80)).min(1).max(12).optional(),
-  languages: z.array(z.string().trim().min(2).max(50)).min(1).max(12).optional(),
+  specialization: z
+    .array(z.enum(SPECIALIZATIONS as unknown as [string, ...string[]]))
+    .min(1)
+    .max(12)
+    .optional(),
+  languages: z
+    .array(z.enum(LANGUAGES as unknown as [string, ...string[]]))
+    .min(1)
+    .max(12)
+    .optional(),
   experienceYears: z.number().int().min(0).max(70).optional(),
   consultationFee: z.object({
-    amount: z.number().positive().max(1_000_000),
+    // Base fee in paise for a 30-minute video session (₹50 – ₹1,00,000)
+    amount: z.number().int().min(5000).max(10_000_000),
     currency: z.string().trim().length(3),
   }).optional(),
   bio: z.string().trim().min(50).max(3000).optional(),
-  licensedCountries: z.array(z.string().trim().regex(/^[A-Z]{2}$/)).min(1).max(30).optional(),
+  licensedCountries: z
+    .array(
+      z
+        .string()
+        .trim()
+        .regex(/^[A-Z]{2}$/)
+        .refine((code) => COUNTRY_CODES.has(code), { message: "Unsupported country code" }),
+    )
+    .min(1)
+    .max(30)
+    .optional(),
   isAcceptingEmergency: z.boolean().optional(),
 });
 
@@ -24,5 +49,9 @@ export const getPsychologistsQuerySchema = z.object({
 });
 
 export const uploadCredentialsSchema = z.object({
-  type: z.enum(["license", "degree", "id_proof"]),
+  type: z.enum(CREDENTIAL_TYPES as unknown as [string, ...string[]]),
+});
+
+export const deleteCredentialParamsSchema = z.object({
+  credentialId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid credential id"),
 });

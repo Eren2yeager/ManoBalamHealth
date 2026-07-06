@@ -5,6 +5,9 @@
   "description": "Combined build/start scripts for deploying client + server as one Render web service",
   "scripts": {
     "build": "npm ci --prefix client && npm run build --prefix client && npm ci --prefix server && npm run build --prefix server",
-    "start": "npm start --prefix server"
+    "start": "npm start --prefix server",
+    "dev": "npm run build --prefix client && npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "dev:server": "npm run dev --prefix server"
   }
 }

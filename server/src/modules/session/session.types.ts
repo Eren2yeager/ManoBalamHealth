@@ -17,7 +17,7 @@ export interface GetSessionResponse {
     psychologistOnline: boolean;
   };
   iceServers: Array<{
-    urls: string;
+    urls: string | string[];
     username?: string;
     credential?: string;
   }>;

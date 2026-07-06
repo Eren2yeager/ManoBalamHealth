@@ -1,7 +1,7 @@
 import type { ConsultationMode } from "@/types/global.types";
 
 export interface IceServer {
-  urls: string;
+  urls: string | string[];
   username?: string;
   credential?: string;
 }

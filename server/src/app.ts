@@ -49,7 +49,7 @@ export const createApp = (): Application => {
   // index.html for SPA routes. API routes are matched above; anything under
   // /api that reaches this point still gets the JSON 404 below.
   const clientDist = path.resolve(__dirname, "../../client/dist");
-  if (env.NODE_ENV === "production" && fs.existsSync(clientDist)) {
+  if (fs.existsSync(clientDist)) {
     app.use(express.static(clientDist));
     app.get(/^\/(?!api\/).*/, (_req, res) => {
       res.sendFile(path.join(clientDist, "index.html"));

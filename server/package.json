@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/server.ts",
     "build": "tsc",
-    "start": "node -r tsconfig-paths/register dist/server.js",
+    "start": "TS_NODE_BASEURL=./dist node -r tsconfig-paths/register dist/server.js",
     "lint": "eslint src --ext .ts",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -35,6 +35,8 @@
     "razorpay": "^2.9.6",
     "resend": "^6.12.4",
     "socket.io": "^4.8.3",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.3",
     "winston": "^3.19.0",
     "zod": "^4.4.3"
   },
@@ -51,8 +53,6 @@
     "@types/node": "^25.9.3",
     "jest": "^30.4.2",
     "ts-jest": "^29.4.11",
-    "ts-node-dev": "^2.0.0",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.3"
+    "ts-node-dev": "^2.0.0"
   }
 }

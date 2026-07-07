@@ -69,7 +69,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AuthInit>
         <PresenceInitializer />
         {children}
-        <Toaster />
+        <Toaster position="top-center" />
       </AuthInit>
     </ThemeProvider>
   );

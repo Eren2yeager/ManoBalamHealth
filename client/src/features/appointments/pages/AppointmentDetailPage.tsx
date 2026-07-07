@@ -31,6 +31,7 @@ import type { AppointmentDetail } from "../types/appointment.types";
 import type { ConsultationMode } from "@/types/global.types";
 import { RetryPaymentButton } from "@/features/payment/components/RetryPaymentButton";
 import { getSessionAccessState } from "../utils/sessionAccess";
+import { SessionNotesCard } from "@/features/session/components/SessionNotes";
 
 const MODE_CONFIG: Record<
   ConsultationMode,
@@ -263,6 +264,12 @@ export const AppointmentDetailPage = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Private session notes (psychologist only) */}
+            {user?.role === "psychologist" &&
+              ["confirmed", "in_progress", "completed"].includes(appointment.status) && (
+                <SessionNotesCard appointmentId={appointment.id} />
+              )}
 
             {/* Feedback Section */}
             {appointment.feedback && (

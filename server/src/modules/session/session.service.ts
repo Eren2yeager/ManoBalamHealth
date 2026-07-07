@@ -1,4 +1,4 @@
-import { SessionModel } from "./session.model";
+import { ISession, SessionModel } from "./session.model";
 import { AppointmentModel } from "@/modules/appointment/appointment.model";
 import { PsychologistModel } from "@/modules/psychologist/psychologist.model";
 import { ApiError } from "@/utils/ApiError";
@@ -9,6 +9,7 @@ import redis from "@/config/redis";
 import { sessionLifecycleService } from "./sessionLifecycle.service";
 import {
   GetSessionResponse,
+  SessionNoteEntryDto,
   UpdateSessionNotesRequest,
   UpdateSessionNotesResponse,
 } from "./session.types";
@@ -143,6 +144,9 @@ class SessionService {
         psychologistOnline: psychologistSocketCount > 0,
       },
       iceServers,
+      ...(userId === psychologistUserId
+        ? { psychologistNotes: buildNoteEntries(session) }
+        : {}),
     };
   }
 
@@ -172,8 +176,16 @@ class SessionService {
       throw new ApiError(StatusCodes.FORBIDDEN, ErrorCodes.FORBIDDEN_ROLE, "You are not authorized to update notes for this session");
     }
 
-    // Update notes
-    session.psychologistNotes = data.notes;
+    // Replace the structured note entries wholesale (the client always sends
+    // the full list). Once entries exist they supersede the legacy string.
+    session.psychologistNoteEntries = data.entries.map((entry) => ({
+      id: entry.id,
+      text: entry.text,
+      emotion: entry.emotion,
+      atSeconds: entry.atSeconds,
+      createdAt: entry.createdAt ? new Date(entry.createdAt) : new Date(),
+    }));
+    session.psychologistNotes = undefined;
     await session.save();
 
     return {
@@ -181,6 +193,32 @@ class SessionService {
       notesUpdated: true,
     };
   }
+}
+
+/**
+ * Structured note entries for a session; legacy free-text notes (saved before
+ * structured entries existed) are folded in as a single entry.
+ */
+function buildNoteEntries(session: ISession): SessionNoteEntryDto[] {
+  if (session.psychologistNoteEntries?.length) {
+    return session.psychologistNoteEntries.map((entry) => ({
+      id: entry.id,
+      text: entry.text,
+      emotion: entry.emotion,
+      atSeconds: entry.atSeconds,
+      createdAt: entry.createdAt.toISOString(),
+    }));
+  }
+  if (session.psychologistNotes) {
+    return [
+      {
+        id: "legacy",
+        text: session.psychologistNotes,
+        createdAt: (session as any).updatedAt?.toISOString?.() ?? new Date(0).toISOString(),
+      },
+    ];
+  }
+  return [];
 }
 
 export const sessionService = new SessionService();

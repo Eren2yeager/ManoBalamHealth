@@ -25,4 +25,23 @@ export interface SessionDetail {
     psychologistOnline: boolean;
   };
   iceServers: IceServer[];
+  /** Private notes — only present when the viewer is the session's psychologist */
+  psychologistNotes?: SessionNoteEntry[];
+}
+
+export type SessionNoteEmotion =
+  | "happy"
+  | "calm"
+  | "neutral"
+  | "anxious"
+  | "sad"
+  | "angry";
+
+export interface SessionNoteEntry {
+  id: string;
+  text: string;
+  emotion?: SessionNoteEmotion;
+  /** Elapsed seconds into the session when the note was taken (if taken live) */
+  atSeconds?: number;
+  createdAt: string;
 }

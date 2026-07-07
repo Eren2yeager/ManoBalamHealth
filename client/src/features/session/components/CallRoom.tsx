@@ -29,6 +29,7 @@ import {
   Mic,
   MicOff,
   MonitorUp,
+  NotebookPen,
   Phone,
   PhoneOff,
   Settings2,
@@ -49,6 +50,9 @@ interface CallRoomProps {
   counterpartOnline: boolean;
   chatOpen: boolean;
   onToggleChat: () => void;
+  /** Rendered only when provided (psychologist-only private notes) */
+  notesOpen?: boolean;
+  onToggleNotes?: () => void;
   onLeave?: () => void;
 }
 
@@ -224,6 +228,8 @@ export function CallRoom({
   counterpartOnline,
   chatOpen,
   onToggleChat,
+  notesOpen = false,
+  onToggleNotes,
   onLeave,
 }: CallRoomProps) {
   const {
@@ -589,7 +595,22 @@ export function CallRoom({
           </button>
         </div>
 
-        <div className="flex items-center justify-end sm:min-w-24">
+        <div className="flex items-center justify-end gap-2 sm:min-w-24 sm:gap-3">
+          {onToggleNotes && (
+            <button
+              type="button"
+              onClick={onToggleNotes}
+              aria-label={notesOpen ? "Close notes" : "Open notes"}
+              title={notesOpen ? "Close notes" : "Open session notes"}
+              className={`grid size-11 place-items-center rounded-full transition-colors sm:size-12 ${
+                notesOpen
+                  ? "bg-primary/20 text-primary"
+                  : "bg-white/10 text-white hover:bg-white/20"
+              }`}
+            >
+              <NotebookPen className="size-5" />
+            </button>
+          )}
           <button
             type="button"
             onClick={onToggleChat}

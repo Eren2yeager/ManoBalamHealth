@@ -1,10 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { DocumentViewerDialog } from "@/components/shared/DocumentViewerDialog";
 import { formatInViewerTz } from "@/lib/timezone";
 import type { PendingPsychologistItem, VerifyPsychologistDto } from "../types/admin.types";
 import { useState } from "react";
-import { CheckCircle2, XCircle, FileText, Stethoscope, Users, Calendar } from "lucide-react";
+import { BadgeCheck, CheckCircle2, XCircle, FileText, Globe2, Languages, Stethoscope, Users, Calendar } from "lucide-react";
+
+const credentialTypeLabels: Record<string, string> = {
+  license: "Professional license",
+  degree: "Degree certificate",
+  id_proof: "Government ID proof",
+};
 
 interface PsychologistVerificationCardProps {
   psychologist: PendingPsychologistItem;
@@ -43,6 +50,7 @@ export function PsychologistVerificationCard({
 }: PsychologistVerificationCardProps) {
   const [showReject, setShowReject] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; title: string } | null>(null);
 
   // A card can represent a first-time application (under_review) or a
   // change-review request from an already-approved psychologist.
@@ -117,53 +125,63 @@ export function PsychologistVerificationCard({
           </div>
         </div>
 
-        <div>
+        <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
           <h4 className="text-sm font-black text-slate-900 mb-3">Profile</h4>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1 min-w-[80px]">
-                Languages
-              </p>
-              <p className="text-sm text-slate-600">
-                {psychologist.languages.join(", ") || "Not provided"}
-              </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex items-start gap-2">
+              <Languages className="mt-0.5 size-4 shrink-0 text-primary" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Languages</p>
+                <p className="mt-0.5 text-sm text-slate-600">
+                  {psychologist.languages.join(", ") || "Not provided"}
+                </p>
+              </div>
             </div>
-            <div className="flex items-start gap-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1 min-w-[80px]">
-                Bio
-              </p>
-              <p className="text-sm leading-relaxed text-slate-600">
-                {psychologist.bio}
-              </p>
+            <div className="flex items-start gap-2">
+              <Globe2 className="mt-0.5 size-4 shrink-0 text-primary" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Licensed countries</p>
+                <p className="mt-0.5 text-sm text-slate-600">
+                  {psychologist.licensedCountries.join(", ") || "Not provided"}
+                </p>
+              </div>
             </div>
-            <div className="flex items-start gap-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1 min-w-[80px]">
-                Fee
-              </p>
-              <p className="text-sm font-semibold text-slate-700">
-                {formatFee(psychologist.consultationFee)}
-                <span className="ml-1 text-xs font-normal text-slate-400">base, 30-min video</span>
-              </p>
-            </div>
+          </div>
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Bio</p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600">
+              {psychologist.bio || "Not provided"}
+            </p>
+          </div>
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Base fee</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">
+              {formatFee(psychologist.consultationFee)}
+              <span className="ml-1 text-xs font-normal text-slate-400">per 30-min video session — other modes/durations derive from platform multipliers</span>
+            </p>
           </div>
         </div>
 
         <div>
           <h4 className="text-sm font-black text-slate-900 mb-3">Credentials</h4>
-          <div className="flex flex-wrap gap-2">
-            {psychologist.credentials.map((c, idx) => (
-              <a
-                key={idx}
-                href={c.docUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-primary hover:border-primary hover:bg-violet-50 transition-colors"
-              >
-                <FileText className="size-4" />
-                {c.type}
-              </a>
-            ))}
-          </div>
+          {psychologist.credentials.length === 0 ? (
+            <p className="text-sm text-slate-500">No documents uploaded.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {psychologist.credentials.map((c, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setViewerDoc({ url: c.docUrl, title: credentialTypeLabels[c.type] ?? c.type })}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-primary hover:border-primary hover:bg-violet-50 transition-colors"
+                >
+                  <FileText className="size-4" />
+                  {credentialTypeLabels[c.type] ?? c.type}
+                  {c.verified && <BadgeCheck className="size-4 text-emerald-500" />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {isChangeReview && pendingEntries.length > 0 && (
@@ -233,6 +251,14 @@ export function PsychologistVerificationCard({
             {showReject ? "Confirm Rejection" : "Reject"}
           </Button>
         </div>
+
+        <DocumentViewerDialog
+          open={viewerDoc !== null}
+          onOpenChange={(open) => !open && setViewerDoc(null)}
+          url={viewerDoc?.url ?? null}
+          title={viewerDoc?.title}
+          description={`Uploaded by ${psychologist.name}`}
+        />
       </CardContent>
     </Card>
   );

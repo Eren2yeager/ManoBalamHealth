@@ -376,11 +376,52 @@ export function PsychologistOnboardingPage() {
               </Card>
             )}
 
-            {!isLocked && <Button type="submit" disabled={saving} className="h-12 rounded-xl font-bold">{saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <Upload className="mr-2 size-4" />}{isApproved ? "Submit changes for review" : "Save progress"}</Button>}
-            {!isApproved && <Button type="button" onClick={submit} disabled={!canSubmit || saving} className="h-12 rounded-xl bg-emerald-600 font-bold hover:bg-emerald-700"><Send className="mr-2 size-4" />Submit for review</Button>}
+            {!isLocked && <Button type="submit" disabled={saving || !isDirty} className="h-12 rounded-xl font-bold">{saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <Upload className="mr-2 size-4" />}{isApproved ? "Submit changes for review" : "Save progress"}</Button>}
+            {!isLocked && !isDirty && <p className="text-center text-xs text-slate-400">No unsaved changes.</p>}
+            {!isApproved && <Button type="button" onClick={() => setConfirmSubmitOpen(true)} disabled={!canSubmit || saving} className="h-12 rounded-xl bg-emerald-600 font-bold hover:bg-emerald-700"><Send className="mr-2 size-4" />Submit for review</Button>}
           </div>
         </form>
       </div>
+
+      <Dialog open={confirmSubmitOpen} onOpenChange={setConfirmSubmitOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Submit for review?</DialogTitle>
+            <DialogDescription>
+              Your profile and credentials will be sent to the ManoBalamHealthCare team for
+              verification. While under review you won't be able to edit your profile.
+              {isDirty && (
+                <span className="mt-2 block font-semibold text-amber-600">
+                  You have unsaved changes — save your progress first, or they won't be included.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmSubmitOpen(false)} className="rounded-xl font-bold">
+              Keep editing
+            </Button>
+            <Button
+              onClick={() => {
+                setConfirmSubmitOpen(false);
+                void submit();
+              }}
+              disabled={saving}
+              className="rounded-xl bg-emerald-600 font-bold hover:bg-emerald-700"
+            >
+              <Send className="mr-2 size-4" />
+              Confirm & submit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <DocumentViewerDialog
+        open={viewerDoc !== null}
+        onOpenChange={(open) => !open && setViewerDoc(null)}
+        url={viewerDoc?.url ?? null}
+        title={viewerDoc?.title}
+      />
     </main>
   );
 }

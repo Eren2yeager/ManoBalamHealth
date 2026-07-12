@@ -1,0 +1,32 @@
+[
+  {
+    "committeeType": "administrative",
+    "name": "Kavya Sharma",
+    "position": "Operations Lead",
+    "operationsExperience": "10 years coordinating healthcare operations",
+    "responsibilities": ["Service workflows", "Staff coordination", "Operational quality"],
+    "bio": "Coordinates the people and processes required for dependable day-to-day service delivery.",
+    "imageUrl": "https://i.pravatar.cc/900?img=32",
+    "isExample": true
+  },
+  {
+    "committeeType": "administrative",
+    "name": "Nikhil Verma",
+    "position": "Program Coordinator",
+    "operationsExperience": "7 years in program delivery and administration",
+    "responsibilities": ["Scheduling", "Documentation", "Team communication"],
+    "bio": "Maintains schedules, documentation, and communication across service teams.",
+    "imageUrl": "https://i.pravatar.cc/900?img=11",
+    "isExample": true
+  },
+  {
+    "committeeType": "administrative",
+    "name": "Riya Bose",
+    "position": "Quality Coordinator",
+    "operationsExperience": "6 years in healthcare quality assurance",
+    "responsibilities": ["Process review", "Quality standards", "Service improvement"],
+    "bio": "Reviews operational standards and helps teams improve service consistency.",
+    "imageUrl": "https://i.pravatar.cc/900?img=44",
+    "isExample": true
+  }
+]

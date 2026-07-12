@@ -1,0 +1,46 @@
+[
+  {
+    "committeeType": "technical",
+    "name": "Vivek Khatkar",
+    "position": "Technical Committee Member",
+    "technicalExperience": "Technology experience details to be confirmed",
+    "skills": ["Platform architecture", "Engineering quality", "Delivery"],
+    "responsibilities": ["Architecture review", "Technical standards", "Platform planning"],
+    "bio": "Contributes to platform architecture, delivery standards, and technical decision-making.",
+    "imageUrl": "https://i.pravatar.cc/900?img=13",
+    "isExample": true
+  },
+  {
+    "committeeType": "technical",
+    "name": "Abhiahek Prajapati",
+    "position": "Technical Committee Member",
+    "technicalExperience": "Technology experience details to be confirmed",
+    "skills": ["Application security", "Reliability", "Development"],
+    "responsibilities": ["Security review", "Implementation quality", "Service reliability"],
+    "bio": "Supports secure implementation, product reliability, and maintainable engineering practices.",
+    "imageUrl": "https://i.pravatar.cc/900?img=5",
+    "isExample": true
+  },
+  {
+    "committeeType": "technical",
+    "name": "Samar Gautam",
+    "position": "Technical Committee Member",
+    "technicalExperience": "Technology experience details to be confirmed",
+    "skills": ["Product engineering", "Accessibility", "Technical review"],
+    "responsibilities": ["Frontend quality", "Accessibility review", "Product improvement"],
+    "bio": "Contributes to accessible product experiences, technical reviews, and platform improvement.",
+    "imageUrl": "https://i.pravatar.cc/900?img=14",
+    "isExample": true
+  },
+  {
+    "committeeType": "technical",
+    "name": "Abhinav Kumar",
+    "position": "Technical Committee Member",
+    "technicalExperience": "Technology experience details to be confirmed",
+    "skills": ["Infrastructure", "Data workflows", "Operations"],
+    "responsibilities": ["Infrastructure review", "Data flow", "Operational resilience"],
+    "bio": "Supports infrastructure resilience, information workflows, and responsible technology delivery.",
+    "imageUrl": "https://i.pravatar.cc/900?img=68",
+    "isExample": true
+  }
+]

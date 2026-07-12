@@ -1,0 +1,22 @@
+[
+  {
+    "committeeType": "consultative",
+    "name": "Dr. Ananya Rao",
+    "designation": "Senior Clinical Advisor",
+    "advisoryExperience": "15 years in counselling, supervision, and inclusive service design",
+    "specialties": ["Trauma-informed care", "Clinical supervision", "Cultural wellbeing"],
+    "bio": "Advises on culturally aware services and responsible professional-practice standards.",
+    "imageUrl": "https://i.pravatar.cc/900?img=45",
+    "isExample": true
+  },
+  {
+    "committeeType": "consultative",
+    "name": "Farhan Ali",
+    "designation": "Community Advisor",
+    "advisoryExperience": "9 years working with community mental-health programs",
+    "specialties": ["Community outreach", "Youth wellbeing", "Accessibility"],
+    "bio": "Brings community experience into policy, accessibility, and outreach decisions.",
+    "imageUrl": "https://i.pravatar.cc/900?img=15",
+    "isExample": true
+  }
+]

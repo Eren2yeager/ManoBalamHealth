@@ -74,11 +74,11 @@ export function OrganizationDetailPage() {
             <div className="max-w-2xl">
               <h2 className="text-3xl font-black tracking-[-.035em] sm:text-4xl">People behind this work</h2>
               <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
-                Add each confirmed member's name, photograph, role, credentials, biography, and focus areas to the organization content file.
+                Meet the people contributing their experience, perspective, and specialist knowledge to this group.
               </p>
             </div>
             <div className="mt-9">
-              <CommitteeGrid members={page.members} />
+              <CommitteeGrid members={page.members} committeeSlug={page.slug} />
             </div>
           </div>
         </section>

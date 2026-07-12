@@ -1,0 +1,22 @@
+[
+  {
+    "committeeType": "executive",
+    "name": "Dr. Meera Nair",
+    "position": "Committee Chair",
+    "governanceExperience": "18 years in mental-health leadership and clinical governance",
+    "leadershipAreas": ["Strategy", "Clinical governance", "Partnerships"],
+    "bio": "Guides organizational priorities, accountability, and responsible long-term growth.",
+    "imageUrl": "https://i.pravatar.cc/900?img=47",
+    "isExample": true
+  },
+  {
+    "committeeType": "executive",
+    "name": "Arjun Menon",
+    "position": "Governance Member",
+    "governanceExperience": "12 years in healthcare operations and organizational planning",
+    "leadershipAreas": ["Governance", "Operations", "Sustainability"],
+    "bio": "Supports strategic decisions, organizational accountability, and sustainable service delivery.",
+    "imageUrl": "https://i.pravatar.cc/900?img=12",
+    "isExample": true
+  }
+]

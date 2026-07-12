@@ -22,14 +22,52 @@ export interface ContentPage {
   }>;
 }
 
-export interface CommitteeMember {
+interface MemberBase {
   name: string;
-  role: string;
-  description: string;
   imageUrl?: string;
-  credentials?: string;
-  focusAreas?: string[];
+  bio: string;
+  isExample?: boolean;
 }
+
+export interface ExecutiveMember extends MemberBase {
+  committeeType: "executive";
+  position: string;
+  governanceExperience: string;
+  leadershipAreas: string[];
+}
+
+export interface AdministrativeMember extends MemberBase {
+  committeeType: "administrative";
+  position: string;
+  operationsExperience: string;
+  responsibilities: string[];
+}
+
+export interface ConsultativeMember extends MemberBase {
+  committeeType: "consultative";
+  designation: string;
+  advisoryExperience: string;
+  specialties?: string[];
+}
+
+export interface TechnicalMember extends MemberBase {
+  committeeType: "technical";
+  position: string;
+  technicalExperience: string;
+  skills: string[];
+  responsibilities: string[];
+}
+
+export interface ClinicalAmbassador extends MemberBase {
+  committeeType: "clinical";
+  designation: string;
+  qualifications: string;
+  clinicalExperience: string;
+  specialties: string[];
+  languages: string[];
+}
+
+export type CommitteeMember = ExecutiveMember | AdministrativeMember | ConsultativeMember | TechnicalMember | ClinicalAmbassador;
 
 export interface OrganizationPage extends ContentPage {
   members: CommitteeMember[];

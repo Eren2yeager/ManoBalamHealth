@@ -24,7 +24,7 @@ export function BrandLogo({
     >
       <span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white shadow-lg shadow-primary/15 ring-1 ring-slate-200/70 transition-transform group-hover:-rotate-2 group-hover:scale-105">
         <img
-          src="/images/favicon.svg"
+          src="/images/logo.png"
           alt=""
           className={cn("size-10 object-contain", imageClassName)}
         />

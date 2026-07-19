@@ -1,126 +1,171 @@
 <div align="center">
 
-# ManoBalamHealthCare
+<img src="https://capsule-render.vercel.app/api?type=waving&height=220&color=0:ede9fe,45:c4b5fd,100:7c3aed&text=ManoBalamHealthCare&fontColor=ffffff&fontSize=42&fontAlignY=38&desc=A%20calm%20digital%20doorway%20to%20mental-health%20support&descAlignY=58&descSize=16" alt="ManoBalamHealthCare purple gradient banner" />
 
-### A calm digital doorway to mental-health support
+<br />
 
-ManoBalamHealthCare is a full-stack mental-health care platform designed to help people discover trusted professionals, book online sessions, complete guided self-assessments, and access supportive care pathways from one thoughtful, privacy-conscious experience.
+![Mental Health](https://img.shields.io/badge/Mental%20Health-7c3aed?style=for-the-badge&labelColor=ede9fe&color=7c3aed)
+![Teletherapy](https://img.shields.io/badge/Teletherapy-6d28d9?style=for-the-badge&labelColor=f5f3ff&color=6d28d9)
+![Wellness](https://img.shields.io/badge/Wellness-c4b5fd?style=for-the-badge&labelColor=4c1d95&color=c4b5fd)
+![Care Platform](https://img.shields.io/badge/Care%20Platform-a78bfa?style=for-the-badge&labelColor=312e81&color=a78bfa)
 
-`Mental Health` / `Teletherapy` / `Appointments` / `Assessments` / `Secure Sessions`
+### Care that feels closer. Support that feels calmer.
+
+ManoBalamHealthCare is a full-stack mental-health care platform that helps people discover trusted professionals, book online sessions, complete guided self-assessments, and access supportive care pathways through one gentle, privacy-conscious experience.
 
 </div>
 
 ---
 
-## The idea behind the application
+## A softer way to reach support
 
-Finding mental-health support should not feel confusing, distant, or overwhelming. ManoBalamHealthCare brings the essential parts of a care journey into one gentle digital space: discovery, booking, payment, session access, assessments, feedback, and administrative support.
+Finding mental-health care can feel confusing, delayed, or emotionally heavy. ManoBalamHealthCare is designed to make that journey feel clearer and more human.
 
-The application is built around a simple belief: technology should make care easier to reach without removing the human warmth, dignity, and responsibility that mental healthcare deserves.
+It brings together public awareness, professional discovery, appointment booking, secure online care sessions, guided assessments, feedback, and administrative support inside a calm digital environment inspired by lavender, violet, and wellness-focused design.
 
-## What ManoBalamHealthCare helps with
+> Technology should not replace the human side of mental healthcare. It should make the right human support easier to reach.
 
-### For people seeking support
+## The application in one glance
 
-- Explore verified mental-health professionals
-- View professional profiles and availability
-- Book chat, audio, or video consultations
-- Complete guided mental-health self-assessments
-- Track appointments and session history
-- Access urgent-support and crisis-resource pathways
-- Share feedback after care experiences
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>For people seeking care</h3>
+      <p>Discover professionals, book consultations, join sessions, reflect through assessments, and continue the care journey with more confidence.</p>
+    </td>
+    <td width="33%" valign="top">
+      <h3>For mental-health professionals</h3>
+      <p>Manage profile details, availability, appointments, and care sessions through a focused professional workspace.</p>
+    </td>
+    <td width="33%" valign="top">
+      <h3>For administrators</h3>
+      <p>Support safe operations, review professionals, monitor platform activity, and help maintain care quality.</p>
+    </td>
+  </tr>
+</table>
 
-### For psychologists and counsellors
+## What makes it meaningful
 
-- Manage professional profile and onboarding details
-- Set availability and consultation preferences
-- Review upcoming and past appointments
-- Join secure care sessions
-- Communicate with users during scheduled sessions
-- Maintain service quality through structured workflows
+| Focus | How the app supports it |
+| --- | --- |
+| Trust | Clear professional profiles, structured onboarding, and role-based experiences. |
+| Access | Online booking and digital sessions help reduce distance between users and support. |
+| Calm experience | Soft purple visuals, rounded layouts, reassuring language, and uncluttered flows. |
+| Continuity | Users can move from discovery to appointments, sessions, assessments, and feedback. |
+| Responsibility | Crisis pathways and safety notes keep the platform grounded in real-world care needs. |
 
-### For administrators
-
-- Review professional onboarding submissions
-- Monitor platform activity and care operations
-- Manage appointments, reports, payments, and service quality
-- Support safe, accountable platform governance
-
-## Experience at a glance
+## Core experiences
 
 ```text
-Visitor
+Learn about care
   |
-  +-- Learns about the organization and available services
+  +-- Create an account
   |
-  +-- Creates an account or signs in
+  +-- Discover a suitable professional
   |
-  +-- Finds a suitable mental-health professional
+  +-- Choose a consultation mode
   |
-  +-- Books and confirms an appointment
+  +-- Book and confirm an appointment
   |
-  +-- Joins a secure online session
+  +-- Join a secure online session
   |
-  +-- Continues care through assessments, follow-ups, and feedback
+  +-- Continue with assessments, feedback, and follow-up support
 ```
 
-## Key product areas
+## Feature highlights
 
-| Area | Purpose |
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Public wellness website</h3>
+      <p>Beautiful informational pages for the organization, services, committees, events, FAQs, contact, and care awareness.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Professional discovery</h3>
+      <p>Users can explore mental-health professionals and understand availability, care mode, and profile context before booking.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Appointment flow</h3>
+      <p>A guided path from choosing a professional to selecting a slot, confirming details, and preparing for care.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Online care sessions</h3>
+      <p>Digital session spaces designed for chat, audio, and video-oriented care interactions.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Self-assessments</h3>
+      <p>Structured tools that help users reflect on emotional wellbeing areas such as stress, anxiety, and depression.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Admin and quality support</h3>
+      <p>Operational tools help the organization review professionals, track activity, and support responsible service delivery.</p>
+    </td>
+  </tr>
+</table>
+
+## Visual direction
+
+The application follows a calm mental-health design language:
+
+| Theme token | Feeling |
 | --- | --- |
-| Public website | Presents the organization, services, committees, events, FAQs, and contact information in a clear public-facing experience. |
-| Authentication | Supports secure entry into role-based spaces for users, professionals, and administrators. |
-| Professional discovery | Helps users browse, filter, and understand available mental-health professionals. |
-| Appointment booking | Turns availability into bookable care moments with clear scheduling and confirmation flows. |
-| Online sessions | Supports care delivery through chat, audio, and video-oriented session experiences. |
-| Assessments | Provides structured self-reflection tools for areas such as stress, anxiety, and depression. |
-| Crisis pathways | Offers urgent-support routes and resource guidance for higher-risk moments. |
-| Administration | Gives the organization tools to review professionals, monitor care activity, and maintain accountability. |
+| `#f5f3ff` | soft lavender background |
+| `#ede9fe` | gentle page tint |
+| `#c4b5fd` | supportive highlight |
+| `#7c3aed` | primary violet accent |
+| `#6d28d9` | deep premium purple |
 
-## Design personality
+The design aims to feel peaceful, modern, trustworthy, and easy to use even when someone may be arriving during a vulnerable moment.
 
-ManoBalamHealthCare uses a soft wellness-focused visual language: lavender and violet tones, calm gradients, rounded cards, supportive microcopy, and clean typography. The interface is designed to feel:
+## Technology at a high level
 
-- gentle, not clinical-cold
-- premium, but still approachable
-- clear, especially during emotionally sensitive moments
-- structured enough for trust, soft enough for comfort
+ManoBalamHealthCare is organized as a modern full-stack web application.
 
-## Technology overview
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Client</h3>
+      <ul>
+        <li>React and TypeScript</li>
+        <li>Vite frontend workflow</li>
+        <li>Responsive public and dashboard pages</li>
+        <li>Reusable UI components</li>
+        <li>Role-aware app navigation</li>
+      </ul>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Server</h3>
+      <ul>
+        <li>Node.js and Express</li>
+        <li>Structured API services</li>
+        <li>Authentication and role-based access</li>
+        <li>Real-time session support</li>
+        <li>Operational background workflows</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-This project is organized as a modern full-stack web application with separate client and server packages.
-
-### Client
-
-- React with TypeScript
-- Vite-powered frontend workflow
-- Tailwind CSS and reusable UI components
-- Role-aware routing and application state
-- Responsive public pages and authenticated dashboards
-
-### Server
-
-- Node.js and Express
-- Structured API modules for platform features
-- Database-backed domain models
-- Secure authentication and authorization flows
-- Real-time communication support for sessions and presence
-- Background processing for operational workflows
-
-The README intentionally keeps sensitive configuration details, secrets, deployment internals, and private operational information out of public view.
+This README intentionally avoids exposing private configuration, secrets, credentials, deployment internals, or sensitive operational details.
 
 ## Repository layout
 
 ```text
 ManoBalamHealth/
   client/    Frontend application and public website
-  server/    Backend API, real-time services, and platform logic
-  plans/     Planning notes and product/engineering references
+  server/    Backend API and platform services
+  plans/     Product and engineering planning notes
 ```
 
-## Running the project locally
+## Getting started
 
 Install and run each package from its own folder.
+
+### Frontend
 
 ```bash
 cd client
@@ -128,17 +173,17 @@ npm install
 npm run dev
 ```
 
+### Backend
+
 ```bash
 cd server
 npm install
 npm run dev
 ```
 
-The server requires appropriate local environment configuration and supporting services before it can run successfully. Keep credentials and private configuration in local environment files only.
+The backend requires proper local environment configuration and supporting services before running successfully. Keep all credentials in local environment files only.
 
-## Quality and verification
-
-Useful development commands:
+## Useful checks
 
 ```bash
 cd client
@@ -155,7 +200,7 @@ npm test
 
 ## Safety note
 
-ManoBalamHealthCare is designed to support access to mental-health care and wellbeing resources. It should not be treated as a replacement for emergency services. If someone is in immediate danger or may harm themselves or others, they should contact local emergency services or a trusted crisis helpline right away.
+ManoBalamHealthCare supports access to mental-health care and wellbeing resources, but it is not a replacement for emergency services. If someone is in immediate danger or may harm themselves or others, they should contact local emergency services or a trusted crisis helpline right away.
 
 ## Vision
 
@@ -169,8 +214,10 @@ To build a dependable digital bridge between people seeking care, qualified ment
 
 <div align="center">
 
+![Purple Divider](https://capsule-render.vercel.app/api?type=rect&height=2&color=0:ede9fe,50:a78bfa,100:7c3aed)
+
 ### ManoBalamHealthCare
 
-Care that feels closer. Support that feels calmer. Technology that remembers the human.
+**Soft technology for stronger emotional wellbeing.**
 
 </div>

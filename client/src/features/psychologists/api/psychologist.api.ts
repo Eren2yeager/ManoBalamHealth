@@ -69,3 +69,68 @@ export const submitPsychologistForReview = async (): Promise<{
   >("/psychologists/me/submit");
   return data.data;
 };
+
+export interface PayoutDetails {
+  id: string;
+  psychologistId: string;
+  accountHolderName: string;
+  bankName: string;
+  accountNumberLast4: string;
+  maskedAccountNumber: string;
+  ifscCode: string;
+  accountType: "savings" | "current";
+  branchName?: string;
+  upiId?: string;
+  status: "not_added" | "saved" | "needs_update" | "under_review";
+  lastReviewedAt?: string;
+  updatedAt: string;
+}
+
+export interface CreatePayoutDetailsDto {
+  accountHolderName: string;
+  bankName: string;
+  accountNumber: string;
+  accountNumberConfirmation: string;
+  ifscCode: string;
+  accountType: "savings" | "current";
+  branchName?: string;
+  upiId?: string;
+}
+
+export interface UpdatePayoutDetailsDto {
+  accountHolderName?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountNumberConfirmation?: string;
+  ifscCode?: string;
+  accountType?: "savings" | "current";
+  branchName?: string;
+  upiId?: string;
+}
+
+export const getMyPayoutDetails = async (): Promise<PayoutDetails | null> => {
+  const { data } = await axiosInstance.get<ApiSuccessResponse<PayoutDetails | null>>(
+    "/payout-details/my"
+  );
+  return data.data;
+};
+
+export const createPayoutDetails = async (
+  payload: CreatePayoutDetailsDto
+): Promise<PayoutDetails> => {
+  const { data } = await axiosInstance.post<ApiSuccessResponse<PayoutDetails>>(
+    "/payout-details",
+    payload
+  );
+  return data.data;
+};
+
+export const updatePayoutDetails = async (
+  payload: UpdatePayoutDetailsDto
+): Promise<PayoutDetails> => {
+  const { data } = await axiosInstance.put<ApiSuccessResponse<PayoutDetails>>(
+    "/payout-details",
+    payload
+  );
+  return data.data;
+};

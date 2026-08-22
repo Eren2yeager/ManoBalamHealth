@@ -36,7 +36,6 @@ export interface PsychologistPendingChanges {
   specialization?: string[];
   languages?: string[];
   experienceYears?: number;
-  consultationFee?: Money;
   bio?: string;
   licensedCountries?: string[];
 }
@@ -75,7 +74,6 @@ export interface UpdatePsychologistProfileDto {
   specialization?: string[];
   languages?: string[];
   experienceYears?: number;
-  consultationFee?: Money;
   bio?: string;
   licensedCountries?: string[];
   isAcceptingEmergency?: boolean;

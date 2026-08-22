@@ -5,7 +5,8 @@ import { DocumentViewerDialog } from "@/components/shared/DocumentViewerDialog";
 import { formatInViewerTz } from "@/lib/timezone";
 import type { PendingPsychologistItem, VerifyPsychologistDto } from "../types/admin.types";
 import { useState } from "react";
-import { BadgeCheck, CheckCircle2, XCircle, FileText, Globe2, Languages, Stethoscope, Users, Calendar } from "lucide-react";
+import { AdminUserLink } from "./AdminUserLink";
+import { BadgeCheck, CheckCircle2, XCircle, FileText, Globe2, Languages, Stethoscope, Users, Calendar, Landmark } from "lucide-react";
 
 const credentialTypeLabels: Record<string, string> = {
   license: "Professional license",
@@ -32,13 +33,11 @@ const pendingChangeLabels: Record<string, string> = {
   specialization: "Specializations",
   languages: "Languages",
   experienceYears: "Experience (years)",
-  consultationFee: "Base fee",
   bio: "Bio",
   licensedCountries: "Licensed countries",
 };
 
-function renderChangeValue(key: string, value: unknown): string {
-  if (key === "consultationFee") return formatFee(value as { amount: number; currency: string });
+function renderChangeValue(value: unknown): string {
   if (Array.isArray(value)) return value.join(", ");
   return String(value ?? "—");
 }
@@ -54,12 +53,13 @@ export function PsychologistVerificationCard({
 
   // A card can represent a first-time application (under_review) or a
   // change-review request from an already-approved psychologist.
-  const isChangeReview =
-    psychologist.changeReviewStatus === "pending" &&
-    psychologist.onboardingStatus === "approved";
   const pendingEntries = Object.entries(psychologist.pendingChanges ?? {}).filter(
     ([, value]) => value !== undefined && value !== null,
   );
+  const isChangeReview =
+    psychologist.changeReviewStatus === "pending" &&
+    psychologist.onboardingStatus === "approved" &&
+    pendingEntries.length > 0;
 
   return (
     <Card className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm transition-all hover:border-violet-100 hover:shadow-xl hover:shadow-primary/8">
@@ -71,7 +71,7 @@ export function PsychologistVerificationCard({
             </div>
             <div>
               <CardTitle className="text-lg font-black tracking-tight text-slate-950">
-                {psychologist.name}
+                <AdminUserLink id={psychologist.userId} name={psychologist.name} avatarUrl={psychologist.avatarUrl} />
               </CardTitle>
               {psychologist.email && (
                 <p className="mt-1 text-sm text-slate-500">{psychologist.email}</p>
@@ -160,6 +160,20 @@ export function PsychologistVerificationCard({
               <span className="ml-1 text-xs font-normal text-slate-400">per 30-min video session — other modes/durations derive from platform multipliers</span>
             </p>
           </div>
+          <div className="mt-3 flex items-start gap-2 border-t border-slate-100 pt-3">
+            <Landmark className="mt-0.5 size-4 shrink-0 text-primary" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Payout bank details</p>
+              {psychologist.payoutDetails ? (
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                  <span>{psychologist.payoutDetails.bankName} · {psychologist.payoutDetails.maskedAccountNumber}</span>
+                  <Badge className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${psychologist.payoutDetails.status === "saved" ? "bg-emerald-100 text-emerald-700" : psychologist.payoutDetails.status === "needs_update" ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-700"}`}>
+                    {psychologist.payoutDetails.status.replaceAll("_", " ")}
+                  </Badge>
+                </div>
+              ) : <p className="mt-1 text-sm font-semibold text-rose-600">Not provided</p>}
+            </div>
+          </div>
         </div>
 
         <div>
@@ -196,9 +210,9 @@ export function PsychologistVerificationCard({
                   </p>
                   <div className="min-w-0">
                     <p className="text-xs text-slate-400 line-through">
-                      {renderChangeValue(key, (psychologist as unknown as Record<string, unknown>)[key])}
+                      {renderChangeValue((psychologist as unknown as Record<string, unknown>)[key])}
                     </p>
-                    <p className="font-semibold text-slate-800">{renderChangeValue(key, value)}</p>
+                    <p className="font-semibold text-slate-800">{renderChangeValue(value)}</p>
                   </div>
                 </div>
               ))}

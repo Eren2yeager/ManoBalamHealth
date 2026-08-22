@@ -85,6 +85,31 @@ export class PsychologistController {
     const result = await psychologistService.submitForReview(req.user!.userId);
     res.status(200).json(ApiResponse.success(result, "Application submitted for review"));
   });
+
+  // Admin-only fee management endpoints
+  setPsychologistFee = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const psychologistId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const adminUserId = req.user!.userId;
+    const { amount, currency, reason } = req.body;
+
+    const result = await psychologistService.setPsychologistFee(
+      psychologistId,
+      amount,
+      currency,
+      adminUserId,
+      reason,
+    );
+    res.status(200).json(ApiResponse.success(result, "Psychologist fee updated successfully"));
+  });
+
+  getFeeHistory = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const psychologistId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    const result = await psychologistService.getFeeHistory(psychologistId, page, limit);
+    res.status(200).json(ApiResponse.success(result.data, "Fee history retrieved", result.meta));
+  });
 }
 
 export const psychologistController = new PsychologistController();

@@ -35,6 +35,21 @@ export class AdminController {
     res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Appointments retrieved successfully", result.meta));
   });
 
+  getUsers = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.getUsers(req.validatedData?.query as any);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Users retrieved successfully", result.meta));
+  });
+
+  updateUserActivity = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.updateUserActivity(req.params.id as string, req.body, req.user!.userId);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "User account status updated"));
+  });
+
+  getUserDetail = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.getUserDetail(req.params.id as string);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "User details retrieved successfully"));
+  });
+
   getReportsSummary = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
     const summary = await adminService.getReportsSummary();
     res.status(StatusCodes.OK).json(ApiResponse.success(summary, "Reports summary retrieved successfully"));

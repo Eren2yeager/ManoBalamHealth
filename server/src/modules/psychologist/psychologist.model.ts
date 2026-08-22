@@ -13,7 +13,6 @@ export interface IPsychologistPendingChanges {
   specialization?: string[];
   languages?: string[];
   experienceYears?: number;
-  consultationFee?: { amount: number; currency: string };
   bio?: string;
   licensedCountries?: string[];
 }
@@ -77,16 +76,6 @@ const psychologistSchema = new Schema<IPsychologistProfile>(
           specialization: { type: [String], default: undefined },
           languages: { type: [String], default: undefined },
           experienceYears: { type: Number },
-          consultationFee: {
-            type: new Schema(
-              {
-                amount: { type: Number, min: 0 },
-                currency: { type: String },
-              },
-              { _id: false },
-            ),
-            default: undefined,
-          },
           bio: { type: String },
           licensedCountries: { type: [String], default: undefined },
         },

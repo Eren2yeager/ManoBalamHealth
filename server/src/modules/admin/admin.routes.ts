@@ -7,6 +7,8 @@ import {
   processRefundSchema,
   getPsychologistsSchema,
   getAppointmentsSchema,
+  getUsersSchema,
+  updateUserActivitySchema,
 } from "./admin.validation";
 
 const router = Router();
@@ -18,6 +20,11 @@ router.use(requireAuth, requireRole("admin"));
 router.get("/psychologists/pending", validate(getPsychologistsSchema, "query"), adminController.getPsychologists);
 router.patch("/psychologists/:id/verify", validate(updatePsychologistStatusSchema), adminController.updatePsychologistStatus);
 router.patch("/psychologists/:id/changes", validate(updatePsychologistStatusSchema), adminController.reviewPendingChanges);
+
+// User directory and account safety controls
+router.get("/users", validate(getUsersSchema, "query"), adminController.getUsers);
+router.get("/users/:id", adminController.getUserDetail);
+router.patch("/users/:id/activity", validate(updateUserActivitySchema), adminController.updateUserActivity);
 
 // Appointment oversight
 router.get("/appointments", validate(getAppointmentsSchema, "query"), adminController.getAppointments);

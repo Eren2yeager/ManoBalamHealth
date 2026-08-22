@@ -5,7 +5,6 @@ export interface UpdatePsychologistProfileRequest {
   specialization?: string[];
   languages?: string[];
   experienceYears?: number;
-  consultationFee?: { amount: number; currency: string };
   bio?: string;
   licensedCountries?: string[];
   isAcceptingEmergency?: boolean;

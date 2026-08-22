@@ -7,6 +7,9 @@ import {
   FileText,
   BarChart3,
   AlertCircle,
+  CircleDollarSign,
+  WalletCards,
+  UserRoundCog,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { BrandLogo } from "@/components/brand/BrandLogo";
@@ -34,8 +37,11 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   ];
 
   const adminNavItems = [
-    { path: "/admin", label: "Dashboard", icon: BarChart3 },
+    { path: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
     { path: "/admin/verifications", label: "Verifications", icon: Users },
+    { path: "/admin/pricing", label: "Pricing", icon: CircleDollarSign },
+    { path: "/admin/payouts", label: "Payouts", icon: WalletCards },
+    { path: "/admin/users", label: "Users", icon: UserRoundCog },
     { path: "/admin/reports", label: "Reports", icon: FileText },
   ];
 

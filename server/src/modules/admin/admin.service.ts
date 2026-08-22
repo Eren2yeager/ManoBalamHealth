@@ -10,8 +10,81 @@ import { Types } from "mongoose";
 import { sendEmail } from "@/modules/notification/channels/email.channel";
 import { logger } from "@/utils/logger";
 import { razorpayProvider } from "@/modules/payment/providers/razorpay.provider";
+import { PayoutDetailsModel } from "@/modules/payout/payout-details.model";
+import { AdminAuditModel } from "./admin-audit.model";
 
 class AdminService {
+  async getUsers(query: { page: number; limit: number; role?: "patient" | "psychologist"; status?: "active" | "inactive"; search?: string }) {
+    const filter: any = { role: query.role ? query.role : { $in: ["patient", "psychologist"] } };
+    if (query.status) filter.isActive = query.status === "active";
+    if (query.search) {
+      const escaped = query.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [{ name: new RegExp(escaped, "i") }, { email: new RegExp(escaped, "i") }, { phone: new RegExp(escaped, "i") }];
+    }
+    const skip = (query.page - 1) * query.limit;
+    const [users, total] = await Promise.all([
+      UserModel.find(filter).select("name email phone role country timezone isVerified isActive avatarUrl createdAt").sort({ createdAt: -1 }).skip(skip).limit(query.limit).lean(),
+      UserModel.countDocuments(filter),
+    ]);
+    const psychologistProfiles = await PsychologistModel.find({ userId: { $in: users.map((user) => user._id) } }).select("userId onboardingStatus verificationStatus consultationFee").lean();
+    const profileByUser = new Map(psychologistProfiles.map((profile) => [profile.userId.toString(), profile]));
+    const [patientCounts, psychologistCounts] = await Promise.all([
+      AppointmentModel.aggregate([{ $match: { patientId: { $in: users.map((user) => user._id) } } }, { $group: { _id: "$patientId", count: { $sum: 1 } } }]),
+      AppointmentModel.aggregate([{ $match: { psychologistId: { $in: psychologistProfiles.map((profile) => profile._id) } } }, { $group: { _id: "$psychologistId", count: { $sum: 1 } } }]),
+    ]);
+    const patientCountByUser = new Map(patientCounts.map((entry) => [entry._id.toString(), entry.count]));
+    const psychologistCountByProfile = new Map(psychologistCounts.map((entry) => [entry._id.toString(), entry.count]));
+    return {
+      data: users.map((user) => {
+        const profile = profileByUser.get(user._id.toString());
+        return {
+          id: user._id.toString(), name: user.name, email: user.email, phone: user.phone, role: user.role,
+          country: user.country, timezone: user.timezone, isVerified: user.isVerified, isActive: user.isActive,
+          avatarUrl: user.avatarUrl, createdAt: user.createdAt.toISOString(),
+          appointmentCount: user.role === "patient" ? patientCountByUser.get(user._id.toString()) ?? 0 : profile ? psychologistCountByProfile.get(profile._id.toString()) ?? 0 : 0,
+          psychologist: profile ? { onboardingStatus: profile.onboardingStatus, verificationStatus: profile.verificationStatus, consultationFee: profile.consultationFee } : undefined,
+        };
+      }),
+      meta: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) },
+    };
+  }
+
+  async updateUserActivity(userId: string, data: { isActive: boolean; reason: string }, adminUserId: string) {
+    if (userId === adminUserId) throw new ApiError(StatusCodes.CONFLICT, ErrorCodes.VALIDATION_ERROR, "You cannot change your own account status");
+    const user = await UserModel.findById(userId);
+    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "User not found");
+    if (user.role === "admin") throw new ApiError(StatusCodes.FORBIDDEN, ErrorCodes.FORBIDDEN_ROLE, "Admin accounts cannot be managed here");
+    if (user.isActive === data.isActive) return { id: user._id.toString(), isActive: user.isActive };
+    user.isActive = data.isActive;
+    user.authVersion += 1;
+    await user.save();
+    await AdminAuditModel.create({ adminId: new Types.ObjectId(adminUserId), targetUserId: user._id, action: data.isActive ? "account_activated" : "account_suspended", reason: data.reason });
+    return { id: user._id.toString(), isActive: user.isActive };
+  }
+
+  async getUserDetail(userId: string) {
+    const user = await UserModel.findById(userId)
+      .select("name email phone role age gender emergencyContact country timezone isVerified isActive avatarUrl createdAt updatedAt")
+      .lean();
+    if (!user || user.role === "admin") throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "User not found");
+    const profile = user.role === "psychologist"
+      ? await PsychologistModel.findOne({ userId: user._id }).select("specialization languages experienceYears bio licensedCountries onboardingStatus verificationStatus consultationFee rating isOnline").lean()
+      : null;
+    const appointmentFilter = user.role === "patient" ? { patientId: user._id } : { psychologistId: profile?._id };
+    const appointments = await AppointmentModel.find(appointmentFilter)
+      .populate("patientId", "name avatarUrl")
+      .populate({ path: "psychologistId", populate: { path: "userId", select: "name avatarUrl" } })
+      .sort({ scheduledAt: -1 }).limit(10).lean();
+    return {
+      id: user._id.toString(), name: user.name, email: user.email, phone: user.phone, role: user.role,
+      age: user.age, gender: user.gender, country: user.country, timezone: user.timezone, isVerified: user.isVerified,
+      isActive: user.isActive, avatarUrl: user.avatarUrl, createdAt: user.createdAt.toISOString(), updatedAt: user.updatedAt.toISOString(),
+      emergencyContact: user.emergencyContact,
+      psychologist: profile ? { specialization: profile.specialization, languages: profile.languages, experienceYears: profile.experienceYears, bio: profile.bio, licensedCountries: profile.licensedCountries, onboardingStatus: profile.onboardingStatus, verificationStatus: profile.verificationStatus, consultationFee: profile.consultationFee, rating: profile.rating, isOnline: profile.isOnline } : undefined,
+      appointments: appointments.map((appointment: any) => ({ id: appointment._id.toString(), scheduledAt: appointment.scheduledAt.toISOString(), status: appointment.status, mode: appointment.mode, patient: { id: appointment.patientId._id.toString(), name: appointment.patientId.name, avatarUrl: appointment.patientId.avatarUrl }, psychologist: { id: appointment.psychologistId.userId._id.toString(), name: appointment.psychologistId.userId.name, avatarUrl: appointment.psychologistId.userId.avatarUrl } })),
+    };
+  }
+
   async getPsychologists(query: { page: number; limit: number; status?: "pending" | "approved" | "rejected" }) {
     const skip = (query.page - 1) * query.limit;
     const filter: any = query.status
@@ -25,13 +98,28 @@ class AdminService {
       .limit(query.limit);
 
     const total = await PsychologistModel.countDocuments(filter);
+    const payoutDetails = await PayoutDetailsModel.find({
+      psychologistId: { $in: psychologists.map((psychologist) => psychologist._id) },
+    }).lean();
+    const payoutDetailsByPsychologist = new Map(
+      payoutDetails.map((detail) => [detail.psychologistId.toString(), detail]),
+    );
 
     const data: PsychologistListItem[] = psychologists.map((psychologist) => {
       const user = (psychologist as any).userId;
+      const payoutDetail = payoutDetailsByPsychologist.get(psychologist._id.toString());
+      // Ignore legacy pending values that are identical to the live profile.
+      // Older clients submitted every onboarding field, which made reviews
+      // appear to contain changes even when nothing had actually changed.
+      const pendingChanges = Object.fromEntries(
+        Object.entries((psychologist.pendingChanges as any)?.toObject?.() ?? psychologist.pendingChanges ?? {})
+          .filter(([key, value]) => JSON.stringify(value) !== JSON.stringify((psychologist as any)[key])),
+      );
       return {
         id: psychologist._id.toString(),
         userId: user._id.toString(),
         name: user.name,
+        avatarUrl: user.avatarUrl,
         email: user.email,
         phone: user.phone,
         verificationStatus: psychologist.verificationStatus,
@@ -45,11 +133,17 @@ class AdminService {
         credentials: psychologist.credentials,
         submittedAt: psychologist.submittedAt?.toISOString(),
         rejectionReason: psychologist.rejectionReason,
-        pendingChanges: psychologist.pendingChanges,
+        pendingChanges: Object.keys(pendingChanges).length > 0 ? pendingChanges : undefined,
         changeReviewStatus: psychologist.changeReviewStatus,
         changeSubmittedAt: psychologist.changeSubmittedAt?.toISOString(),
         rating: psychologist.rating,
         createdAt: psychologist.createdAt.toISOString(),
+        payoutDetails: payoutDetail ? {
+          bankName: payoutDetail.bankName,
+          maskedAccountNumber: `•••• ${payoutDetail.accountNumberLast4}`,
+          status: payoutDetail.status,
+          updatedAt: payoutDetail.updatedAt.toISOString(),
+        } : undefined,
       };
     });
 
@@ -72,6 +166,17 @@ class AdminService {
         ErrorCodes.VALIDATION_ERROR,
         "Only submitted applications can be reviewed",
       );
+    }
+
+    // Require fee confirmation before approving new psychologists
+    if (data.decision === "approved") {
+      if (!psychologist.consultationFee?.amount || psychologist.consultationFee.amount <= 0) {
+        throw new ApiError(
+          StatusCodes.UNPROCESSABLE_ENTITY,
+          ErrorCodes.VALIDATION_ERROR,
+          "Psychologist must have a consultation fee set before approval. Please set the fee first.",
+        );
+      }
     }
 
     psychologist.verificationStatus = data.decision;
@@ -152,7 +257,6 @@ class AdminService {
         "specialization",
         "languages",
         "experienceYears",
-        "consultationFee",
         "bio",
         "licensedCountries",
       ] as const;
@@ -207,14 +311,14 @@ class AdminService {
     const filter: any = query.status ? { status: query.status } : {};
 
     const appointments = await AppointmentModel.find(filter)
-      .populate("patientId", "name")
+      .populate("patientId", "name avatarUrl")
       .populate("psychologistId")
       .sort({ scheduledAt: -1 })
       .skip(skip)
       .limit(query.limit);
 
     for (const appt of appointments) {
-      await (appt as any).populate("psychologistId.userId", "name");
+      await (appt as any).populate("psychologistId.userId", "name avatarUrl");
     }
 
     const total = await AppointmentModel.countDocuments(filter);
@@ -223,8 +327,8 @@ class AdminService {
       const apptAny = appt as any;
       return {
         id: appt._id.toString(),
-        patient: { id: apptAny.patientId._id.toString(), name: apptAny.patientId.name },
-        psychologist: { id: apptAny.psychologistId._id.toString(), name: apptAny.psychologistId.userId.name },
+        patient: { id: apptAny.patientId._id.toString(), name: apptAny.patientId.name, avatarUrl: apptAny.patientId.avatarUrl },
+        psychologist: { id: apptAny.psychologistId.userId._id.toString(), name: apptAny.psychologistId.userId.name, avatarUrl: apptAny.psychologistId.userId.avatarUrl },
         mode: appt.mode,
         status: appt.status,
         scheduledAt: appt.scheduledAt.toISOString(),

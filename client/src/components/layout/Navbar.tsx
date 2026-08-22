@@ -30,6 +30,9 @@ const roleLinks: Record<Role, Array<{ label: string; to: string }>> = {
   admin: [
     { label: "Dashboard", to: "/admin/dashboard" },
     { label: "Verifications", to: "/admin/verifications" },
+    { label: "Pricing", to: "/admin/pricing" },
+    { label: "Payouts", to: "/admin/payouts" },
+    { label: "Users", to: "/admin/users" },
     { label: "Reports", to: "/admin/reports" },
     { label: "Payments", to: "/admin/payments" },
   ],
@@ -265,7 +268,7 @@ export function Navbar() {
   return (
     <>
       <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${scrolled || isMobileMenuOpen || location.pathname !== "/" ? "border-slate-200/70 bg-white/96 shadow-[0_8px_35px_rgba(32,22,70,.07)] backdrop-blur-xl" : "border-transparent bg-white/80 backdrop-blur-lg"}`}>
-        <div className="mx-auto flex h-19 max-w-[1440px] items-center justify-between gap-4 px-4 md:px-7">
+        <div className="mx-auto flex h-19 max-w-7xl items-center justify-between gap-4 px-4 md:px-7">
           <BrandLogo to={homePath} />
 
           {!showPublicNavigation && user ? (
@@ -289,9 +292,9 @@ export function Navbar() {
               <>
                 <Button variant="ghost" size="icon" className="rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700" onClick={handleCrisisToggle} disabled={isCrisisLoading} aria-label="Open crisis resources"><HeartHandshake /></Button>
                 {isPatient && <div className="hidden sm:block"><EmergencyRequestButton /></div>}
-                <Link to="/profile" className="hidden items-center gap-2 rounded-xl p-1.5 pr-3 transition-colors hover:bg-violet-50 md:flex">
+                <Link to="/profile" className="hidden items-center gap-2 rounded-xl p-1.5  transition-colors hover:bg-violet-50 md:flex">
                   <Avatar className="size-8">{user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}<AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">{user.name.charAt(0).toUpperCase()}</AvatarFallback></Avatar>
-                  <span className="max-w-28 truncate text-sm font-semibold text-slate-700">{user.name}</span>
+                  {/* <span className="max-w-28 truncate text-sm font-semibold text-slate-700">{user.name}</span> */}
                 </Link>
               </>
             ) : (

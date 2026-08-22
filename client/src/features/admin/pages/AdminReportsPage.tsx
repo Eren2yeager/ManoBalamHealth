@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ReportsChart } from "../components/ReportsChart";
+import { AdminMetricCard, AdminWorkspaceHeader } from "../components/AdminWorkspaceHeader";
+import { AdminUserLink } from "../components/AdminUserLink";
 import { getAdminReports, getAdminAppointments } from "../api/admin.api";
 import type { AdminReport, AdminAppointmentItem } from "../types/admin.types";
 import { toast } from "sonner";
-import { AlertCircle, RefreshCw, Sparkles, Calendar, Stethoscope, CheckCircle2, CircleDollarSign } from "lucide-react";
+import { AlertCircle, RefreshCw, Calendar, Stethoscope, CheckCircle2, CircleDollarSign, ChartNoAxesCombined } from "lucide-react";
 
 const initialEndDate = new Date().toISOString().split("T")[0];
 const initialStartDate = new Date(
@@ -128,37 +130,13 @@ export function AdminReportsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-violet-600 via-primary to-indigo-700 p-7 text-white shadow-xl md:p-10">
-          <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 left-1/3 size-64 rounded-full bg-white/10 blur-3xl" />
-          
-          <div className="relative">
-            <div className="mb-4 flex items-center gap-2 text-sm font-bold text-violet-100">
-              <span className="grid size-9 place-items-center rounded-xl bg-white/15">
-                <Sparkles className="size-4" />
-              </span>
-              Reports & Analytics
-            </div>
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h1 className="text-3xl font-black tracking-[-0.035em] md:text-4xl">
-                  Platform Performance
-                </h1>
-                <p className="mt-3 max-w-lg text-sm leading-relaxed text-violet-100/80">
-                  View key metrics and appointment history for your selected date range.
-                </p>
-              </div>
-              <Button
-                onClick={fetchData}
-                className="h-11 rounded-xl bg-white px-6 font-bold text-primary hover:bg-violet-50"
-              >
-                <RefreshCw className="mr-2 size-4" />
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </section>
+        <AdminWorkspaceHeader
+          icon={ChartNoAxesCombined}
+          eyebrow="Reports & analytics"
+          title="Platform performance"
+          description="Track appointments, clinical capacity, and recorded revenue for a selected reporting period."
+          actions={<Button onClick={fetchData} className="h-11 rounded-xl bg-white px-5 font-bold text-primary hover:bg-violet-50"><RefreshCw className="mr-2 size-4" />Refresh report</Button>}
+        />
 
         {/* Date Filter */}
         <Card className="rounded-[2rem] border border-slate-100 bg-white shadow-sm">
@@ -192,20 +170,7 @@ export function AdminReportsPage() {
 
         {/* Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map(({ icon: Icon, label, value, tone }) => (
-            <div
-              key={label}
-              className="flex items-center gap-4 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-1"
-            >
-              <span className={`grid size-12 place-items-center rounded-2xl ${tone}`}>
-                <Icon className="size-5" />
-              </span>
-              <div>
-                <p className="text-2xl font-black text-slate-900">{value}</p>
-                <p className="text-xs font-bold text-slate-500">{label}</p>
-              </div>
-            </div>
-          ))}
+          {stats.map(({ icon, label, value, tone }) => <AdminMetricCard key={label} icon={icon} label={label} value={value} tone={tone} note="Selected reporting period" />)}
         </div>
 
         {/* Reports Chart */}
@@ -259,12 +224,8 @@ export function AdminReportsPage() {
                             )}
                           </p>
                         </td>
-                        <td className="px-4 py-4 text-sm font-semibold text-slate-700">
-                          {appt.patient.name}
-                        </td>
-                        <td className="px-4 py-4 text-sm font-semibold text-slate-700">
-                          {appt.psychologist.name}
-                        </td>
+                        <td className="px-4 py-4"><AdminUserLink {...appt.patient} compact /></td>
+                        <td className="px-4 py-4"><AdminUserLink {...appt.psychologist} compact /></td>
                         <td className="px-4 py-4">
                           <span
                             className={`inline-flex rounded-full px-3 py-1 text-xs font-black capitalize ring-1 ${

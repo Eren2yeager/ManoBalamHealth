@@ -31,6 +31,7 @@ import {
 import { PsychologistVerificationCard } from "../components/PsychologistVerificationCard";
 import { RefundModal } from "../components/RefundModal";
 import { ReportsChart } from "../components/ReportsChart";
+import { AdminUserLink } from "../components/AdminUserLink";
 import type {
   AdminAppointmentItem,
   AdminReport,
@@ -241,7 +242,7 @@ export function AdminDashboardPage() {
           {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
         </section>
 
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue="overview" className="flex flex-col">
           <div className="sticky top-20 z-20 rounded-2xl border border-violet-100 bg-white/90 p-2 shadow-lg shadow-violet-100/40 backdrop-blur-xl">
             <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 md:grid-cols-4">
               {[
@@ -266,7 +267,7 @@ export function AdminDashboardPage() {
                 { icon: Stethoscope, label: "Approved psychologists", value: report?.totalPsychologists ?? 0, tone: "text-violet-600 bg-violet-50" },
                 { icon: ShieldCheck, label: "Completion rate", value: `${report?.totalAppointments ? Math.round((report.completedAppointments / report.totalAppointments) * 100) : 0}%`, tone: "text-emerald-600 bg-emerald-50" },
               ].map(({ icon: Icon, label, value, tone }) => (
-                <div key={label} className="flex items-center gap-4 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                <div key={label} className=" relative flex items-center gap-4 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
                   <span className={`grid size-12 place-items-center rounded-2xl ${tone}`}><Icon className="size-5" /></span>
                   <div><p className="text-2xl font-black text-[#111631]">{value}</p><p className="text-xs font-bold text-slate-500">{label}</p></div>
                 </div>
@@ -292,8 +293,8 @@ export function AdminDashboardPage() {
                     {appointments.map((appointment) => (
                       <tr key={appointment.id} className="transition-colors hover:bg-violet-50/35">
                         <td className="px-6 py-4"><p className="text-sm font-black text-slate-800">{new Date(appointment.scheduledAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p><p className="mt-1 flex items-center gap-1 text-[11px] text-slate-400"><Clock3 className="size-3" />{new Date(appointment.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p></td>
-                        <td className="px-4 py-4 text-sm font-semibold text-slate-700">{appointment.patient.name}</td>
-                        <td className="px-4 py-4 text-sm font-semibold text-slate-700">{appointment.psychologist.name}</td>
+                        <td className="px-4 py-4"><AdminUserLink {...appointment.patient} compact /></td>
+                        <td className="px-4 py-4"><AdminUserLink {...appointment.psychologist} compact /></td>
                         <td className="px-4 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black capitalize ring-1 ${statusTone[appointment.status] ?? "bg-slate-50 text-slate-600 ring-slate-100"}`}>{appointment.status.replaceAll("_", " ")}</span></td>
                       </tr>
                     ))}
@@ -311,7 +312,7 @@ export function AdminDashboardPage() {
               <div className="grid gap-4">
                 {cancelledAppointments.map((appointment) => (
                   <article key={appointment.id} className="flex flex-col justify-between gap-5 rounded-3xl border border-rose-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center">
-                    <div><p className="font-black text-slate-900">{appointment.patient.name}</p><p className="mt-1 text-sm text-slate-500">With {appointment.psychologist.name}</p><p className="mt-2 text-xs text-slate-400">{new Date(appointment.scheduledAt).toLocaleString()}</p></div>
+                    <div><AdminUserLink {...appointment.patient} /><p className="mt-1 flex items-center gap-1 text-sm text-slate-500">With <AdminUserLink {...appointment.psychologist} compact /></p><p className="mt-2 text-xs text-slate-400">{new Date(appointment.scheduledAt).toLocaleString()}</p></div>
                     <Button onClick={() => { setSelectedAppointment(appointment); setSelectedPaymentId(appointment.id); setShowRefundModal(true); }} className="rounded-xl bg-rose-600 hover:bg-rose-700"><WalletCards className="mr-2 size-4" />Review refund</Button>
                   </article>
                 ))}

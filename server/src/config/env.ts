@@ -21,6 +21,7 @@ const envSchema = z.object({
   MSG91_API_KEY: z.string().optional(),
   METERED_TURN_CREDENTIALS_URL: z.string().url(),
   CLIENT_ORIGIN: z.string().min(1),
+  ENCRYPTION_KEY: z.string().min(32),
 }).superRefine((data, context) => {
   if (data.NODE_ENV === "production" && data.EMAIL_DELIVERY_MODE !== "resend") {
     context.addIssue({

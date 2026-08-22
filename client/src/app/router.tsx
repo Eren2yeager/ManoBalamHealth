@@ -48,6 +48,10 @@ import { AdminDashboardPage } from "../features/admin/pages/AdminDashboardPage";
 import { AdminVerificationsPage } from "../features/admin/pages/AdminVerificationsPage";
 import { AdminReportsPage } from "../features/admin/pages/AdminReportsPage";
 import { AdminPaymentsPage } from "../features/admin/pages/AdminPaymentsPage";
+import { AdminPricingPage } from "../features/admin/pages/AdminPricingPage";
+import { AdminPayoutsPage } from "../features/admin/pages/AdminPayoutsPage";
+import { AdminUsersPage } from "../features/admin/pages/AdminUsersPage";
+import { AdminUserDetailPage } from "../features/admin/pages/AdminUserDetailPage";
 // Guards
 import { ProtectedRoute } from "../routes/ProtectedRoute";
 import { RoleRoute } from "../routes/RoleRoute";
@@ -215,6 +219,10 @@ const router = createBrowserRouter([
           { path: "/admin/verifications", element: <AdminVerificationsPage /> },
           { path: "/admin/reports", element: <AdminReportsPage /> },
           { path: "/admin/payments", element: <AdminPaymentsPage /> },
+          { path: "/admin/pricing", element: <AdminPricingPage /> },
+          { path: "/admin/payouts", element: <AdminPayoutsPage /> },
+          { path: "/admin/users", element: <AdminUsersPage /> },
+          { path: "/admin/users/:id", element: <AdminUserDetailPage /> },
         ],
       },
     ],

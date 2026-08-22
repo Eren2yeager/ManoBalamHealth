@@ -4,6 +4,7 @@ export interface PendingPsychologistItem {
   id: string;
   userId: string;
   name: string;
+  avatarUrl?: string;
   email?: string;
   phone?: string;
   verificationStatus: "pending" | "approved" | "rejected";
@@ -21,13 +22,18 @@ export interface PendingPsychologistItem {
   changeReviewStatus?: "pending" | "approved" | "rejected";
   changeSubmittedAt?: string;
   createdAt: string;
+  payoutDetails?: {
+    bankName: string;
+    maskedAccountNumber: string;
+    status: "not_added" | "saved" | "needs_update" | "under_review";
+    updatedAt: string;
+  };
 }
 
 export interface PsychologistPendingChanges {
   specialization?: string[];
   languages?: string[];
   experienceYears?: number;
-  consultationFee?: { amount: number; currency: string };
   bio?: string;
   licensedCountries?: string[];
 }
@@ -39,8 +45,8 @@ export interface VerifyPsychologistDto {
 
 export interface AdminAppointmentItem {
   id: string;
-  patient: { id: string; name: string };
-  psychologist: { id: string; name: string };
+  patient: { id: string; name: string; avatarUrl?: string };
+  psychologist: { id: string; name: string; avatarUrl?: string };
   status: AppointmentStatus;
   scheduledAt: string;
 }

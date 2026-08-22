@@ -7,6 +7,7 @@ import {
   updatePsychologistProfileSchema,
   getPsychologistsQuerySchema,
   uploadCredentialsSchema,
+  setPsychologistFeeSchema,
 } from "./psychologist.validation";
 
 const router = Router();
@@ -57,6 +58,22 @@ router.patch(
   requireRole("psychologist"),
   validate(updatePsychologistProfileSchema),
   psychologistController.updateMyProfile,
+);
+
+// Admin-only fee management routes
+router.put(
+  "/:id/fee",
+  requireAuth,
+  requireRole("admin"),
+  validate(setPsychologistFeeSchema),
+  psychologistController.setPsychologistFee,
+);
+
+router.get(
+  "/:id/fee-history",
+  requireAuth,
+  requireRole("admin"),
+  psychologistController.getFeeHistory,
 );
 
 export default router;

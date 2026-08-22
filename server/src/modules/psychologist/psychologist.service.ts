@@ -1,5 +1,7 @@
 import { Types } from "mongoose";
 import { PsychologistModel, IPsychologistProfile } from "./psychologist.model";
+import { FeeHistoryModel } from "./fee-history.model";
+import { PayoutDetailsModel } from "../payout/payout-details.model";
 import { UserModel } from "../user/user.model";
 import { ApiError } from "@/utils/ApiError";
 import { StatusCodes } from "@/constants/statusCodes.constant";
@@ -30,7 +32,7 @@ export class PsychologistService {
     if (profile.specialization.length === 0) missing.push("specialization");
     if (profile.languages.length === 0) missing.push("languages");
     if (profile.experienceYears < 0) missing.push("experienceYears");
-    if (!profile.consultationFee?.amount || profile.consultationFee.amount <= 0) missing.push("consultationFee");
+    // consultationFee removed - now managed by admin only
     if (!profile.bio || profile.bio.trim().length < 50) missing.push("bio");
     if (profile.licensedCountries.length === 0) missing.push("licensedCountries");
     const credentialTypes = new Set(profile.credentials.map((credential) => credential.type));
@@ -243,22 +245,39 @@ export class PsychologistService {
     if (isOnlyAcceptingEmergencyUpdate) {
       updateQuery = { ...data };
     } else if (isApproved) {
-      // Approved profiles stay live: edits are held in pendingChanges until an
-      // admin approves them. Re-editing while pending merges over the pending set.
+      // Approved profiles stay live. Retain only fields which genuinely differ
+      // from the live profile; legacy clients previously re-sent every field
+      // and created misleading no-op change requests.
       const { isAcceptingEmergency, ...professionalFields } = data;
+      const valuesMatch = (left: unknown, right: unknown) =>
+        JSON.stringify(left) === JSON.stringify(right);
+      const actualChanges = Object.fromEntries(
+        Object.entries(professionalFields).filter(([key, value]) =>
+          !valuesMatch(value, (profile as any)[key]),
+        ),
+      );
+      const existingPending = (profile.pendingChanges as any)?.toObject?.() ?? profile.pendingChanges ?? {};
+      const retainedPending = Object.fromEntries(
+        Object.entries(existingPending).filter(([key, value]) =>
+          value !== undefined && value !== null && !valuesMatch(value, (profile as any)[key]),
+        ),
+      );
+      const nextPending = { ...retainedPending, ...actualChanges };
       updateQuery = {
         $set: {
           ...(isAcceptingEmergency !== undefined ? { isAcceptingEmergency } : {}),
           ...Object.fromEntries(
-            Object.entries(professionalFields).map(([key, value]) => [
+            Object.entries(nextPending).map(([key, value]) => [
               `pendingChanges.${key}`,
               value,
             ]),
           ),
-          changeReviewStatus: "pending",
-          changeSubmittedAt: new Date(),
+          ...(Object.keys(nextPending).length > 0 ? { changeReviewStatus: "pending", changeSubmittedAt: new Date() } : {}),
         },
-        $unset: { changeRejectionReason: 1 },
+        $unset: {
+          changeRejectionReason: 1,
+          ...(Object.keys(nextPending).length === 0 ? { pendingChanges: 1, changeReviewStatus: 1, changeSubmittedAt: 1 } : {}),
+        },
       };
     } else {
       // First-time onboarding flow: edit live fields directly.
@@ -415,6 +434,19 @@ export class PsychologistService {
       );
     }
 
+    // Check for valid payout details
+    const payoutDetails = await PayoutDetailsModel.findOne({
+      psychologistId: profile._id,
+    });
+    if (!payoutDetails || payoutDetails.status !== "saved") {
+      throw new ApiError(
+        StatusCodes.UNPROCESSABLE_ENTITY,
+        ErrorCodes.PSYCHOLOGIST_ONBOARDING_INCOMPLETE,
+        "Add your bank details for payouts before submitting for review",
+        { missingFields: [...missingFields, "bankDetails"] },
+      );
+    }
+
     profile.onboardingStatus = "under_review";
     profile.verificationStatus = "pending";
     profile.submittedAt = new Date();
@@ -427,6 +459,80 @@ export class PsychologistService {
       id: profile._id.toString(),
       onboardingStatus: profile.onboardingStatus,
       submittedAt: profile.submittedAt.toISOString(),
+    };
+  }
+
+  /**
+   * Admin-only: Set psychologist's consultation fee with audit trail
+   */
+  async setPsychologistFee(
+    psychologistId: string,
+    amount: number,
+    currency: string,
+    adminUserId: string,
+    reason?: string,
+  ) {
+    const psychologist = await PsychologistModel.findById(psychologistId);
+    if (!psychologist) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Psychologist not found");
+    }
+
+    const previousAmount = psychologist.consultationFee.amount;
+
+    // Record fee change in audit history
+    await FeeHistoryModel.create({
+      psychologistId: psychologist._id,
+      previousAmount,
+      newAmount: amount,
+      currency,
+      changedBy: new Types.ObjectId(adminUserId),
+      changeReason: reason,
+    });
+
+    // Update the psychologist's fee
+    psychologist.consultationFee = { amount, currency };
+    await psychologist.save();
+
+    return {
+      id: psychologistId,
+      consultationFee: psychologist.consultationFee,
+      previousAmount,
+      newAmount: amount,
+    };
+  }
+
+  /**
+   * Admin-only: Get fee history for a psychologist
+   */
+  async getFeeHistory(psychologistId: string, page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+
+    const [history, total] = await Promise.all([
+      FeeHistoryModel.find({ psychologistId: new Types.ObjectId(psychologistId) })
+        .populate("changedBy", "name email")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      FeeHistoryModel.countDocuments({ psychologistId: new Types.ObjectId(psychologistId) }),
+    ]);
+
+    return {
+      data: history.map((entry) => ({
+        id: entry._id.toString(),
+        previousAmount: entry.previousAmount,
+        newAmount: entry.newAmount,
+        currency: entry.currency,
+        changedBy: (entry.changedBy as any)?.name || "Unknown",
+        changedById: entry.changedBy?.toString(),
+        changeReason: entry.changeReason,
+        createdAt: entry.createdAt.toISOString(),
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 }

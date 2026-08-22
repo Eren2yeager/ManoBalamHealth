@@ -29,7 +29,6 @@ export interface PsychologistListItem {
     specialization?: string[];
     languages?: string[];
     experienceYears?: number;
-    consultationFee?: { amount: number; currency: string };
     bio?: string;
     licensedCountries?: string[];
   };
@@ -37,12 +36,18 @@ export interface PsychologistListItem {
   changeSubmittedAt?: string;
   rating: { average: number; count: number };
   createdAt: string;
+  payoutDetails?: {
+    bankName: string;
+    maskedAccountNumber: string;
+    status: "not_added" | "saved" | "needs_update" | "under_review";
+    updatedAt: string;
+  };
 }
 
 export interface AppointmentListItem {
   id: string;
-  patient: { id: string; name: string };
-  psychologist: { id: string; name: string };
+  patient: { id: string; name: string; avatarUrl?: string };
+  psychologist: { id: string; name: string; avatarUrl?: string };
   mode: string;
   status: string;
   scheduledAt: string;

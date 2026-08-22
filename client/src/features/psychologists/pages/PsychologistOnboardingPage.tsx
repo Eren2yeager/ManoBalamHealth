@@ -29,18 +29,17 @@ import {
   submitPsychologistForReview,
   updateMyPsychologistProfile,
   uploadCredentials,
+  getMyPayoutDetails,
+  createPayoutDetails,
+  updatePayoutDetails,
+  type PayoutDetails,
+  type CreatePayoutDetailsDto,
 } from "../api/psychologist.api";
 import type {
   PsychologistCredential,
   PsychologistOnboarding,
 } from "../types/psychologist.types";
-import {
-  SPECIALIZATIONS,
-  LANGUAGES,
-  SESSION_MODES,
-  SESSION_DURATIONS,
-  computeSessionFee,
-} from "../constants/psychologist.constants";
+import { SPECIALIZATIONS, LANGUAGES } from "../constants/psychologist.constants";
 import { COUNTRIES } from "../constants/countries.constants";
 import { MultiSelectPicker } from "../components/MultiSelectPicker";
 
@@ -48,12 +47,6 @@ const credentialLabels: Record<PsychologistCredential["type"], string> = {
   license: "Professional license",
   degree: "Degree certificate",
   id_proof: "Government ID proof",
-};
-
-const modeLabels: Record<(typeof SESSION_MODES)[number], string> = {
-  chat: "Chat",
-  audio: "Voice",
-  video: "Video",
 };
 
 const specializationOptions = SPECIALIZATIONS.map(({ value, label }) => ({ value, label }));
@@ -89,19 +82,31 @@ export function PsychologistOnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [files, setFiles] = useState<Partial<Record<PsychologistCredential["type"], File>>>({});
+  const [payoutDetails, setPayoutDetails] = useState<PayoutDetails | null>(null);
   const emptyForm = {
     specialization: [] as string[],
     languages: [] as string[],
     experienceYears: "0",
-    feeRupees: "",
     bio: "",
     licensedCountries: [] as string[],
     isAcceptingEmergency: false,
   };
+  const emptyPayoutForm = {
+    accountHolderName: "",
+    bankName: "",
+    accountNumber: "",
+    accountNumberConfirmation: "",
+    ifscCode: "",
+    accountType: "savings" as "savings" | "current",
+    branchName: "",
+    upiId: "",
+  };
   const [form, setForm] = useState(emptyForm);
+  const [payoutForm, setPayoutForm] = useState(emptyPayoutForm);
   // Snapshot of the form as loaded from the server — used to disable saving
   // when nothing has actually changed.
   const [baseline, setBaseline] = useState(emptyForm);
+  const [payoutBaseline, setPayoutBaseline] = useState(emptyPayoutForm);
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
   const [viewerDoc, setViewerDoc] = useState<{ url: string; title: string } | null>(null);
 
@@ -112,18 +117,34 @@ export function PsychologistOnboardingPage() {
       // Pending changes (if any) are what the psychologist last submitted —
       // pre-fill from them so re-editing continues where they left off.
       const pending = data.pendingChanges;
-      const feePaise = pending?.consultationFee?.amount ?? data.consultationFee.amount;
       const nextForm = {
         specialization: onlyAllowed(pending?.specialization ?? data.specialization, specializationOptions),
         languages: onlyAllowed(pending?.languages ?? data.languages, languageOptions),
         experienceYears: String(pending?.experienceYears ?? data.experienceYears),
-        feeRupees: feePaise ? String(feePaise / 100) : "",
         bio: pending?.bio ?? data.bio,
         licensedCountries: onlyAllowed(pending?.licensedCountries ?? data.licensedCountries, countryOptions),
         isAcceptingEmergency: data.isAcceptingEmergency ?? false,
       };
       setForm(nextForm);
       setBaseline(nextForm);
+
+      // Load payout details
+      const payoutData = await getMyPayoutDetails();
+      setPayoutDetails(payoutData);
+      if (payoutData) {
+        const nextPayoutForm = {
+          accountHolderName: payoutData.accountHolderName,
+          bankName: payoutData.bankName,
+          accountNumber: "",
+          accountNumberConfirmation: "",
+          ifscCode: payoutData.ifscCode,
+          accountType: payoutData.accountType,
+          branchName: payoutData.branchName || "",
+          upiId: payoutData.upiId || "",
+        };
+        setPayoutForm(nextPayoutForm);
+        setPayoutBaseline(nextPayoutForm);
+      }
     } catch {
       toast.error("Unable to load your professional onboarding profile.");
     } finally {
@@ -142,28 +163,19 @@ export function PsychologistOnboardingPage() {
   const isApproved = profile?.onboardingStatus === "approved";
   const hasPendingChanges = profile?.changeReviewStatus === "pending";
   const missingFields = profile?.missingFields ?? [];
-  const canSubmit = profile && !isLocked && !isApproved && missingFields.length === 0;
+  const hasSavedPayoutDetails = payoutDetails?.status === "saved";
+  const canSubmit = profile && !isLocked && !isApproved && missingFields.length === 0 && hasSavedPayoutDetails;
   const canDeleteCredentials = !isLocked && !isApproved;
 
-  const feePaise = Math.round(Number(form.feeRupees || 0) * 100);
-
   const hasStagedFiles = Object.values(files).some(Boolean);
+  const hasPayoutChanges = payoutForm.accountNumber !== "" ||
+    JSON.stringify(payoutForm) !== JSON.stringify(payoutBaseline);
   // Anything different from what the server last gave us (or a new file staged)?
   const isDirty =
     hasStagedFiles ||
     JSON.stringify({ ...form, bio: form.bio.trim() }) !==
-      JSON.stringify({ ...baseline, bio: baseline.bio.trim() });
-
-  const priceMatrix = useMemo(() => {
-    if (!feePaise) return null;
-    return SESSION_MODES.map((mode) => ({
-      mode,
-      prices: SESSION_DURATIONS.map((duration) => ({
-        duration,
-        amount: computeSessionFee(feePaise, mode, duration),
-      })),
-    }));
-  }, [feePaise]);
+      JSON.stringify({ ...baseline, bio: baseline.bio.trim() }) ||
+    hasPayoutChanges;
 
   const credentialsByType = useMemo(() => {
     const groups: Record<string, PsychologistCredential[]> = {};
@@ -177,18 +189,31 @@ export function PsychologistOnboardingPage() {
     event.preventDefault();
     setSaving(true);
     try {
-      // All fields are optional server-side — omit anything still empty so a
-      // partial save doesn't fail validation (empty arrays / zero fee are rejected).
+      if (hasPayoutChanges && !payoutForm.accountNumber) {
+        throw new Error("Re-enter and confirm your account number before updating bank details.");
+      }
       const bio = form.bio.trim();
-      await updateMyPsychologistProfile({
-        ...(form.specialization.length ? { specialization: form.specialization } : {}),
-        ...(form.languages.length ? { languages: form.languages } : {}),
-        experienceYears: Number(form.experienceYears) || 0,
-        ...(feePaise > 0 ? { consultationFee: { amount: feePaise, currency: "INR" } } : {}),
-        ...(bio ? { bio } : {}),
-        ...(form.licensedCountries.length ? { licensedCountries: form.licensedCountries } : {}),
-        isAcceptingEmergency: form.isAcceptingEmergency,
-      });
+      // For approved psychologists, the server turns this payload into the
+      // admin review request. Send only actual differences so unchanged fields
+      // never appear as misleading "requested changes" in the review card.
+      const profileChanges = {
+        ...(JSON.stringify(form.specialization) !== JSON.stringify(baseline.specialization) && form.specialization.length ? { specialization: form.specialization } : {}),
+        ...(JSON.stringify(form.languages) !== JSON.stringify(baseline.languages) && form.languages.length ? { languages: form.languages } : {}),
+        ...(form.experienceYears !== baseline.experienceYears ? { experienceYears: Number(form.experienceYears) || 0 } : {}),
+        ...(bio !== baseline.bio.trim() && bio ? { bio } : {}),
+        ...(JSON.stringify(form.licensedCountries) !== JSON.stringify(baseline.licensedCountries) && form.licensedCountries.length ? { licensedCountries: form.licensedCountries } : {}),
+        ...(form.isAcceptingEmergency !== baseline.isAcceptingEmergency ? { isAcceptingEmergency: form.isAcceptingEmergency } : {}),
+      };
+      if (Object.keys(profileChanges).length > 0) await updateMyPsychologistProfile(profileChanges);
+
+      // Save payout details if changed
+      if (hasPayoutChanges && payoutForm.accountNumber !== "") {
+        if (payoutDetails) {
+          await updatePayoutDetails(payoutForm);
+        } else {
+          await createPayoutDetails(payoutForm as CreatePayoutDetailsDto);
+        }
+      }
 
       for (const type of ["license", "degree", "id_proof"] as const) {
         const file = files[type];
@@ -295,33 +320,15 @@ export function PsychologistOnboardingPage() {
               </div>
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-bold">Years of experience<input disabled={isLocked} required min="0" type="number" value={form.experienceYears} onChange={(e) => setForm({ ...form, experienceYears: e.target.value })} className="h-12 rounded-xl border px-4 font-normal outline-none focus:border-primary focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100" /></label>
-                <label className="grid gap-2 text-sm font-bold">Base fee (₹, per 30-min video session)<input disabled={isLocked} required min="50" type="number" value={form.feeRupees} onChange={(e) => setForm({ ...form, feeRupees: e.target.value })} className="h-12 rounded-xl border px-4 font-normal outline-none focus:border-primary focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100" /></label>
+                <div className="grid gap-2 text-sm font-bold">
+                  Base fee (₹, per 30-min video session)
+                  <div className="flex h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-600">
+                    {profile.consultationFee?.amount ? formatRupees(profile.consultationFee.amount) : "Not set by admin"}
+                  </div>
+                  <p className="text-xs font-normal text-slate-500">Your consultation fee is set by the ManoBalamHealthCare team. Contact support for changes.</p>
+                </div>
               </div>
        
-              {priceMatrix && (
-                <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-                  <p className="text-sm font-black text-slate-800">Session price preview</p>
-                  <p className="mt-1 text-xs text-slate-500">What patients will pay per session, derived from your base fee.</p>
-                  <table className="mt-3 w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-xs font-bold uppercase tracking-wide text-slate-500">
-                        <th className="py-1">Mode</th>
-                        {SESSION_DURATIONS.map((duration) => <th key={duration} className="py-1">{duration} min</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {priceMatrix.map(({ mode, prices }) => (
-                        <tr key={mode} className="border-t border-violet-100">
-                          <td className="py-2 font-bold text-slate-700">{modeLabels[mode]}</td>
-                          {prices.map(({ duration, amount }) => (
-                            <td key={duration} className="py-2 text-slate-600">{formatRupees(amount)}</td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
               <div className="grid gap-2 text-sm font-bold">
                 Licensed countries
                 <MultiSelectPicker options={countryOptions} selected={form.licensedCountries} onChange={(licensedCountries) => setForm({ ...form, licensedCountries })} disabled={isLocked} searchable searchPlaceholder="Search countries…" />
@@ -370,6 +377,113 @@ export function PsychologistOnboardingPage() {
               </CardContent>
             </Card>
 
+            <Card className="rounded-3xl border-violet-100 shadow-sm">
+              <CardHeader><CardTitle>Bank details for payouts</CardTitle></CardHeader>
+              <CardContent className="grid gap-4">
+                {payoutDetails && (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                    <p className="text-sm font-black text-emerald-900">Bank details on file</p>
+                    <div className="mt-3 grid gap-2 text-sm text-emerald-800">
+                      <p><span className="font-semibold">Account:</span> {payoutDetails.maskedAccountNumber}</p>
+                      <p><span className="font-semibold">Bank:</span> {payoutDetails.bankName}</p>
+                      <p><span className="font-semibold">IFSC:</span> {payoutDetails.ifscCode}</p>
+                      <p><span className="font-semibold">Type:</span> {payoutDetails.accountType}</p>
+                    </div>
+                    <p className="mt-2 text-xs text-emerald-600">To update these details, re-enter and confirm the account number below.</p>
+                  </div>
+                )}
+                <>
+                  <p className="text-sm text-slate-600">Add your bank account details to receive payments for completed sessions.</p>
+                  <div className="grid gap-3">
+                      <label className="grid gap-1 text-sm font-bold">
+                        Account holder name
+                        <input
+                          disabled={isLocked}
+                          type="text"
+                          value={payoutForm.accountHolderName}
+                          onChange={(e) => setPayoutForm({ ...payoutForm, accountHolderName: e.target.value })}
+                          className="h-10 rounded-lg border px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+                        />
+                      </label>
+                      <label className="grid gap-1 text-sm font-bold">
+                        Bank name
+                        <input
+                          disabled={isLocked}
+                          type="text"
+                          value={payoutForm.bankName}
+                          onChange={(e) => setPayoutForm({ ...payoutForm, bankName: e.target.value })}
+                          className="h-10 rounded-lg border px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+                        />
+                      </label>
+                      <label className="grid gap-1 text-sm font-bold">
+                        Account number
+                        <input
+                          disabled={isLocked}
+                          type="text"
+                          value={payoutForm.accountNumber}
+                          onChange={(e) => setPayoutForm({ ...payoutForm, accountNumber: e.target.value })}
+                          className="h-10 rounded-lg border px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+                        />
+                      </label>
+                      <label className="grid gap-1 text-sm font-bold">
+                        Confirm account number
+                        <input
+                          disabled={isLocked}
+                          type="text"
+                          value={payoutForm.accountNumberConfirmation}
+                          onChange={(e) => setPayoutForm({ ...payoutForm, accountNumberConfirmation: e.target.value })}
+                          className="h-10 rounded-lg border px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+                        />
+                      </label>
+                      <label className="grid gap-1 text-sm font-bold">
+                        IFSC code
+                        <input
+                          disabled={isLocked}
+                          type="text"
+                          value={payoutForm.ifscCode}
+                          onChange={(e) => setPayoutForm({ ...payoutForm, ifscCode: e.target.value.toUpperCase() })}
+                          placeholder="SBIN0001234"
+                          className="h-10 rounded-lg border px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+                        />
+                      </label>
+                      <label className="grid gap-1 text-sm font-bold">
+                        Account type
+                        <select
+                          disabled={isLocked}
+                          value={payoutForm.accountType}
+                          onChange={(e) => setPayoutForm({ ...payoutForm, accountType: e.target.value as "savings" | "current" })}
+                          className="h-10 rounded-lg border px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+                        >
+                          <option value="savings">Savings</option>
+                          <option value="current">Current</option>
+                        </select>
+                      </label>
+                      <label className="grid gap-1 text-sm font-bold">
+                        Branch name (optional)
+                        <input
+                          disabled={isLocked}
+                          type="text"
+                          value={payoutForm.branchName}
+                          onChange={(e) => setPayoutForm({ ...payoutForm, branchName: e.target.value })}
+                          className="h-10 rounded-lg border px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+                        />
+                      </label>
+                      <label className="grid gap-1 text-sm font-bold">
+                        UPI ID (optional)
+                        <input
+                          disabled={isLocked}
+                          type="text"
+                          value={payoutForm.upiId}
+                          onChange={(e) => setPayoutForm({ ...payoutForm, upiId: e.target.value.toLowerCase() })}
+                          placeholder="name@upi"
+                          className="h-10 rounded-lg border px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+                        />
+                      </label>
+                  </div>
+                </>
+              </CardContent>
+            </Card>
+
             {missingFields.length > 0 && !isLocked && (
               <Card className="rounded-3xl border-amber-200 bg-amber-50">
                 <CardContent className="pt-6"><p className="font-black text-amber-900">Still required</p><ul className="mt-3 grid gap-2 text-sm text-amber-800">{missingFields.map((field) => <li key={field}>• {field.replaceAll(/([A-Z])/g, " $1").replaceAll("_", " ")}</li>)}</ul></CardContent>
@@ -378,6 +492,7 @@ export function PsychologistOnboardingPage() {
 
             {!isLocked && <Button type="submit" disabled={saving || !isDirty} className="h-12 rounded-xl font-bold">{saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <Upload className="mr-2 size-4" />}{isApproved ? "Submit changes for review" : "Save progress"}</Button>}
             {!isLocked && !isDirty && <p className="text-center text-xs text-slate-400">No unsaved changes.</p>}
+            {!isApproved && !hasSavedPayoutDetails && <p className="text-center text-xs text-amber-700">Save valid bank details before submitting for review.</p>}
             {!isApproved && <Button type="button" onClick={() => setConfirmSubmitOpen(true)} disabled={!canSubmit || saving} className="h-12 rounded-xl bg-emerald-600 font-bold hover:bg-emerald-700"><Send className="mr-2 size-4" />Submit for review</Button>}
           </div>
         </form>

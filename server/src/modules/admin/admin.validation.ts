@@ -34,3 +34,16 @@ export const getAppointmentsSchema = z.object({
     ])
     .optional(),
 });
+
+export const getUsersSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(25),
+  role: z.enum(["patient", "psychologist"]).optional(),
+  status: z.enum(["active", "inactive"]).optional(),
+  search: z.string().trim().min(1).max(100).optional(),
+});
+
+export const updateUserActivitySchema = z.object({
+  isActive: z.boolean(),
+  reason: z.string().trim().min(10).max(1000),
+});

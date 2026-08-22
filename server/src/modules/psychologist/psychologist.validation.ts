@@ -18,11 +18,7 @@ export const updatePsychologistProfileSchema = z.object({
     .max(12)
     .optional(),
   experienceYears: z.number().int().min(0).max(70).optional(),
-  consultationFee: z.object({
-    // Base fee in paise for a 30-minute video session (₹50 – ₹1,00,000)
-    amount: z.number().int().min(5000).max(10_000_000),
-    currency: z.string().trim().length(3),
-  }).optional(),
+  // consultationFee removed - now managed by admin only
   bio: z.string().trim().min(50).max(3000).optional(),
   licensedCountries: z
     .array(
@@ -54,4 +50,11 @@ export const uploadCredentialsSchema = z.object({
 
 export const deleteCredentialParamsSchema = z.object({
   credentialId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid credential id"),
+});
+
+// Admin-only fee validation
+export const setPsychologistFeeSchema = z.object({
+  amount: z.number().int().min(5000).max(10_000_000), // Base fee in paise (₹50 – ₹1,00,000)
+  currency: z.string().trim().length(3).default("INR"),
+  reason: z.string().trim().max(500).optional(),
 });

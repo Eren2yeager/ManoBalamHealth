@@ -9,6 +9,9 @@ import {
   getAppointmentsSchema,
   getUsersSchema,
   updateUserActivitySchema,
+  getContactRequestsSchema,
+  updateContactRequestSchema,
+  getAuditLogsSchema,
 } from "./admin.validation";
 
 const router = Router();
@@ -31,6 +34,13 @@ router.get("/appointments", validate(getAppointmentsSchema, "query"), adminContr
 
 // Reports
 router.get("/reports", adminController.getReportsSummary);
+
+// Contact requests
+router.get("/contact-requests", validate(getContactRequestsSchema, "query"), adminController.getContactRequests);
+router.patch("/contact-requests/:id", validate(updateContactRequestSchema), adminController.updateContactRequest);
+
+// Audit logs
+router.get("/audit-logs", validate(getAuditLogsSchema, "query"), adminController.getAuditLogs);
 
 // Payment refunds — keyed by paymentId to match plan
 router.patch("/payments/:id/refund", validate(processRefundSchema), adminController.processRefund);

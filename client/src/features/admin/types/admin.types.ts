@@ -48,6 +48,9 @@ export interface AdminAppointmentItem {
   patient: { id: string; name: string; avatarUrl?: string };
   psychologist: { id: string; name: string; avatarUrl?: string };
   status: AppointmentStatus;
+  mode?: "chat" | "audio" | "video";
+  allocationMode?: "manual" | "auto" | "emergency";
+  fee?: { amount: number; currency: string };
   scheduledAt: string;
 }
 

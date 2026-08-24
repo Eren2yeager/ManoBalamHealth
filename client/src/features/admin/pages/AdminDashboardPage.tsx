@@ -22,11 +22,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
+  getAdminAttentionSummary,
   getAdminAppointments,
   getAdminReports,
   getPendingPsychologists,
   refundPayment,
   verifyPsychologist,
+  type AdminAttentionSummary,
 } from "../api/admin.api";
 import { PsychologistVerificationCard } from "../components/PsychologistVerificationCard";
 import { RefundModal } from "../components/RefundModal";
@@ -38,6 +40,7 @@ import type {
   PendingPsychologistItem,
   VerifyPsychologistDto,
 } from "../types/admin.types";
+import { Link } from "react-router-dom";
 
 const statusTone: Record<string, string> = {
   completed: "bg-emerald-50 text-emerald-700 ring-emerald-100",
@@ -108,6 +111,7 @@ export function AdminDashboardPage() {
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attention, setAttention] = useState<AdminAttentionSummary | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -115,14 +119,16 @@ export function AdminDashboardPage() {
       setError(null);
       const to = new Date().toISOString();
       const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const [psychologists, reportData, appointmentsData] = await Promise.all([
+      const [psychologists, reportData, appointmentsData, attentionData] = await Promise.all([
         getPendingPsychologists({ page: 1, limit: 50 }),
         getAdminReports(from, to),
         getAdminAppointments({ page: 1, limit: 100 }),
+        getAdminAttentionSummary(),
       ]);
       setPendingPsychologists(psychologists.items);
       setReport(reportData);
       setAppointments(appointmentsData.items);
+      setAttention(attentionData);
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "Failed to load dashboard data";
       setError(message);
@@ -209,6 +215,40 @@ export function AdminDashboardPage() {
     { icon: CheckCircle2, label: "Completed", value: completedCount, note: "Successfully delivered care", tone: "bg-emerald-100 text-emerald-700", delay: "delay-[140ms]" },
     { icon: CircleDollarSign, label: "Revenue", value: `₹${(report?.totalRevenue ?? 0).toLocaleString("en-IN")}`, note: "Recorded paid payments", tone: "bg-amber-100 text-amber-700", delay: "delay-[210ms]" },
   ];
+  const attentionCards = [
+    {
+      label: "Professional reviews",
+      value: attention?.pendingVerifications ?? pendingPsychologists.length,
+      note: "Applications or profile changes waiting for admin decision",
+      to: "/admin/verifications",
+      icon: BadgeCheck,
+      tone: "bg-violet-100 text-violet-700",
+    },
+    {
+      label: "Refund reviews",
+      value: attention?.refundReviews ?? cancelledAppointments.length,
+      note: "Cancelled care appointments that may need payment action",
+      to: "/admin/payments",
+      icon: WalletCards,
+      tone: "bg-rose-100 text-rose-700",
+    },
+    {
+      label: "Payout actions",
+      value: (attention?.payoutReady ?? 0) + (attention?.payoutBlocked ?? 0),
+      note: "Ready payouts plus records blocked by missing bank details",
+      to: "/admin/payouts",
+      icon: CircleDollarSign,
+      tone: "bg-amber-100 text-amber-800",
+    },
+    {
+      label: "Support inbox",
+      value: attention?.contactNew ?? 0,
+      note: "New public contact requests waiting for first review",
+      to: "/admin/contact-requests",
+      icon: Users,
+      tone: "bg-blue-100 text-blue-700",
+    },
+  ];
 
   return (
     <DashboardLayout>
@@ -240,6 +280,34 @@ export function AdminDashboardPage() {
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
+        </section>
+
+        <section className="rounded-[2rem] border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-5 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[.16em] text-violet-500">Needs attention</p>
+              <h2 className="mt-1 text-xl font-black text-slate-950">Operational action queue</h2>
+            </div>
+            <p className="max-w-xl text-sm leading-6 text-slate-500">
+              Start here when you only have a few minutes. These cards point to the workspaces most likely to need a decision.
+            </p>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {attentionCards.map(({ icon: Icon, ...card }) => (
+              <Link
+                key={card.label}
+                to={card.to}
+                className="group rounded-3xl border border-white bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+              >
+                <span className={`grid size-11 place-items-center rounded-2xl ${card.tone}`}>
+                  <Icon className="size-5" />
+                </span>
+                <p className="mt-4 text-2xl font-black text-slate-950">{card.value}</p>
+                <p className="mt-1 text-sm font-black text-slate-800 group-hover:text-primary">{card.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{card.note}</p>
+              </Link>
+            ))}
+          </div>
         </section>
 
         <Tabs defaultValue="overview" className="flex flex-col">

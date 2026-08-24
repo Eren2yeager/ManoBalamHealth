@@ -30,6 +30,10 @@ const STATUS_CONFIG: Record<
     label: "No show",
     className: "bg-muted text-muted-foreground border-border",
   },
+  refunded: {
+    label: "Refunded",
+    className: "bg-warning/15 text-warning-foreground border-warning/30",
+  },
 };
 
 interface AppointmentStatusBadgeProps {
@@ -46,6 +50,3 @@ export const AppointmentStatusBadge = ({ status, className }: AppointmentStatusB
     </Badge>
   );
 };
-
-export const canCancelAppointment = (status: AppointmentStatus): boolean =>
-  status === "pending_payment" || status === "confirmed";

@@ -1,7 +1,14 @@
-import { Heart, LockKeyhole } from "lucide-react";
+import { Heart, LockKeyhole, Sparkles } from "lucide-react";
 import { useBookingStore } from "../store/bookingStore";
 
-const prompts = ["Anxiety or stress", "Low mood", "Relationships", "Sleep", "Work pressure"];
+const prompts = [
+  "Anxiety or stress",
+  "Low mood",
+  "Relationships",
+  "Sleep",
+  "Work pressure",
+  "I am not sure yet",
+];
 
 export const ConcernForm = () => {
   const { concernDescription, setConcern } = useBookingStore();
@@ -17,6 +24,10 @@ export const ConcernForm = () => {
       <p className="mt-2 text-sm leading-6 text-slate-500">
         A short note can help your psychologist prepare. You can also leave this blank.
       </p>
+      <div className="mt-4 flex items-start gap-3 rounded-2xl border border-violet-100 bg-violet-50/70 p-4 text-sm leading-6 text-violet-800">
+        <Sparkles className="mt-0.5 size-4 shrink-0" />
+        You do not need perfect words. A few simple phrases are enough.
+      </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
         {prompts.map((prompt) => (
@@ -30,7 +41,7 @@ export const ConcernForm = () => {
                   : `${prompt}.`,
               )
             }
-            className="rounded-full border border-violet-100 bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
+            className="rounded-full border border-violet-100 bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
           >
             + {prompt}
           </button>

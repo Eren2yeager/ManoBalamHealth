@@ -171,6 +171,7 @@ export const ProfilePage = () => {
   const DestinationIcon = destination.icon;
   const isPsychologist = profile.role === "psychologist";
   const isAdmin = profile.role === "admin";
+  const isPatient = profile.role === "patient";
 
   return (
     <main className="min-h-[calc(100vh-4.5rem)] bg-[radial-gradient(circle_at_8%_0%,rgba(221,214,254,.65),transparent_27%),radial-gradient(circle_at_95%_8%,rgba(191,219,254,.4),transparent_24%),#faf9ff] px-4 py-7 md:px-8 md:py-10">
@@ -326,6 +327,7 @@ export const ProfilePage = () => {
           </aside>
 
           <div className="space-y-6">
+            {isPatient && <PatientCareShortcuts />}
             {isPsychologist && (
               <PsychologistProfessionalOverview profile={professionalProfile} />
             )}
@@ -341,6 +343,41 @@ export const ProfilePage = () => {
     </main>
   );
 };
+
+function PatientCareShortcuts() {
+  const actions = [
+    { label: "Book a session", to: "/book", icon: CalendarDays, tone: "bg-violet-100 text-violet-700" },
+    { label: "Find psychologists", to: "/psychologists", icon: UsersRound, tone: "bg-emerald-100 text-emerald-700" },
+    { label: "Assessments", to: "/assessment", icon: FileCheck2, tone: "bg-blue-100 text-blue-700" },
+    { label: "Urgent support", to: "/emergency", icon: HeartHandshake, tone: "bg-rose-100 text-rose-700" },
+  ];
+
+  return (
+    <section className="rounded-3xl border border-violet-100 bg-white p-6 shadow-sm">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-600">
+        Care shortcuts
+      </p>
+      <h2 className="mt-2 text-2xl font-black text-slate-950">
+        Continue your care journey
+      </h2>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        {actions.map(({ icon: Icon, ...action }) => (
+          <Link
+            key={action.to}
+            to={action.to}
+            className="group flex items-center gap-3 rounded-2xl border border-slate-100 p-4 transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+          >
+            <span className={`grid size-10 place-items-center rounded-xl ${action.tone}`}>
+              <Icon className="size-4" />
+            </span>
+            <span className="font-black text-slate-800 group-hover:text-primary">{action.label}</span>
+            <ArrowRight className="ml-auto size-4 text-slate-300 group-hover:text-primary" />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function AdminQuickActions() {
   const actions = [

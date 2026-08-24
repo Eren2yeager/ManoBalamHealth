@@ -15,6 +15,7 @@ import {
   Leaf,
   MessageCircle,
   Plus,
+  PlayCircle,
   ShieldCheck,
   Sparkles,
   Star,
@@ -29,6 +30,7 @@ import type { AppointmentListItem } from "@/features/appointments/types/appointm
 import { listPsychologists } from "@/features/psychologists/api/psychologist.api";
 import type { PsychologistListItem } from "@/features/psychologists/types/psychologist.types";
 import { formatInViewerTz } from "@/lib/timezone";
+import { getSessionAccessState } from "@/features/appointments/utils/sessionAccess";
 
 const moodOptions = [
   { value: 1, emoji: "😔", label: "Low" },
@@ -293,6 +295,109 @@ function QuickActions() {
               </article>
             </Link>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CareJourneyStrip({ appointments }: { appointments: AppointmentListItem[] }) {
+  const nextAppointment = appointments[0];
+  const sessionReady = nextAppointment
+    ? getSessionAccessState(nextAppointment).canJoinSession
+    : false;
+  const nextAction = sessionReady
+    ? {
+        label: "Join your session",
+        to: `/session/${nextAppointment.id}`,
+        icon: PlayCircle,
+        detail: "Your session window is open now.",
+      }
+    : nextAppointment
+      ? {
+          label: "View next appointment",
+          to: `/appointments/${nextAppointment.id}`,
+          icon: Calendar,
+          detail: formatInViewerTz(nextAppointment.scheduledAt, "EEE, MMM d · h:mm a"),
+        }
+      : {
+          label: "Book a session",
+          to: "/book",
+          icon: Plus,
+          detail: "Find support that fits your needs.",
+        };
+
+  const NextIcon = nextAction.icon;
+  const steps = [
+    {
+      icon: ClipboardList,
+      title: "Check in",
+      text: "Notice how you feel today.",
+      complete: true,
+    },
+    {
+      icon: Users,
+      title: "Choose care",
+      text: "Find a psychologist or auto-match.",
+      complete: appointments.length > 0,
+    },
+    {
+      icon: Video,
+      title: "Attend",
+      text: "Join chat, audio, or video.",
+      complete: sessionReady,
+    },
+    {
+      icon: Star,
+      title: "Reflect",
+      text: "Share feedback after care.",
+      complete: false,
+    },
+  ];
+
+  return (
+    <section className="px-4 pt-7 md:px-8">
+      <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-violet-100 bg-white shadow-sm">
+        <div className="grid gap-0 lg:grid-cols-[1fr_320px]">
+          <div className="grid gap-3 p-5 sm:grid-cols-4">
+            {steps.map(({ icon: Icon, title, text, complete }, index) => (
+              <div
+                key={title}
+                className="group relative rounded-3xl bg-violet-50/55 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-50"
+              >
+                {index < steps.length - 1 && (
+                  <span className="absolute right-[-1rem] top-9 hidden h-px w-8 bg-violet-100 sm:block" />
+                )}
+                <span
+                  className={`grid size-10 place-items-center rounded-2xl ${
+                    complete
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-violet-100 text-violet-700"
+                  }`}
+                >
+                  {complete ? <CheckCircle2 className="size-5" /> : <Icon className="size-5" />}
+                </span>
+                <p className="mt-4 font-black text-slate-950">{title}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{text}</p>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-violet-100 bg-gradient-to-br from-[#17142f] to-violet-900 p-5 text-white lg:border-l lg:border-t-0">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-200">
+              Next best action
+            </p>
+            <h2 className="mt-3 text-xl font-black">{nextAction.label}</h2>
+            <p className="mt-2 text-sm leading-6 text-violet-100/70">{nextAction.detail}</p>
+            <Button
+              asChild
+              className="mt-5 h-11 rounded-xl bg-white px-5 font-black text-violet-800 hover:bg-violet-50"
+            >
+              <Link to={nextAction.to}>
+                <NextIcon className="mr-2 size-4" />
+                Continue
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </section>
@@ -728,6 +833,7 @@ export const HomePage = () => {
   return (
     <div className="min-h-screen bg-slate-50/60">
       <GreetingHero name={user.name} upcomingCount={appointments.length} />
+      <CareJourneyStrip appointments={appointments} />
       <QuickActions />
       <UpcomingSession appointments={appointments} isLoading={appointmentsLoading} />
       <DashboardStats

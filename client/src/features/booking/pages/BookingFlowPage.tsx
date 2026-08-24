@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,6 +8,7 @@ import {
   HeartHandshake,
   LockKeyhole,
   MessageCircleHeart,
+  HelpCircle,
   ShieldCheck,
   Sparkles,
   Stethoscope,
@@ -78,6 +79,18 @@ export const BookingFlowPage = () => {
     [psychologistId],
   );
   const currentIndex = visibleSteps.indexOf(step);
+  const proceedHint = useMemo(() => {
+    if (step === "mode" && !allocationMode) return "Choose how you would like to find support.";
+    if (step === "type" && !mode) return "Select chat, audio, or video to continue.";
+    if (step === "schedule") {
+      if (isManualFlow && !selectedPsychologistId) return "Choose a psychologist first.";
+      if (isManualFlow && !selectedSlotId) return "Select an available time slot.";
+      if (!isManualFlow && !(preferredWindow?.from && preferredWindow?.to)) {
+        return "Pick your preferred date and time window.";
+      }
+    }
+    return "Ready for the next step.";
+  }, [allocationMode, isManualFlow, mode, preferredWindow, selectedPsychologistId, selectedSlotId, step]);
 
   useEffect(() => {
     if (psychologistId) {
@@ -257,6 +270,22 @@ export const BookingFlowPage = () => {
                 to provide care.
               </p>
             </div>
+
+            <div className="mt-3 rounded-2xl bg-violet-50 p-4">
+              <p className="flex items-center gap-2 text-xs font-black text-violet-800">
+                <HelpCircle className="size-4" />
+                Not sure who to choose?
+              </p>
+              <p className="mt-2 text-[11px] leading-5 text-violet-700/80">
+                You can browse profiles first, or use automatic matching if you prefer a simpler path.
+              </p>
+              <Link
+                to="/psychologists"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-700 hover:gap-2"
+              >
+                Browse psychologists <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
           </aside>
 
           <section className="min-w-0 rounded-[2rem] border border-violet-100 bg-white/95 p-5 shadow-xl shadow-violet-100/40 backdrop-blur sm:p-7 md:p-9">
@@ -279,7 +308,7 @@ export const BookingFlowPage = () => {
             </div>
 
             {step !== "summary" && (
-              <div className="mt-8 flex items-center justify-between gap-4 border-t border-slate-100 pt-6">
+              <div className="mt-8 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <Button
                   variant="outline"
                   disabled={currentIndex === 0}
@@ -289,14 +318,19 @@ export const BookingFlowPage = () => {
                   <ArrowLeft className="mr-2 size-4" />
                   Back
                 </Button>
-                <Button
-                  onClick={nextStep}
-                  disabled={!canProceed()}
-                  className="h-11 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-bold shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-indigo-700"
-                >
-                  Continue
-                  <ArrowRight className="ml-2 size-4" />
-                </Button>
+                <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                  <p className={`text-xs font-semibold ${canProceed() ? "text-emerald-600" : "text-slate-500"}`}>
+                    {proceedHint}
+                  </p>
+                  <Button
+                    onClick={nextStep}
+                    disabled={!canProceed()}
+                    className="h-11 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-bold shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-indigo-700"
+                  >
+                    Continue
+                    <ArrowRight className="ml-2 size-4" />
+                  </Button>
+                </div>
               </div>
             )}
           </section>

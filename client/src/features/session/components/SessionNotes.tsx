@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import {
   Check,
   ChevronDown,
+  ClipboardList,
   CloudUpload,
   LoaderCircle,
   Lock,
@@ -20,6 +21,25 @@ import { getSession, updateSessionNotes } from "../api/session.api";
 import type { SessionNoteEmotion, SessionNoteEntry } from "../types/session.types";
 
 const MAX_NOTE_LENGTH = 2000;
+
+const NOTE_TEMPLATES = [
+  {
+    label: "Presenting concern",
+    text: "Presenting concern:\n\nObserved mood/affect:\n\nKey context shared:",
+  },
+  {
+    label: "Intervention",
+    text: "Intervention used:\n\nPatient response:\n\nClinical observation:",
+  },
+  {
+    label: "Follow-up plan",
+    text: "Follow-up plan:\n\nPractice/home task:\n\nNext session focus:",
+  },
+  {
+    label: "Risk check",
+    text: "Risk indicators checked:\n\nProtective factors:\n\nEscalation/follow-up needed:",
+  },
+];
 
 // ── Emotions ─────────────────────────────────────────────────────────────────
 
@@ -218,8 +238,34 @@ const NoteComposer = ({
     textareaRef.current?.focus();
   };
 
+  const insertTemplate = (template: string) => {
+    setText((current) => {
+      const separator = current.trim().length > 0 ? "\n\n" : "";
+      return `${current}${separator}${template}`.slice(0, MAX_NOTE_LENGTH);
+    });
+    textareaRef.current?.focus();
+  };
+
   return (
     <div className="space-y-2">
+      <div>
+        <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+          <ClipboardList className="size-3.5" />
+          Quick templates
+        </div>
+        <div className="flex gap-1.5 overflow-x-auto pb-1" aria-label="Session note templates">
+          {NOTE_TEMPLATES.map((template) => (
+            <button
+              key={template.label}
+              type="button"
+              onClick={() => insertTemplate(template.text)}
+              className="shrink-0 rounded-full border border-border bg-muted/30 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {template.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Patient's emotion">
         {EMOTIONS.map((e) => {
           const selected = emotion === e.value;

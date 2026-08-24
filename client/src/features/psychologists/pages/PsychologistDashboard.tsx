@@ -4,11 +4,14 @@ import {
   AlertCircle,
   ArrowRight,
   BadgeCheck,
+  Banknote,
   CalendarDays,
   CheckCircle2,
   Clock3,
   FileCheck2,
   HeartHandshake,
+  NotebookPen,
+  PlayCircle,
   ShieldCheck,
   Sparkles,
   UserRoundCheck,
@@ -20,6 +23,10 @@ import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { usePsychologistPresenceToggle } from "@/features/psychologists/hooks/usePresence";
 import { useAuth } from "@/hooks/useAuth";
+import { formatInViewerTz } from "@/lib/timezone";
+import { getMyAppointments } from "@/features/appointments/api/appointment.api";
+import type { AppointmentListItem } from "@/features/appointments/types/appointment.types";
+import { getSessionAccessState } from "@/features/appointments/utils/sessionAccess";
 import { getMyPsychologistOnboarding, updateMyPsychologistProfile } from "../api/psychologist.api";
 import type {
   PsychologistCredential,
@@ -75,6 +82,8 @@ export function PsychologistDashboard() {
   const [isAcceptingEmergency, setIsAcceptingEmergency] = useState(false);
   const [isUpdatingEmergency, setIsUpdatingEmergency] = useState(false);
   const [onboarding, setOnboarding] = useState<PsychologistOnboarding | null>(null);
+  const [appointments, setAppointments] = useState<AppointmentListItem[]>([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -88,6 +97,33 @@ export function PsychologistDashboard() {
         }
       })
       .catch(() => toast.error("Unable to load verification status."));
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    void getMyAppointments({ page: 1, limit: 12, upcoming: true })
+      .then(({ items }) => {
+        if (active) {
+          setAppointments(
+            [...items].sort(
+              (a, b) =>
+                new Date(a.scheduledAt).getTime() -
+                new Date(b.scheduledAt).getTime(),
+            ),
+          );
+        }
+      })
+      .catch(() => {
+        if (active) setAppointments([]);
+      })
+      .finally(() => {
+        if (active) setAppointmentsLoading(false);
+      });
 
     return () => {
       active = false;
@@ -136,6 +172,23 @@ export function PsychologistDashboard() {
       complete: isApproved,
     },
   ];
+
+  const todayKey = new Date().toDateString();
+  const terminalStatuses = new Set(["completed", "cancelled", "no_show", "refunded"]);
+  const todayAppointments = appointments.filter(
+    (appointment) =>
+      new Date(appointment.scheduledAt).toDateString() === todayKey &&
+      !terminalStatuses.has(appointment.status),
+  );
+  const nextAppointment = appointments.find(
+    (appointment) => !terminalStatuses.has(appointment.status),
+  );
+  const completedAppointments = appointments.filter(
+    (appointment) => appointment.status === "completed",
+  ).length;
+  const emergencyAppointments = appointments.filter(
+    (appointment) => appointment.allocationMode === "emergency",
+  ).length;
 
   const handleToggleOnline = (online: boolean) => {
     if (!isApproved) {
@@ -269,6 +322,141 @@ export function PsychologistDashboard() {
             }
             accent={isOnline ? "emerald" : "slate"}
           />
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1.1fr_.9fr]">
+          <div className="overflow-hidden rounded-[2rem] border border-violet-100 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-violet-100 bg-gradient-to-r from-violet-50 via-white to-indigo-50/70 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.17em] text-violet-600">
+                  Today&apos;s practice
+                </p>
+                <h2 className="mt-2 text-xl font-black text-slate-950">
+                  Care delivery snapshot
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  A quick view of your live schedule and care activity.
+                </p>
+              </div>
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 rounded-xl border-violet-200 bg-white font-bold text-violet-700 hover:bg-violet-50"
+              >
+                <Link to="/psychologist/appointments">
+                  Open appointments <ArrowRight className="ml-2 size-4" />
+                </Link>
+              </Button>
+            </div>
+
+            <div className="grid gap-4 p-5 sm:grid-cols-3">
+              <PracticeStat
+                icon={CalendarDays}
+                label="Today"
+                value={appointmentsLoading ? "..." : String(todayAppointments.length)}
+                detail="Scheduled sessions"
+                tone="violet"
+              />
+              <PracticeStat
+                icon={Clock3}
+                label="Upcoming"
+                value={appointmentsLoading ? "..." : String(appointments.length)}
+                detail="Loaded queue"
+                tone="blue"
+              />
+              <PracticeStat
+                icon={HeartHandshake}
+                label="Urgent"
+                value={appointmentsLoading ? "..." : String(emergencyAppointments)}
+                detail="Emergency requests"
+                tone="rose"
+              />
+            </div>
+
+            <div className="border-t border-violet-50 p-5">
+              {nextAppointment ? (
+                <NextSessionCard appointment={nextAppointment} />
+              ) : (
+                <div className="rounded-3xl border border-dashed border-violet-200 bg-violet-50/50 p-6 text-center">
+                  <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-white text-violet-700 shadow-sm">
+                    <NotebookPen className="size-5" />
+                  </span>
+                  <h3 className="mt-4 font-black text-slate-950">
+                    No upcoming care sessions
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+                    Keep your availability updated so patients can find the right time with you.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-violet-100 bg-white p-6 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.17em] text-violet-600">
+              Action queue
+            </p>
+            <h2 className="mt-2 text-xl font-black text-slate-950">
+              Recommended next steps
+            </h2>
+            <div className="mt-5 grid gap-3">
+              {!isApproved ? (
+                <ActionStep
+                  icon={ShieldCheck}
+                  title="Complete verification"
+                  detail="Approval unlocks visibility, sessions, and availability tools."
+                  to="/psychologist/onboarding"
+                  action="Open onboarding"
+                  tone="amber"
+                />
+              ) : (
+                <ActionStep
+                  icon={CheckCircle2}
+                  title="Verification complete"
+                  detail="Your professional profile is approved and ready for patients."
+                  to="/psychologist/onboarding"
+                  action="View profile"
+                  tone="emerald"
+                />
+              )}
+              <ActionStep
+                icon={Clock3}
+                title="Keep availability fresh"
+                detail="Review weekly rules so patients only see reliable booking windows."
+                to="/psychologist/availability"
+                action="Manage schedule"
+                tone="violet"
+              />
+              <ActionStep
+                icon={UserRoundCheck}
+                title="Edit professional details"
+                detail="Update your specializations, languages, bio, countries, and emergency preference."
+                to="/psychologist/onboarding"
+                action="Open editor"
+                tone="violet"
+              />
+              <ActionStep
+                icon={isOnline ? Wifi : WifiOff}
+                title={isOnline ? "Visible to patients" : "Go online when ready"}
+                detail={
+                  isOnline
+                    ? "Patients can currently discover your profile."
+                    : "Turn visibility on when you are ready to receive bookings."
+                }
+                to="/psychologist/dashboard"
+                action={isOnline ? "Online now" : "Use live controls"}
+                tone={isOnline ? "emerald" : "slate"}
+              />
+              <ActionStep
+                icon={Banknote}
+                title={`${completedAppointments} completed in queue`}
+                detail="Use completed sessions and payout details to track compensation readiness."
+                to="/psychologist/earnings"
+                action="Open payout workspace"
+                tone="blue"
+              />
+            </div>
+          </div>
         </section>
 
         <section
@@ -505,6 +693,15 @@ export function PsychologistDashboard() {
               locked={false}
               color="rose"
             />
+            <WorkspaceCard
+              icon={Banknote}
+              title="Payouts"
+              description="Review bank setup and completed sessions from a dedicated payout workspace."
+              to="/psychologist/earnings"
+              action="Open payouts"
+              locked={false}
+              color="violet"
+            />
           </div>
         </section>
       </div>
@@ -519,6 +716,136 @@ type MetricCardProps = {
   detail: string;
   accent: "violet" | "blue" | "amber" | "emerald" | "slate";
 };
+
+type PracticeStatProps = {
+  icon: typeof CalendarDays;
+  label: string;
+  value: string;
+  detail: string;
+  tone: "violet" | "blue" | "rose";
+};
+
+const practiceStatTones: Record<PracticeStatProps["tone"], string> = {
+  violet: "bg-violet-100 text-violet-700 shadow-violet-100",
+  blue: "bg-blue-100 text-blue-700 shadow-blue-100",
+  rose: "bg-rose-100 text-rose-700 shadow-rose-100",
+};
+
+function PracticeStat({ icon: Icon, label, value, detail, tone }: PracticeStatProps) {
+  return (
+    <div className="group rounded-3xl border border-violet-50 bg-slate-50/60 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-lg hover:shadow-violet-100/70">
+      <div
+        className={`grid size-10 place-items-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-105 ${practiceStatTones[tone]}`}
+      >
+        <Icon className="size-4.5" />
+      </div>
+      <p className="mt-4 text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+        {label}
+      </p>
+      <p className="mt-1 text-3xl font-black text-slate-950">{value}</p>
+      <p className="mt-1 text-xs font-semibold text-slate-500">{detail}</p>
+    </div>
+  );
+}
+
+function NextSessionCard({ appointment }: { appointment: AppointmentListItem }) {
+  const { canJoinSession, isTooEarly, isExpired } = getSessionAccessState(appointment);
+  const sessionLabel =
+    appointment.status === "in_progress"
+      ? "Rejoin session"
+      : canJoinSession
+        ? "Start session"
+        : isTooEarly
+          ? "Opens soon"
+          : isExpired
+            ? "Window ended"
+            : "Session pending";
+
+  return (
+    <div className="group rounded-3xl border border-violet-100 bg-gradient-to-br from-white to-violet-50/70 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-100/80">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-4">
+          <span className="grid size-13 shrink-0 place-items-center rounded-2xl bg-violet-100 text-violet-700 shadow-sm">
+            <CalendarDays className="size-6" />
+          </span>
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.15em] text-violet-600">
+              Next session
+            </p>
+            <h3 className="mt-1 text-lg font-black text-slate-950">
+              {appointment.otherParty.name}
+            </h3>
+            <p className="mt-1 text-sm font-semibold text-slate-500">
+              {formatInViewerTz(appointment.scheduledAt, "EEE, MMM d · h:mm a")} ·{" "}
+              {appointment.mode}
+            </p>
+            <p className="mt-2 text-xs font-bold capitalize text-slate-400">
+              {appointment.allocationMode} care · {appointment.status.replaceAll("_", " ")}
+            </p>
+          </div>
+        </div>
+        <Button
+          asChild={canJoinSession}
+          disabled={!canJoinSession}
+          className={`h-11 rounded-xl px-5 font-black ${
+            canJoinSession
+              ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-200 hover:opacity-95"
+              : "bg-slate-100 text-slate-500 hover:bg-slate-100"
+          }`}
+        >
+          {canJoinSession ? (
+            <Link to={`/psychologist/session/${appointment.id}`}>
+              <PlayCircle className="mr-2 size-4" />
+              {sessionLabel}
+            </Link>
+          ) : (
+            <span>{sessionLabel}</span>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+type ActionStepProps = {
+  icon: typeof ShieldCheck;
+  title: string;
+  detail: string;
+  to: string;
+  action: string;
+  tone: "violet" | "blue" | "amber" | "emerald" | "slate";
+};
+
+const actionStepTones: Record<ActionStepProps["tone"], string> = {
+  violet: "bg-violet-100 text-violet-700",
+  blue: "bg-blue-100 text-blue-700",
+  amber: "bg-amber-100 text-amber-700",
+  emerald: "bg-emerald-100 text-emerald-700",
+  slate: "bg-slate-100 text-slate-600",
+};
+
+function ActionStep({ icon: Icon, title, detail, to, action, tone }: ActionStepProps) {
+  return (
+    <Link
+      to={to}
+      className="group flex items-start gap-3 rounded-3xl border border-violet-50 bg-slate-50/70 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-lg hover:shadow-violet-100/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+    >
+      <span
+        className={`grid size-11 shrink-0 place-items-center rounded-2xl transition-transform duration-300 group-hover:scale-105 ${actionStepTones[tone]}`}
+      >
+        <Icon className="size-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-black text-slate-950">{title}</span>
+        <span className="mt-1 block text-sm leading-6 text-slate-500">{detail}</span>
+        <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-700">
+          {action}
+          <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
+        </span>
+      </span>
+    </Link>
+  );
+}
 
 const metricAccents: Record<MetricCardProps["accent"], string> = {
   violet: "bg-violet-100 text-violet-700",

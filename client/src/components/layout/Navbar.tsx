@@ -26,6 +26,7 @@ const roleLinks: Record<Role, Array<{ label: string; to: string }>> = {
     { label: "Onboarding", to: "/psychologist/onboarding" },
     { label: "Appointments", to: "/psychologist/appointments" },
     { label: "Availability", to: "/psychologist/availability" },
+    { label: "Payouts", to: "/psychologist/earnings" },
   ],
   admin: [
     { label: "Dashboard", to: "/admin/dashboard" },

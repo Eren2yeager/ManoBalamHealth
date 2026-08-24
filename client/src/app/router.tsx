@@ -41,6 +41,7 @@ import { SessionSocketListener } from "./SessionSocketListener";
 // Psychologist-only
 import { PsychologistDashboard } from "../features/psychologists/pages/PsychologistDashboard";
 import { PsychologistOnboardingPage } from "../features/psychologists/pages/PsychologistOnboardingPage";
+import { PsychologistEarningsPage } from "../features/psychologists/pages/PsychologistEarningsPage";
 import { AvailabilityPage } from "../features/availability/pages/AvailabilityPage";
 import { PsychologistAppointmentsPage } from "../features/appointments/pages/PsychologistAppointmentsPage";
 
@@ -175,6 +176,7 @@ const router = createBrowserRouter([
         children: [
           { path: "/psychologist/dashboard", element: <PsychologistDashboard /> },
           { path: "/psychologist/onboarding", element: <PsychologistOnboardingPage /> },
+          { path: "/psychologist/earnings", element: <PsychologistEarningsPage /> },
           {
             element: <ApprovedPsychologistRoute />,
             children: [

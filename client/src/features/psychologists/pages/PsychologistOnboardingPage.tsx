@@ -2,14 +2,17 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import {
   AlertCircle,
   CheckCircle2,
+  ClipboardCheck,
   ExternalLink,
   FileCheck2,
   Hourglass,
+  Landmark,
   LoaderCircle,
+  PencilLine,
+  Save,
   Send,
   ShieldCheck,
   Trash2,
-  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -76,6 +79,41 @@ const formatRupees = (paise: number) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(paise / 100);
+
+type ProfileSectionLinkProps = {
+  href: string;
+  icon: typeof PencilLine;
+  title: string;
+  description: string;
+  active?: boolean;
+};
+
+function ProfileSectionLink({
+  href,
+  icon: Icon,
+  title,
+  description,
+  active = false,
+}: ProfileSectionLinkProps) {
+  return (
+    <a
+      href={href}
+      className={`group rounded-3xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-violet-100/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 ${
+        active
+          ? "border-violet-200 bg-violet-50"
+          : "border-violet-100 bg-white"
+      }`}
+    >
+      <span className="grid size-10 place-items-center rounded-2xl bg-violet-100 text-violet-700 transition-transform duration-300 group-hover:scale-105">
+        <Icon className="size-5" />
+      </span>
+      <span className="mt-4 block font-black text-slate-950">{title}</span>
+      <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">
+        {description}
+      </span>
+    </a>
+  );
+}
 
 export function PsychologistOnboardingPage() {
   const [profile, setProfile] = useState<PsychologistOnboarding | null>(null);
@@ -184,6 +222,9 @@ export function PsychologistOnboardingPage() {
     });
     return groups;
   }, [profile]);
+  const uploadedCredentials = (["license", "degree", "id_proof"] as const).filter(
+    (type) => (credentialsByType[type] ?? []).length > 0,
+  ).length;
 
   const saveProgress = async (event: FormEvent) => {
     event.preventDefault();
@@ -271,14 +312,25 @@ export function PsychologistOnboardingPage() {
         <div className="rounded-[2rem] bg-gradient-to-r from-[#17162e] to-violet-900 p-7 text-white shadow-2xl md:p-10">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-              <p className="text-xs font-black uppercase tracking-[.2em] text-violet-300">Professional onboarding</p>
-              <h1 className="mt-3 text-3xl font-black">Complete your psychologist profile</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-violet-100/75">Your professional details and credentials must be reviewed before you can publish availability, appear online, or receive appointments.</p>
+              <p className="text-xs font-black uppercase tracking-[.2em] text-violet-300">Professional profile editor</p>
+              <h1 className="mt-3 text-3xl font-black">Edit and save your professional details</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-violet-100/75">Update your specializations, languages, experience, licensed countries, biography, credentials, and payout details from this workspace.</p>
             </div>
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold capitalize">
-              {isApproved ? <CheckCircle2 className="size-4 text-emerald-300" /> : <ShieldCheck className="size-4 text-violet-300" />}
-              {profile.onboardingStatus.replaceAll("_", " ")}
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                asChild
+                className="h-11 rounded-xl bg-white px-5 font-black text-violet-800 hover:bg-violet-50"
+              >
+                <a href="#professional-details">
+                  <PencilLine className="mr-2 size-4" />
+                  Edit details
+                </a>
+              </Button>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold capitalize">
+                {isApproved ? <CheckCircle2 className="size-4 text-emerald-300" /> : <ShieldCheck className="size-4 text-violet-300" />}
+                {profile.onboardingStatus.replaceAll("_", " ")}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -306,9 +358,53 @@ export function PsychologistOnboardingPage() {
           </div>
         )}
 
+        <section className="mt-6 grid gap-3 md:grid-cols-4">
+          <ProfileSectionLink
+            href="#professional-details"
+            icon={PencilLine}
+            title="Profile"
+            description="Clinical focus, bio, languages"
+            active={isDirty}
+          />
+          <ProfileSectionLink
+            href="#credentials"
+            icon={FileCheck2}
+            title="Credentials"
+            description={`${uploadedCredentials} of 3 required`}
+            active={uploadedCredentials < 3}
+          />
+          <ProfileSectionLink
+            href="#payout-details"
+            icon={Landmark}
+            title="Payouts"
+            description={hasSavedPayoutDetails ? "Bank details saved" : "Setup required"}
+            active={!hasSavedPayoutDetails}
+          />
+          <ProfileSectionLink
+            href="#verification-actions"
+            icon={ClipboardCheck}
+            title="Review"
+            description={isApproved ? "Approved profile" : "Submit when ready"}
+            active={!isApproved}
+          />
+        </section>
+
         <form onSubmit={saveProgress} className="mt-7 grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
-          <Card className="rounded-3xl border-violet-100 shadow-sm">
-            <CardHeader><CardTitle>Professional details</CardTitle></CardHeader>
+          <Card id="professional-details" className="scroll-mt-28 rounded-3xl border-violet-100 shadow-sm">
+            <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <PencilLine className="size-5 text-primary" />
+                  Edit professional details
+                </CardTitle>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  These fields shape your public psychologist profile. Save after changing any detail.
+                </p>
+              </div>
+              <span className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black ${isDirty ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-700"}`}>
+                {isDirty ? "Unsaved changes" : "Saved"}
+              </span>
+            </CardHeader>
             <CardContent className="grid gap-5">
               <div className="grid gap-2 text-sm font-bold">
                 Specializations
@@ -339,8 +435,16 @@ export function PsychologistOnboardingPage() {
           </Card>
 
           <div className="grid content-start gap-6">
-            <Card className="rounded-3xl border-violet-100 shadow-sm">
-              <CardHeader><CardTitle>Required credentials</CardTitle></CardHeader>
+            <Card id="credentials" className="scroll-mt-28 rounded-3xl border-violet-100 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileCheck2 className="size-5 text-primary" />
+                  Required credentials
+                </CardTitle>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Upload the documents reviewers need to verify your professional profile.
+                </p>
+              </CardHeader>
               <CardContent className="grid gap-4">
                 {(["license", "degree", "id_proof"] as const).map((type) => (
                   <div key={type} className="block rounded-2xl border border-dashed border-violet-200 bg-violet-50/40 p-4">
@@ -377,8 +481,16 @@ export function PsychologistOnboardingPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-3xl border-violet-100 shadow-sm">
-              <CardHeader><CardTitle>Bank details for payouts</CardTitle></CardHeader>
+            <Card id="payout-details" className="scroll-mt-28 rounded-3xl border-violet-100 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Landmark className="size-5 text-primary" />
+                  Bank details for payouts
+                </CardTitle>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Keep payout information current so completed sessions can be processed without delay.
+                </p>
+              </CardHeader>
               <CardContent className="grid gap-4">
                 {payoutDetails && (
                   <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
@@ -484,17 +596,89 @@ export function PsychologistOnboardingPage() {
               </CardContent>
             </Card>
 
-            {missingFields.length > 0 && !isLocked && (
-              <Card className="rounded-3xl border-amber-200 bg-amber-50">
-                <CardContent className="pt-6"><p className="font-black text-amber-900">Still required</p><ul className="mt-3 grid gap-2 text-sm text-amber-800">{missingFields.map((field) => <li key={field}>• {field.replaceAll(/([A-Z])/g, " $1").replaceAll("_", " ")}</li>)}</ul></CardContent>
-              </Card>
-            )}
-
-            {!isLocked && <Button type="submit" disabled={saving || !isDirty} className="h-12 rounded-xl font-bold">{saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <Upload className="mr-2 size-4" />}{isApproved ? "Submit changes for review" : "Save progress"}</Button>}
-            {!isLocked && !isDirty && <p className="text-center text-xs text-slate-400">No unsaved changes.</p>}
-            {!isApproved && !hasSavedPayoutDetails && <p className="text-center text-xs text-amber-700">Save valid bank details before submitting for review.</p>}
-            {!isApproved && <Button type="button" onClick={() => setConfirmSubmitOpen(true)} disabled={!canSubmit || saving} className="h-12 rounded-xl bg-emerald-600 font-bold hover:bg-emerald-700"><Send className="mr-2 size-4" />Submit for review</Button>}
+            <Card id="verification-actions" className="scroll-mt-28 rounded-3xl border-violet-100 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardCheck className="size-5 text-primary" />
+                  Verification actions
+                </CardTitle>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Save changes first, then submit your profile for review when every requirement is complete.
+                </p>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                {missingFields.length > 0 && !isLocked && (
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
+                    <p className="font-black text-amber-900">Still required</p>
+                    <ul className="mt-3 grid gap-2 text-sm text-amber-800">
+                      {missingFields.map((field) => (
+                        <li key={field}>• {field.replaceAll(/([A-Z])/g, " $1").replaceAll("_", " ")}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {isLocked && (
+                  <div className="rounded-3xl border border-violet-200 bg-violet-50 p-5 text-violet-900">
+                    <p className="font-black">Profile under review</p>
+                    <p className="mt-2 text-sm leading-6">
+                      Editing is paused while the ManoBalamHealthCare team reviews your submission.
+                    </p>
+                  </div>
+                )}
+                {!isLocked && (
+                  <Button type="submit" disabled={saving || !isDirty} className="h-12 rounded-xl font-bold">
+                    {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
+                    {isApproved ? "Save professional changes for review" : "Save professional details"}
+                  </Button>
+                )}
+                {!isLocked && !isDirty && <p className="text-center text-xs text-slate-400">No unsaved changes.</p>}
+                {!isApproved && !hasSavedPayoutDetails && <p className="text-center text-xs text-amber-700">Save valid bank details before submitting for review.</p>}
+                {!isApproved && (
+                  <Button
+                    type="button"
+                    onClick={() => setConfirmSubmitOpen(true)}
+                    disabled={!canSubmit || saving}
+                    className="h-12 rounded-xl bg-emerald-600 font-bold hover:bg-emerald-700"
+                  >
+                    <Send className="mr-2 size-4" />
+                    Submit for review
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
           </div>
+
+          {!isLocked && (
+            <div className="sticky bottom-4 z-20 rounded-2xl border border-violet-100 bg-white/95 p-4 shadow-2xl shadow-violet-200/60 backdrop-blur-xl lg:col-span-2">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className={`mt-1 size-2.5 rounded-full ${isDirty ? "animate-pulse bg-amber-500" : "bg-emerald-500"}`} />
+                  <div>
+                    <p className="text-sm font-black text-slate-950">
+                      {isDirty ? "You have unsaved professional details" : "Professional details are saved"}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      {isApproved
+                        ? "Saved profile changes will be sent to admin review before going live."
+                        : "Save your profile, credentials, and payout details before submitting for verification."}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  disabled={saving || !isDirty}
+                  className="h-11 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-black shadow-lg shadow-violet-200"
+                >
+                  {saving ? (
+                    <LoaderCircle className="mr-2 size-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 size-4" />
+                  )}
+                  {isApproved ? "Save changes for review" : "Save professional details"}
+                </Button>
+              </div>
+            </div>
+          )}
         </form>
       </div>
 

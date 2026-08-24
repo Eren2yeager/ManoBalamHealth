@@ -11,7 +11,9 @@ import {
   Mic, 
   MessageSquare,
   XCircle,
-  CheckCircle2
+  CheckCircle2,
+  Copy,
+  AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,43 @@ const DEFAULT_RULE: AvailabilityRuleDto = {
   modes: ["chat", "audio"],
 };
 
+const toMinutes = (time: string) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
+const getRuleValidationIssues = (rules: AvailabilityRuleDto[]) => {
+  const issues: string[] = [];
+
+  rules.forEach((rule, index) => {
+    if (toMinutes(rule.endTime) <= toMinutes(rule.startTime)) {
+      issues.push(`Rule ${index + 1}: end time must be after start time.`);
+    }
+    if (rule.modes.length === 0) {
+      issues.push(`Rule ${index + 1}: select at least one consultation mode.`);
+    }
+  });
+
+  DAYS.forEach((day) => {
+    const dayRules = rules
+      .map((rule, index) => ({ rule, index }))
+      .filter(({ rule }) => rule.dayOfWeek === day)
+      .sort((a, b) => toMinutes(a.rule.startTime) - toMinutes(b.rule.startTime));
+
+    for (let i = 1; i < dayRules.length; i += 1) {
+      const previous = dayRules[i - 1];
+      const current = dayRules[i];
+      if (toMinutes(current.rule.startTime) < toMinutes(previous.rule.endTime)) {
+        issues.push(
+          `${DAY_LABELS[day]}: Rule ${previous.index + 1} overlaps with rule ${current.index + 1}.`,
+        );
+      }
+    }
+  });
+
+  return issues;
+};
+
 const ModeIcon = ({ mode }: { mode: ConsultationMode }) => {
   switch (mode) {
     case "video":
@@ -80,6 +119,7 @@ export function AvailabilityPage() {
   const [initialRules, setInitialRules] = useState<AvailabilityRuleDto[]>([]);
 
   const isDirty = useMemo(() => JSON.stringify(rules) !== JSON.stringify(initialRules), [rules, initialRules]);
+  const validationIssues = useMemo(() => getRuleValidationIssues(rules), [rules]);
 
   const weeklySchedule = useMemo(() => {
     const schedule: Record<number, AvailabilityRuleDto[]> = {};
@@ -135,10 +175,38 @@ export function AvailabilityPage() {
   const removeRule = (index: number) =>
     setRules((prev) => prev.filter((_, i) => i !== index));
 
+  const duplicateRule = (index: number) =>
+    setRules((prev) => {
+      const source = prev[index];
+      if (!source) return prev;
+      const next = [...prev];
+      next.splice(index + 1, 0, { ...source });
+      return next;
+    });
+
+  const copyDayToWeekdays = (sourceDay: AvailabilityRuleDto["dayOfWeek"]) => {
+    const sourceRules = rules.filter((rule) => rule.dayOfWeek === sourceDay);
+    if (sourceRules.length === 0) {
+      toast.error(`Add at least one ${DAY_LABELS[sourceDay]} rule before copying.`);
+      return;
+    }
+
+    const weekdays: AvailabilityRuleDto["dayOfWeek"][] = [1, 2, 3, 4, 5];
+    setRules((prev) => [
+      ...prev.filter((rule) => !weekdays.includes(rule.dayOfWeek)),
+      ...weekdays.flatMap((day) =>
+        sourceRules.map((rule) => ({
+          ...rule,
+          dayOfWeek: day,
+        })),
+      ),
+    ]);
+    toast.success(`${DAY_LABELS[sourceDay]} schedule copied to weekdays.`);
+  };
+
   const handleSubmit = async () => {
-    const invalid = rules.find((r) => r.modes.length === 0);
-    if (invalid) {
-      toast.error("Each rule must have at least one consultation mode selected.");
+    if (validationIssues.length > 0) {
+      toast.error(validationIssues[0]);
       return;
     }
 
@@ -147,7 +215,7 @@ export function AvailabilityPage() {
       const { rulesUpdated } = await setRecurringRules(rules);
       toast.success(`${rulesUpdated} availability rule${rulesUpdated !== 1 ? "s" : ""} saved.`);
       setInitialRules([...rules]);
-    } catch (error) {
+    } catch {
       toast.error("Failed to save availability rules.");
     } finally {
       setIsSaving(false);
@@ -192,12 +260,37 @@ export function AvailabilityPage() {
             <div className="lg:col-span-1 space-y-4">
               <Card className="rounded-3xl border-violet-100 shadow-xl shadow-violet-100/40 overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-violet-50 to-blue-50/70 pb-4">
-                  <CardTitle className="text-lg font-bold flex items-center gap-2 text-violet-900">
-                    <CalendarIcon className="size-5" />
-                    Weekly Preview
-                  </CardTitle>
+                  <div className="flex items-start justify-between gap-3">
+                    <CardTitle className="text-lg font-bold flex items-center gap-2 text-violet-900">
+                      <CalendarIcon className="size-5" />
+                      Weekly Preview
+                    </CardTitle>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyDayToWeekdays(1)}
+                      className="h-9 rounded-xl border-violet-200 bg-white text-xs font-bold text-violet-700 hover:bg-violet-50"
+                    >
+                      <Copy className="mr-1.5 size-3.5" />
+                      Mon to weekdays
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-4 space-y-3">
+                  {validationIssues.length > 0 && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                      <p className="flex items-center gap-2 text-xs font-black">
+                        <AlertTriangle className="size-4" />
+                        Schedule needs attention
+                      </p>
+                      <ul className="mt-2 space-y-1 text-xs leading-5">
+                        {validationIssues.slice(0, 3).map((issue) => (
+                          <li key={issue}>{issue}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   {DAYS.map(day => (
                     <div key={day} className="space-y-1.5">
                       <div className="flex items-center justify-between">
@@ -263,14 +356,38 @@ export function AvailabilityPage() {
                       </div>
                     </div>
                     {rules.length > 1 && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => duplicateRule(index)}
+                          className="h-9 rounded-xl px-3 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
+                        >
+                          <Copy className="mr-1.5 size-4" />
+                          Copy
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeRule(index)}
+                          className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl h-9 w-9 p-0"
+                        >
+                          <Trash2 className="size-4.5" />
+                        </Button>
+                      </div>
+                    )}
+                    {rules.length === 1 && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeRule(index)}
-                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl h-9 w-9 p-0"
+                        onClick={() => duplicateRule(index)}
+                        className="h-9 rounded-xl px-3 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
                       >
-                        <Trash2 className="size-4.5" />
+                        <Copy className="mr-1.5 size-4" />
+                        Copy
                       </Button>
                     )}
                   </CardHeader>
@@ -402,12 +519,16 @@ export function AvailabilityPage() {
             <div className="flex items-center gap-3">
               <div className={`w-2 h-2 rounded-full ${isDirty ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
               <p className="text-xs font-semibold text-slate-500">
-                {isDirty ? "You have unsaved changes to your availability schedule." : "Your availability schedule is up to date and saved."}
+                {validationIssues.length > 0
+                  ? "Fix the schedule warnings before saving."
+                  : isDirty
+                    ? "You have unsaved changes to your availability schedule."
+                    : "Your availability schedule is up to date and saved."}
               </p>
             </div>
             <Button
               onClick={handleSubmit}
-              disabled={!isDirty || isSaving}
+              disabled={!isDirty || isSaving || validationIssues.length > 0}
               className="h-12 px-8 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 font-black text-white shadow-lg shadow-violet-200 hover:shadow-violet-300 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               {isSaving ? (

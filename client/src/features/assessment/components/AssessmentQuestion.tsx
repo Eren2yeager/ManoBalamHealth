@@ -1,15 +1,24 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import type { AssessmentQuestionItem } from "../types/assessment.types";
+import type { AssessmentQuestionItem, AssessmentType } from "../types/assessment.types";
 import { CheckCircle2 } from "lucide-react";
+import {
+  getLocalizedOption,
+  getLocalizedQuestion,
+  type AssessmentLanguage,
+} from "../utils/assessmentTranslations";
 
 interface AssessmentQuestionProps {
   question: AssessmentQuestionItem;
+  assessmentType: AssessmentType;
+  language: AssessmentLanguage;
   selectedScore: number | null;
   onSelectScore: (score: number) => void;
 }
 
 export function AssessmentQuestion({
   question,
+  assessmentType,
+  language,
   selectedScore,
   onSelectScore,
 }: AssessmentQuestionProps) {
@@ -17,8 +26,13 @@ export function AssessmentQuestion({
     <Card className="mb-6 overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
       <CardHeader className="border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white pb-6 pt-6">
         <h3 className="text-xl font-black tracking-tight text-slate-950">
-          {question.text}
+          {getLocalizedQuestion(assessmentType, question, language)}
         </h3>
+        {language === "hi" && (
+          <p className="mt-3 text-sm leading-6 text-slate-500">
+            {question.text}
+          </p>
+        )}
       </CardHeader>
       <CardContent className="pt-6 pb-6">
         <div className="space-y-3">
@@ -36,8 +50,13 @@ export function AssessmentQuestion({
                 <CheckCircle2 className="absolute right-4 top-1/2 -translate-y-1/2 text-primary size-5" />
               )}
               <span className={`text-base ${selectedScore === option.score ? "font-semibold" : "font-medium text-slate-700"}`}>
-                {option.text}
+                {getLocalizedOption(option, language)}
               </span>
+              {language === "hi" && (
+                <span className="mt-1 block text-xs font-medium text-slate-500">
+                  {option.text}
+                </span>
+              )}
             </button>
           ))}
         </div>

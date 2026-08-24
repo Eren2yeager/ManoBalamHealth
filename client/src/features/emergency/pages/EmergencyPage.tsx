@@ -13,6 +13,8 @@ import {
   BriefcaseBusiness,
   ArrowRight,
   XCircle,
+  ShieldCheck,
+  PhoneCall,
 } from "lucide-react";
 import { useEmergencyStore } from "../store/emergencyStore";
 import { useEmergencySocket } from "../hooks/useEmergencySocket";
@@ -73,7 +75,7 @@ export function EmergencyPage() {
                 Finding your emergency support
               </CardTitle>
               <p className="mt-2 text-sm text-slate-600">
-                We&apos;re connecting you with an available psychologist now…
+                We&apos;re looking for an available psychologist now. Keep this screen open.
               </p>
             </CardHeader>
             <CardContent className="text-center space-y-6">
@@ -101,7 +103,7 @@ export function EmergencyPage() {
                 onClick={cancelRequest}
               >
                 <XCircle className="size-5 mr-2" />
-                Cancel Request
+                Cancel request
               </Button>
             </CardContent>
           </Card>
@@ -135,10 +137,10 @@ export function EmergencyPage() {
             <CardHeader className="text-center pb-2 relative z-10">
               <CheckCircle2 className="mx-auto mb-4 size-16 text-emerald-600" />
               <CardTitle className="text-3xl font-black text-slate-900">
-                Emergency support found!
+                Support is ready
               </CardTitle>
               <p className="mt-2 text-sm text-slate-600">
-                A verified psychologist is ready to help you
+                A verified psychologist is available now.
               </p>
             </CardHeader>
           </Card>
@@ -254,7 +256,7 @@ export function EmergencyPage() {
                   className="flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-violet-600 text-sm font-bold text-white shadow-lg shadow-primary/15 hover:shadow-xl"
                   onClick={confirmSession}
                 >
-                  Join session
+                  Join secure session
                   <ArrowRight className="ml-2 size-4" />
                 </Button>
               </div>
@@ -274,21 +276,29 @@ export function EmergencyPage() {
           <CardHeader className="text-center pb-4 relative z-10">
             <AlertTriangle className="mx-auto mb-4 size-16 text-destructive" />
             <CardTitle className="text-3xl font-black text-slate-900">
-              Emergency Support
+              Urgent support
             </CardTitle>
             <p className="mt-3 text-sm text-slate-600">
-              If you are in crisis, request an immediate session with an available
-              psychologist. A professional will respond as quickly as possible.
+              Request immediate support from an available psychologist. If there is immediate danger, call local emergency services first.
             </p>
           </CardHeader>
           <CardContent className="space-y-5 relative z-10">
+            <div className="grid gap-3 rounded-3xl border border-rose-100 bg-white/80 p-4 text-left">
+              <p className="flex items-center gap-2 text-sm font-black text-rose-900">
+                <PhoneCall className="size-4" />
+                If you may harm yourself or someone else
+              </p>
+              <p className="text-xs leading-5 text-rose-700">
+                Call emergency services immediately. ManoBalamHealthCare urgent support is not a replacement for emergency medical services.
+              </p>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="concern" className="text-sm font-semibold text-slate-700">
-                What&apos;s happening? (optional)
+                What&apos;s happening? Optional
               </Label>
               <Textarea
                 id="concern"
-                placeholder="Briefly describe your concern so the psychologist knows how to help…"
+                placeholder="Briefly describe what you need help with right now..."
                 value={localConcern}
                 onChange={(e) => setLocalConcern(e.target.value)}
                 rows={5}
@@ -302,23 +312,26 @@ export function EmergencyPage() {
               onClick={handleSendRequest}
             >
               <AlertCircle className="size-5 mr-2" />
-              Send Emergency Request
+              Request urgent support
             </Button>
+            <div className="flex gap-3 rounded-2xl bg-emerald-50 p-4 text-xs leading-5 text-emerald-800">
+              <ShieldCheck className="mt-0.5 size-4 shrink-0" />
+              Your request is shared only with available care professionals needed to respond.
+            </div>
           </CardContent>
         </Card>
 
         {crisisResources.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-center text-lg font-black text-destructive">
-              Crisis Resources
+            Crisis resources
             </h2>
             <CrisisResourceList resources={crisisResources} />
           </div>
         )}
 
         <p className="text-center text-xs text-slate-500">
-          For life-threatening emergencies, please call emergency services (112)
-          immediately.
+          For life-threatening emergencies, please call emergency services immediately.
         </p>
       </div>
     </div>

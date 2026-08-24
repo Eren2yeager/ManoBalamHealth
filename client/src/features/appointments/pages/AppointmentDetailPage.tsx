@@ -13,6 +13,8 @@ import {
   CreditCard,
   AlertCircle,
   Star,
+  ShieldCheck,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -146,6 +148,35 @@ export const AppointmentDetailPage = () => {
           <DetailSkeleton />
         ) : (
           <>
+            {user?.role === "patient" && (
+              <section className="grid gap-3 sm:grid-cols-3">
+                <PatientDetailStep
+                  icon={Calendar}
+                  title="Scheduled"
+                  text={formatInViewerTz(appointment.scheduledAt, "MMM d · h:mm a")}
+                  active
+                />
+                <PatientDetailStep
+                  icon={canOpenSession ? PlayCircle : Clock3}
+                  title={canOpenSession ? "Ready now" : "Session access"}
+                  text={
+                    canOpenSession
+                      ? "You can join now"
+                      : sessionAccess?.isTooEarly
+                        ? `Opens ${formatInViewerTz(appointment.sessionAccessStartsAt, "h:mm a")}`
+                        : "Shown when available"
+                  }
+                  active={canOpenSession}
+                />
+                <PatientDetailStep
+                  icon={appointment.hasFeedback ? CheckCircle2 : Star}
+                  title="After session"
+                  text={appointment.hasFeedback ? "Feedback submitted" : "Share feedback when complete"}
+                  active={appointment.hasFeedback}
+                />
+              </section>
+            )}
+
             {/* Hero Section */}
             <section className="relative overflow-hidden rounded-[2rem] border border-slate-100 bg-white p-4 shadow-sm sm:p-6">
               <div className="pointer-events-none absolute -right-10 -top-10 size-24 rounded-full bg-violet-300/20 blur-2xl sm:-right-16 sm:-top-16 sm:size-40" />
@@ -265,6 +296,20 @@ export const AppointmentDetailPage = () => {
               </Card>
             )}
 
+            {user?.role === "patient" && (
+              <Card className="overflow-hidden rounded-[2rem] border border-violet-100 bg-violet-50/60 shadow-sm">
+                <CardContent className="flex gap-3 pt-5 sm:pt-6">
+                  <ShieldCheck className="mt-0.5 size-5 shrink-0 text-violet-700" />
+                  <div>
+                    <p className="font-black text-violet-950">Private care information</p>
+                    <p className="mt-1 text-sm leading-6 text-violet-800/75">
+                      Your appointment details are used only to support scheduling, payment, and care delivery.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Private session notes (psychologist only) */}
             {user?.role === "psychologist" &&
               ["confirmed", "in_progress", "completed"].includes(appointment.status) && (
@@ -378,3 +423,25 @@ export const AppointmentDetailPage = () => {
     </div>
   );
 };
+
+function PatientDetailStep({
+  icon: Icon,
+  title,
+  text,
+  active,
+}: {
+  icon: typeof Calendar;
+  title: string;
+  text: string;
+  active?: boolean;
+}) {
+  return (
+    <div className={`rounded-3xl border p-4 shadow-sm ${active ? "border-violet-200 bg-violet-50" : "border-slate-100 bg-white"}`}>
+      <span className={`grid size-10 place-items-center rounded-2xl ${active ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"}`}>
+        <Icon className="size-5" />
+      </span>
+      <p className="mt-4 font-black text-slate-950">{title}</p>
+      <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{text}</p>
+    </div>
+  );
+}

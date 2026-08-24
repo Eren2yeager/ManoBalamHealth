@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import {
   AlertCircle,
   CheckCircle2,
+  ClipboardCheck,
   ExternalLink,
   FileCheck2,
   Hourglass,
+  Landmark,
   LoaderCircle,
   PencilLine,
   Save,
@@ -77,6 +79,41 @@ const formatRupees = (paise: number) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(paise / 100);
+
+type ProfileSectionLinkProps = {
+  href: string;
+  icon: typeof PencilLine;
+  title: string;
+  description: string;
+  active?: boolean;
+};
+
+function ProfileSectionLink({
+  href,
+  icon: Icon,
+  title,
+  description,
+  active = false,
+}: ProfileSectionLinkProps) {
+  return (
+    <a
+      href={href}
+      className={`group rounded-3xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-violet-100/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 ${
+        active
+          ? "border-violet-200 bg-violet-50"
+          : "border-violet-100 bg-white"
+      }`}
+    >
+      <span className="grid size-10 place-items-center rounded-2xl bg-violet-100 text-violet-700 transition-transform duration-300 group-hover:scale-105">
+        <Icon className="size-5" />
+      </span>
+      <span className="mt-4 block font-black text-slate-950">{title}</span>
+      <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">
+        {description}
+      </span>
+    </a>
+  );
+}
 
 export function PsychologistOnboardingPage() {
   const [profile, setProfile] = useState<PsychologistOnboarding | null>(null);
@@ -185,6 +222,9 @@ export function PsychologistOnboardingPage() {
     });
     return groups;
   }, [profile]);
+  const uploadedCredentials = (["license", "degree", "id_proof"] as const).filter(
+    (type) => (credentialsByType[type] ?? []).length > 0,
+  ).length;
 
   const saveProgress = async (event: FormEvent) => {
     event.preventDefault();
@@ -318,6 +358,37 @@ export function PsychologistOnboardingPage() {
           </div>
         )}
 
+        <section className="mt-6 grid gap-3 md:grid-cols-4">
+          <ProfileSectionLink
+            href="#professional-details"
+            icon={PencilLine}
+            title="Profile"
+            description="Clinical focus, bio, languages"
+            active={isDirty}
+          />
+          <ProfileSectionLink
+            href="#credentials"
+            icon={FileCheck2}
+            title="Credentials"
+            description={`${uploadedCredentials} of 3 required`}
+            active={uploadedCredentials < 3}
+          />
+          <ProfileSectionLink
+            href="#payout-details"
+            icon={Landmark}
+            title="Payouts"
+            description={hasSavedPayoutDetails ? "Bank details saved" : "Setup required"}
+            active={!hasSavedPayoutDetails}
+          />
+          <ProfileSectionLink
+            href="#verification-actions"
+            icon={ClipboardCheck}
+            title="Review"
+            description={isApproved ? "Approved profile" : "Submit when ready"}
+            active={!isApproved}
+          />
+        </section>
+
         <form onSubmit={saveProgress} className="mt-7 grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
           <Card id="professional-details" className="scroll-mt-28 rounded-3xl border-violet-100 shadow-sm">
             <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -364,8 +435,16 @@ export function PsychologistOnboardingPage() {
           </Card>
 
           <div className="grid content-start gap-6">
-            <Card className="rounded-3xl border-violet-100 shadow-sm">
-              <CardHeader><CardTitle>Required credentials</CardTitle></CardHeader>
+            <Card id="credentials" className="scroll-mt-28 rounded-3xl border-violet-100 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileCheck2 className="size-5 text-primary" />
+                  Required credentials
+                </CardTitle>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Upload the documents reviewers need to verify your professional profile.
+                </p>
+              </CardHeader>
               <CardContent className="grid gap-4">
                 {(["license", "degree", "id_proof"] as const).map((type) => (
                   <div key={type} className="block rounded-2xl border border-dashed border-violet-200 bg-violet-50/40 p-4">
@@ -402,8 +481,16 @@ export function PsychologistOnboardingPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-3xl border-violet-100 shadow-sm">
-              <CardHeader><CardTitle>Bank details for payouts</CardTitle></CardHeader>
+            <Card id="payout-details" className="scroll-mt-28 rounded-3xl border-violet-100 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Landmark className="size-5 text-primary" />
+                  Bank details for payouts
+                </CardTitle>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Keep payout information current so completed sessions can be processed without delay.
+                </p>
+              </CardHeader>
               <CardContent className="grid gap-4">
                 {payoutDetails && (
                   <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
@@ -509,16 +596,56 @@ export function PsychologistOnboardingPage() {
               </CardContent>
             </Card>
 
-            {missingFields.length > 0 && !isLocked && (
-              <Card className="rounded-3xl border-amber-200 bg-amber-50">
-                <CardContent className="pt-6"><p className="font-black text-amber-900">Still required</p><ul className="mt-3 grid gap-2 text-sm text-amber-800">{missingFields.map((field) => <li key={field}>• {field.replaceAll(/([A-Z])/g, " $1").replaceAll("_", " ")}</li>)}</ul></CardContent>
-              </Card>
-            )}
-
-            {!isLocked && <Button type="submit" disabled={saving || !isDirty} className="h-12 rounded-xl font-bold">{saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}{isApproved ? "Save professional changes for review" : "Save professional details"}</Button>}
-            {!isLocked && !isDirty && <p className="text-center text-xs text-slate-400">No unsaved changes.</p>}
-            {!isApproved && !hasSavedPayoutDetails && <p className="text-center text-xs text-amber-700">Save valid bank details before submitting for review.</p>}
-            {!isApproved && <Button type="button" onClick={() => setConfirmSubmitOpen(true)} disabled={!canSubmit || saving} className="h-12 rounded-xl bg-emerald-600 font-bold hover:bg-emerald-700"><Send className="mr-2 size-4" />Submit for review</Button>}
+            <Card id="verification-actions" className="scroll-mt-28 rounded-3xl border-violet-100 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardCheck className="size-5 text-primary" />
+                  Verification actions
+                </CardTitle>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Save changes first, then submit your profile for review when every requirement is complete.
+                </p>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                {missingFields.length > 0 && !isLocked && (
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
+                    <p className="font-black text-amber-900">Still required</p>
+                    <ul className="mt-3 grid gap-2 text-sm text-amber-800">
+                      {missingFields.map((field) => (
+                        <li key={field}>• {field.replaceAll(/([A-Z])/g, " $1").replaceAll("_", " ")}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {isLocked && (
+                  <div className="rounded-3xl border border-violet-200 bg-violet-50 p-5 text-violet-900">
+                    <p className="font-black">Profile under review</p>
+                    <p className="mt-2 text-sm leading-6">
+                      Editing is paused while the ManoBalamHealthCare team reviews your submission.
+                    </p>
+                  </div>
+                )}
+                {!isLocked && (
+                  <Button type="submit" disabled={saving || !isDirty} className="h-12 rounded-xl font-bold">
+                    {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
+                    {isApproved ? "Save professional changes for review" : "Save professional details"}
+                  </Button>
+                )}
+                {!isLocked && !isDirty && <p className="text-center text-xs text-slate-400">No unsaved changes.</p>}
+                {!isApproved && !hasSavedPayoutDetails && <p className="text-center text-xs text-amber-700">Save valid bank details before submitting for review.</p>}
+                {!isApproved && (
+                  <Button
+                    type="button"
+                    onClick={() => setConfirmSubmitOpen(true)}
+                    disabled={!canSubmit || saving}
+                    className="h-12 rounded-xl bg-emerald-600 font-bold hover:bg-emerald-700"
+                  >
+                    <Send className="mr-2 size-4" />
+                    Submit for review
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {!isLocked && (

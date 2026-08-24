@@ -451,8 +451,8 @@ export function PsychologistDashboard() {
                 icon={Banknote}
                 title={`${completedAppointments} completed in queue`}
                 detail="Use completed sessions and payout details to track compensation readiness."
-                to="/psychologist/onboarding"
-                action="Check payout setup"
+                to="/psychologist/earnings"
+                action="Open payout workspace"
                 tone="blue"
               />
             </div>
@@ -692,6 +692,15 @@ export function PsychologistDashboard() {
               action="Open profile"
               locked={false}
               color="rose"
+            />
+            <WorkspaceCard
+              icon={Banknote}
+              title="Payouts"
+              description="Review bank setup and completed sessions from a dedicated payout workspace."
+              to="/psychologist/earnings"
+              action="Open payouts"
+              locked={false}
+              color="violet"
             />
           </div>
         </section>

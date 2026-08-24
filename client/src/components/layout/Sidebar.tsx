@@ -5,6 +5,8 @@ import {
   Calendar,
   User,
   Users,
+  ClipboardList,
+  PlusCircle,
   FileText,
   BarChart3,
   AlertCircle,
@@ -65,7 +67,11 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const navItems: SidebarNavItem[] = [
     { path: "/home", label: "Home", icon: Home },
+    { path: "/book", label: "Book Session", icon: PlusCircle },
+    { path: "/psychologists", label: "Psychologists", icon: Users },
     { path: "/appointments", label: "Appointments", icon: Calendar },
+    { path: "/assessment", label: "Assessments", icon: ClipboardList },
+    { path: "/crisis", label: "Crisis Support", icon: HeartHandshake },
     { path: "/profile", label: "Profile", icon: User },
   ];
 
@@ -73,6 +79,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     { path: "/psychologist/dashboard", label: "Dashboard", icon: BarChart3 },
     { path: "/psychologist/appointments", label: "Appointments", icon: Calendar },
     { path: "/psychologist/availability", label: "Availability", icon: Clock3 },
+    { path: "/psychologist/earnings", label: "Payouts", icon: WalletCards },
     { path: "/psychologist/onboarding", label: "Edit Professional Details", icon: ShieldCheck },
     { path: "/profile", label: "Account Profile", icon: User },
   ];
@@ -124,6 +131,11 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         {user.role === "psychologist" && (
           <p className="mt-2 pl-13 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Psychologist workspace
+          </p>
+        )}
+        {user.role === "patient" && (
+          <p className="mt-2 pl-13 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Patient care space
           </p>
         )}
       </div>

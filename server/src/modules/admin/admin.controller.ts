@@ -60,6 +60,21 @@ export class AdminController {
     const result = await adminService.processRefund(req.params.id as string, req.body);
     res.status(StatusCodes.OK).json(ApiResponse.success(result, "Refund processed successfully"));
   });
+
+  getContactRequests = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.getContactRequests(req.validatedData?.query as any);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Contact requests retrieved successfully", result.meta));
+  });
+
+  updateContactRequest = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.updateContactRequest(req.params.id as string, req.body);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "Contact request updated successfully"));
+  });
+
+  getAuditLogs = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.getAuditLogs(req.validatedData?.query as any);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Audit logs retrieved successfully", result.meta));
+  });
 }
 
 export const adminController = new AdminController();

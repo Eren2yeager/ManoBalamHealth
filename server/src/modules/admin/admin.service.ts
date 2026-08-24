@@ -12,6 +12,7 @@ import { logger } from "@/utils/logger";
 import { razorpayProvider } from "@/modules/payment/providers/razorpay.provider";
 import { PayoutDetailsModel } from "@/modules/payout/payout-details.model";
 import { AdminAuditModel } from "./admin-audit.model";
+import { ContactRequestModel } from "@/modules/contact/contact.model";
 
 class AdminService {
   async getUsers(query: { page: number; limit: number; role?: "patient" | "psychologist"; status?: "active" | "inactive"; search?: string }) {
@@ -45,6 +46,93 @@ class AdminService {
           psychologist: profile ? { onboardingStatus: profile.onboardingStatus, verificationStatus: profile.verificationStatus, consultationFee: profile.consultationFee } : undefined,
         };
       }),
+      meta: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) },
+    };
+  }
+
+  async getContactRequests(query: { page: number; limit: number; status?: "new" | "in_progress" | "resolved"; search?: string }) {
+    const filter: any = {};
+    if (query.status) filter.status = query.status;
+    if (query.search) {
+      const escaped = query.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { name: new RegExp(escaped, "i") },
+        { email: new RegExp(escaped, "i") },
+        { subject: new RegExp(escaped, "i") },
+      ];
+    }
+    const skip = (query.page - 1) * query.limit;
+    const [requests, total] = await Promise.all([
+      ContactRequestModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(query.limit).lean(),
+      ContactRequestModel.countDocuments(filter),
+    ]);
+    return {
+      data: requests.map((request) => ({
+        id: request._id.toString(),
+        name: request.name,
+        email: request.email,
+        phone: request.phone,
+        subject: request.subject,
+        message: request.message,
+        status: request.status,
+        createdAt: request.createdAt.toISOString(),
+        updatedAt: request.updatedAt.toISOString(),
+      })),
+      meta: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) },
+    };
+  }
+
+  async updateContactRequest(requestId: string, data: { status: "new" | "in_progress" | "resolved" }) {
+    const request = await ContactRequestModel.findByIdAndUpdate(
+      requestId,
+      { status: data.status },
+      { new: true },
+    ).lean();
+    if (!request) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Contact request not found");
+    }
+    return {
+      id: request._id.toString(),
+      status: request.status,
+      updatedAt: request.updatedAt.toISOString(),
+    };
+  }
+
+  async getAuditLogs(query: { page: number; limit: number; action?: string }) {
+    const filter: any = {};
+    if (query.action) filter.action = query.action;
+    const skip = (query.page - 1) * query.limit;
+    const [logs, total] = await Promise.all([
+      AdminAuditModel.find(filter)
+        .populate("adminId", "name email avatarUrl")
+        .populate("targetUserId", "name email role avatarUrl")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(query.limit)
+        .lean(),
+      AdminAuditModel.countDocuments(filter),
+    ]);
+    return {
+      data: logs.map((log: any) => ({
+        id: log._id.toString(),
+        action: log.action,
+        reason: log.reason,
+        admin: log.adminId ? {
+          id: log.adminId._id.toString(),
+          name: log.adminId.name,
+          email: log.adminId.email,
+          avatarUrl: log.adminId.avatarUrl,
+        } : undefined,
+        targetUser: log.targetUserId ? {
+          id: log.targetUserId._id.toString(),
+          name: log.targetUserId.name,
+          email: log.targetUserId.email,
+          role: log.targetUserId.role,
+          avatarUrl: log.targetUserId.avatarUrl,
+        } : undefined,
+        metadata: log.metadata,
+        createdAt: log.createdAt.toISOString(),
+      })),
       meta: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) },
     };
   }

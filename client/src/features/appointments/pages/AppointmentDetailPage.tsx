@@ -24,8 +24,8 @@ import { useUserStore } from "@/stores/userStore";
 import { getAppointmentById } from "../api/appointment.api";
 import {
   AppointmentStatusBadge,
-  canCancelAppointment,
 } from "../components/AppointmentStatusBadge";
+import { canCancelAppointment } from "../utils/appointmentStatus";
 import { CancelAppointmentDialog } from "../components/CancelAppointmentDialog";
 import type { AppointmentDetail } from "../types/appointment.types";
 import type { ConsultationMode } from "@/types/global.types";

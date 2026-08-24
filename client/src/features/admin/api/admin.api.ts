@@ -246,3 +246,83 @@ export const completeManualPayout = async (
   );
   return data.data;
 };
+
+export interface AdminContactRequestItem {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  status: "new" | "in_progress" | "resolved";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const getAdminContactRequests = async (
+  params: PaginationParams & { status?: AdminContactRequestItem["status"]; search?: string },
+): Promise<{ items: AdminContactRequestItem[]; meta: PaginationMeta }> => {
+  const { data } = await axiosInstance.get<ApiSuccessResponse<AdminContactRequestItem[]>>(
+    "/admin/contact-requests",
+    { params },
+  );
+  return { items: data.data, meta: data.meta as PaginationMeta };
+};
+
+export const updateAdminContactRequest = async (
+  id: string,
+  payload: { status: AdminContactRequestItem["status"] },
+): Promise<{ id: string; status: AdminContactRequestItem["status"]; updatedAt: string }> => {
+  const { data } = await axiosInstance.patch<ApiSuccessResponse<{ id: string; status: AdminContactRequestItem["status"]; updatedAt: string }>>(
+    `/admin/contact-requests/${id}`,
+    payload,
+  );
+  return data.data;
+};
+
+export interface AdminAuditLogItem {
+  id: string;
+  action: string;
+  reason: string;
+  admin?: { id: string; name: string; email?: string; avatarUrl?: string };
+  targetUser?: { id: string; name: string; email?: string; role?: string; avatarUrl?: string };
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export const getAdminAuditLogs = async (
+  params: PaginationParams & { action?: string },
+): Promise<{ items: AdminAuditLogItem[]; meta: PaginationMeta }> => {
+  const { data } = await axiosInstance.get<ApiSuccessResponse<AdminAuditLogItem[]>>(
+    "/admin/audit-logs",
+    { params },
+  );
+  return { items: data.data, meta: data.meta as PaginationMeta };
+};
+
+export interface AdminAttentionSummary {
+  pendingVerifications: number;
+  refundReviews: number;
+  payoutReady: number;
+  payoutBlocked: number;
+  contactNew: number;
+  crisisAppointments: number;
+}
+
+export const getAdminAttentionSummary = async (): Promise<AdminAttentionSummary> => {
+  const [verifications, appointments, payouts, contacts] = await Promise.all([
+    getPendingPsychologists({ page: 1, limit: 100 }),
+    getAdminAppointments({ page: 1, limit: 100 }),
+    getPayoutReadiness(),
+    getAdminContactRequests({ page: 1, limit: 1, status: "new" }),
+  ]);
+
+  return {
+    pendingVerifications: verifications.items.length,
+    refundReviews: appointments.items.filter((appointment) => appointment.status === "cancelled").length,
+    payoutReady: payouts.data.filter((item) => item.bankDetailStatus === "saved" && item.eligibleAppointmentIds.length > 0).length,
+    payoutBlocked: payouts.data.filter((item) => item.outstandingBalance > 0 && item.bankDetailStatus !== "saved").length,
+    contactNew: contacts.meta.total,
+    crisisAppointments: appointments.items.filter((appointment) => appointment.allocationMode === "emergency").length,
+  };
+};

@@ -30,11 +30,15 @@ const roleLinks: Record<Role, Array<{ label: string; to: string }>> = {
   admin: [
     { label: "Dashboard", to: "/admin/dashboard" },
     { label: "Verifications", to: "/admin/verifications" },
+    { label: "Appointments", to: "/admin/appointments" },
+    { label: "Payments", to: "/admin/payments" },
     { label: "Pricing", to: "/admin/pricing" },
     { label: "Payouts", to: "/admin/payouts" },
     { label: "Users", to: "/admin/users" },
     { label: "Reports", to: "/admin/reports" },
-    { label: "Payments", to: "/admin/payments" },
+    { label: "Support", to: "/admin/contact-requests" },
+    { label: "Crisis", to: "/admin/crisis" },
+    { label: "Audit", to: "/admin/audit-logs" },
   ],
 };
 

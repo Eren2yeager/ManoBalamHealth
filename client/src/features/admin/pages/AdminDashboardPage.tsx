@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertCircle,
+  ArrowRight,
   ArrowUpRight,
   BadgeCheck,
   CalendarDays,
@@ -22,11 +23,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
+  getAdminAttentionSummary,
   getAdminAppointments,
   getAdminReports,
   getPendingPsychologists,
   refundPayment,
   verifyPsychologist,
+  type AdminAttentionSummary,
 } from "../api/admin.api";
 import { PsychologistVerificationCard } from "../components/PsychologistVerificationCard";
 import { RefundModal } from "../components/RefundModal";
@@ -38,6 +41,7 @@ import type {
   PendingPsychologistItem,
   VerifyPsychologistDto,
 } from "../types/admin.types";
+import { Link } from "react-router-dom";
 
 const statusTone: Record<string, string> = {
   completed: "bg-emerald-50 text-emerald-700 ring-emerald-100",
@@ -108,6 +112,7 @@ export function AdminDashboardPage() {
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attention, setAttention] = useState<AdminAttentionSummary | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -115,14 +120,16 @@ export function AdminDashboardPage() {
       setError(null);
       const to = new Date().toISOString();
       const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const [psychologists, reportData, appointmentsData] = await Promise.all([
+      const [psychologists, reportData, appointmentsData, attentionData] = await Promise.all([
         getPendingPsychologists({ page: 1, limit: 50 }),
         getAdminReports(from, to),
         getAdminAppointments({ page: 1, limit: 100 }),
+        getAdminAttentionSummary(),
       ]);
       setPendingPsychologists(psychologists.items);
       setReport(reportData);
       setAppointments(appointmentsData.items);
+      setAttention(attentionData);
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "Failed to load dashboard data";
       setError(message);
@@ -209,6 +216,45 @@ export function AdminDashboardPage() {
     { icon: CheckCircle2, label: "Completed", value: completedCount, note: "Successfully delivered care", tone: "bg-emerald-100 text-emerald-700", delay: "delay-[140ms]" },
     { icon: CircleDollarSign, label: "Revenue", value: `₹${(report?.totalRevenue ?? 0).toLocaleString("en-IN")}`, note: "Recorded paid payments", tone: "bg-amber-100 text-amber-700", delay: "delay-[210ms]" },
   ];
+  const appointmentSummary = {
+    active: appointments.filter((appointment) => appointment.status === "confirmed" || appointment.status === "in_progress").length,
+    completed: appointments.filter((appointment) => appointment.status === "completed").length,
+    attention: appointments.filter((appointment) => appointment.status === "cancelled" || appointment.status === "no_show").length,
+  };
+  const attentionCards = [
+    {
+      label: "Professional reviews",
+      value: attention?.pendingVerifications ?? pendingPsychologists.length,
+      note: "Applications or profile changes waiting for admin decision",
+      to: "/admin/verifications",
+      icon: BadgeCheck,
+      tone: "bg-violet-100 text-violet-700",
+    },
+    {
+      label: "Refund reviews",
+      value: attention?.refundReviews ?? cancelledAppointments.length,
+      note: "Cancelled care appointments that may need payment action",
+      to: "/admin/payments",
+      icon: WalletCards,
+      tone: "bg-rose-100 text-rose-700",
+    },
+    {
+      label: "Payout actions",
+      value: (attention?.payoutReady ?? 0) + (attention?.payoutBlocked ?? 0),
+      note: "Ready payouts plus records blocked by missing bank details",
+      to: "/admin/payouts",
+      icon: CircleDollarSign,
+      tone: "bg-amber-100 text-amber-800",
+    },
+    {
+      label: "Support inbox",
+      value: attention?.contactNew ?? 0,
+      note: "New public contact requests waiting for first review",
+      to: "/admin/contact-requests",
+      icon: Users,
+      tone: "bg-blue-100 text-blue-700",
+    },
+  ];
 
   return (
     <DashboardLayout>
@@ -242,18 +288,65 @@ export function AdminDashboardPage() {
           {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
         </section>
 
+        <section className="rounded-[2rem] border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-5 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[.16em] text-violet-500">Needs attention</p>
+              <h2 className="mt-1 text-xl font-black text-slate-950">Operational action queue</h2>
+            </div>
+            <p className="max-w-xl text-sm leading-6 text-slate-500">
+              Start here when you only have a few minutes. These cards point to the workspaces most likely to need a decision.
+            </p>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {attentionCards.map(({ icon: Icon, ...card }) => (
+              <Link
+                key={card.label}
+                to={card.to}
+                className="group rounded-3xl border border-white bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+              >
+                <span className={`grid size-11 place-items-center rounded-2xl ${card.tone}`}>
+                  <Icon className="size-5" />
+                </span>
+                <p className="mt-4 text-2xl font-black text-slate-950">{card.value}</p>
+                <p className="mt-1 text-sm font-black text-slate-800 group-hover:text-primary">{card.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{card.note}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         <Tabs defaultValue="overview" className="flex flex-col">
-          <div className="sticky top-20 z-20 rounded-2xl border border-violet-100 bg-white/90 p-2 shadow-lg shadow-violet-100/40 backdrop-blur-xl">
+          <div className="sticky top-20 z-20 overflow-hidden rounded-[1.75rem] border border-violet-100 bg-white/92 p-2 shadow-[0_18px_55px_rgba(76,29,149,.14)] backdrop-blur-xl">
+            <div className="mb-2 flex flex-col gap-1 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[.18em] text-violet-500">Dashboard navigation</p>
+                <p className="text-sm font-bold text-slate-600">Switch between overview, reviews, care activity, and refund actions.</p>
+              </div>
+              <span className="hidden rounded-full bg-violet-50 px-3 py-1 text-[11px] font-black text-violet-700 sm:inline-flex">
+                {appointments.length} appointments tracked
+              </span>
+            </div>
             <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 md:grid-cols-4">
               {[
-                { value: "overview", label: "Overview", icon: Activity },
-                { value: "verifications", label: "Verifications", icon: BadgeCheck, count: pendingPsychologists.length },
-                { value: "appointments", label: "Appointments", icon: CalendarDays, count: appointments.length },
-                { value: "refunds", label: "Refunds", icon: WalletCards, count: cancelledAppointments.length },
+                { value: "overview", label: "Overview", hint: "Reports", icon: Activity },
+                { value: "verifications", label: "Verifications", hint: "Reviews", icon: BadgeCheck, count: pendingPsychologists.length },
+                { value: "appointments", label: "Appointments", hint: "Care activity", icon: CalendarDays, count: appointments.length },
+                { value: "refunds", label: "Refunds", hint: "Payment review", icon: WalletCards, count: cancelledAppointments.length },
               ].map(({ value, label, icon: Icon, count }) => (
-                <TabsTrigger key={value} value={value} className="h-11 rounded-xl border-0 font-bold data-active:bg-violet-100 data-active:text-primary">
-                  <Icon className="mr-2 size-4" />{label}
-                  {!!count && <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] text-white">{count}</span>}
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className="min-h-14 rounded-2xl border border-transparent bg-slate-50/60 px-3 py-2 font-bold text-slate-600 transition-all data-active:border-violet-200 data-active:bg-gradient-to-br data-active:from-violet-100 data-active:to-white data-active:text-primary data-active:shadow-sm"
+                >
+                  <span className="grid size-9 place-items-center rounded-xl bg-white text-violet-600 shadow-sm">
+                    <Icon className="size-4" />
+                  </span>
+                  <span className="min-w-0 text-left">
+                    <span className="block truncate text-sm">{label}</span>
+                    <span className="block truncate text-[10px] font-bold text-slate-400">{value === "appointments" ? "Care activity" : value === "refunds" ? "Payment review" : value === "verifications" ? "Reviews" : "Reports"}</span>
+                  </span>
+                  {!!count && <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-[10px] text-white">{count}</span>}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -284,23 +377,74 @@ export function AdminDashboardPage() {
           </TabsContent>
 
           <TabsContent value="appointments" className="mt-6">
-            <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-[0_18px_50px_rgba(45,30,91,.06)]">
-              <div className="border-b border-slate-100 px-6 py-5"><h2 className="text-lg font-black text-[#111631]">Appointment operations</h2><p className="mt-1 text-xs text-slate-500">Recent care delivery activity across the platform.</p></div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px]">
-                  <thead className="bg-slate-50/80 text-left text-[11px] font-black uppercase tracking-wider text-slate-500"><tr><th className="px-6 py-4">Schedule</th><th className="px-4 py-4">Patient</th><th className="px-4 py-4">Psychologist</th><th className="px-4 py-4">Status</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {appointments.map((appointment) => (
-                      <tr key={appointment.id} className="transition-colors hover:bg-violet-50/35">
-                        <td className="px-6 py-4"><p className="text-sm font-black text-slate-800">{new Date(appointment.scheduledAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p><p className="mt-1 flex items-center gap-1 text-[11px] text-slate-400"><Clock3 className="size-3" />{new Date(appointment.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p></td>
-                        <td className="px-4 py-4"><AdminUserLink {...appointment.patient} compact /></td>
-                        <td className="px-4 py-4"><AdminUserLink {...appointment.psychologist} compact /></td>
-                        <td className="px-4 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black capitalize ring-1 ${statusTone[appointment.status] ?? "bg-slate-50 text-slate-600 ring-slate-100"}`}>{appointment.status.replaceAll("_", " ")}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {appointments.length === 0 && <div className="p-12 text-center text-sm text-slate-500">No appointments found.</div>}
+            <div className="overflow-hidden rounded-[2rem] border border-violet-100 bg-white shadow-[0_22px_70px_rgba(45,30,91,.08)]">
+              <div className="border-b border-violet-100 bg-gradient-to-r from-violet-50 via-white to-blue-50/70 px-6 py-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[.16em] text-violet-500">Appointment operations</p>
+                    <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">Recent care delivery activity</h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">A calm operational view of scheduled, active, completed, and exception appointments across the platform.</p>
+                  </div>
+                  <Button asChild variant="outline" className="h-11 rounded-xl border-violet-200 bg-white font-black text-primary hover:bg-violet-50">
+                    <Link to="/admin/appointments">
+                      Open full workspace
+                      <ArrowRight className="ml-2 size-4" />
+                    </Link>
+                  </Button>
+                </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  {[
+                    { label: "Active or scheduled", value: appointmentSummary.active, icon: Clock3, tone: "bg-blue-100 text-blue-700" },
+                    { label: "Completed", value: appointmentSummary.completed, icon: CheckCircle2, tone: "bg-emerald-100 text-emerald-700" },
+                    { label: "Needs attention", value: appointmentSummary.attention, icon: AlertCircle, tone: "bg-rose-100 text-rose-700" },
+                  ].map(({ label, value, icon: Icon, tone }) => (
+                    <article key={label} className="rounded-3xl border border-white bg-white/85 p-4 shadow-sm">
+                      <span className={`grid size-10 place-items-center rounded-2xl ${tone}`}>
+                        <Icon className="size-5" />
+                      </span>
+                      <p className="mt-3 text-2xl font-black text-slate-950">{value}</p>
+                      <p className="mt-1 text-xs font-bold text-slate-500">{label}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-3 p-4 sm:p-6">
+                {appointments.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-violet-200 bg-violet-50/40 p-12 text-center">
+                    <CalendarDays className="mx-auto size-12 text-violet-300" />
+                    <p className="mt-4 text-sm font-bold text-slate-600">No appointments found.</p>
+                  </div>
+                ) : (
+                  appointments.slice(0, 8).map((appointment, index) => (
+                    <article
+                      key={appointment.id}
+                      className="animate-in fade-in slide-in-from-bottom-2 grid gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-center"
+                      style={{ animationDelay: `${Math.min(index * 35, 240)}ms` }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-violet-50 text-violet-700">
+                          <CalendarDays className="size-5" />
+                        </span>
+                        <div>
+                          <p className="text-sm font-black text-slate-900">{new Date(appointment.scheduledAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p>
+                          <p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Clock3 className="size-3.5" />{new Date(appointment.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="mb-1 text-[10px] font-black uppercase tracking-[.14em] text-slate-400">Patient</p>
+                        <AdminUserLink {...appointment.patient} compact />
+                      </div>
+                      <div>
+                        <p className="mb-1 text-[10px] font-black uppercase tracking-[.14em] text-slate-400">Psychologist</p>
+                        <AdminUserLink {...appointment.psychologist} compact />
+                      </div>
+                      <span className={`inline-flex w-fit rounded-full px-3 py-1 text-[11px] font-black capitalize ring-1 ${statusTone[appointment.status] ?? "bg-slate-50 text-slate-600 ring-slate-100"}`}>
+                        {appointment.status.replaceAll("_", " ")}
+                      </span>
+                    </article>
+                  ))
+                )}
               </div>
             </div>
           </TabsContent>

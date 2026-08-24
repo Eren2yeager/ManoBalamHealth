@@ -47,3 +47,20 @@ export const updateUserActivitySchema = z.object({
   isActive: z.boolean(),
   reason: z.string().trim().min(10).max(1000),
 });
+
+export const getContactRequestsSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(25),
+  status: z.enum(["new", "in_progress", "resolved"]).optional(),
+  search: z.string().trim().min(1).max(100).optional(),
+});
+
+export const updateContactRequestSchema = z.object({
+  status: z.enum(["new", "in_progress", "resolved"]),
+});
+
+export const getAuditLogsSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(25),
+  action: z.string().trim().min(1).max(100).optional(),
+});

@@ -29,8 +29,7 @@ export const PsychologistCard = ({
   psychologist,
   animationClass = "",
 }: PsychologistCardProps) => {
-  // Cheapest option (chat / 30 min) from the server-derived price matrix,
-  // falling back to the base fee (paise, per 30-min video session).
+  // Admin-controlled booked-session fee, falling back to the public price matrix.
   const startingPaise =
     psychologist.priceMatrix?.chat?.[30] ?? psychologist.consultationFee.amount;
   const fee = new Intl.NumberFormat("en-IN", {
@@ -127,7 +126,7 @@ export const PsychologistCard = ({
           <div className="rounded-2xl bg-slate-50 p-3">
             <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
               <IndianRupee className="size-3.5" />
-              Sessions from
+              Session fee
             </p>
             <p className="mt-1 text-sm font-black text-slate-800">{fee}</p>
           </div>
@@ -150,6 +149,9 @@ export const PsychologistCard = ({
             View profile
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
           </Link>
+          <p className="mt-2 text-center text-[10px] font-semibold text-slate-400">
+            Booking is assigned automatically by availability and care priority.
+          </p>
         </div>
       </div>
     </article>

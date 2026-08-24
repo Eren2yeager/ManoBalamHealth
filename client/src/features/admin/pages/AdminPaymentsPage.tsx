@@ -21,13 +21,22 @@ const statusTone: Record<string, string> = {
   pending_payment: "bg-orange-100 text-orange-700",
 };
 
+const formatMoney = (amountInPaise?: number, currency = "INR") =>
+  typeof amountInPaise === "number"
+    ? new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+      }).format(amountInPaise / 100)
+    : "Payment amount unavailable";
+
 export function AdminPaymentsPage() {
   const [appointments, setAppointments] = useState<AdminAppointmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] =
     useState<AdminAppointmentItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [selectedRefundAppointmentId, setSelectedRefundAppointmentId] = useState<string | null>(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
 
   const fetchAppointments = async () => {
@@ -43,7 +52,10 @@ export function AdminPaymentsPage() {
   };
 
   useEffect(() => {
-    fetchAppointments();
+    const timeoutId = window.setTimeout(() => {
+      void fetchAppointments();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   if (isLoading) {
@@ -120,11 +132,15 @@ export function AdminPaymentsPage() {
                         <Calendar className="size-4" />
                         <span>{formatInViewerTz(appointment.scheduledAt)}</span>
                       </div>
+                      <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                        <CircleDollarSign className="size-4 text-emerald-600" />
+                        <span>{formatMoney(appointment.fee?.amount, appointment.fee?.currency)}</span>
+                      </div>
                     </div>
                     <Button
                       onClick={() => {
                         setSelectedAppointment(appointment);
-                        setSelectedPaymentId(appointment.id);
+                        setSelectedRefundAppointmentId(appointment.id);
                         setShowRefundModal(true);
                       }}
                       className="h-11 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 font-bold shadow-md hover:from-rose-700 hover:to-red-700"
@@ -144,10 +160,10 @@ export function AdminPaymentsPage() {
           onClose={() => {
             setShowRefundModal(false);
             setSelectedAppointment(null);
-            setSelectedPaymentId(null);
+            setSelectedRefundAppointmentId(null);
           }}
           appointment={selectedAppointment}
-          paymentId={selectedPaymentId}
+          appointmentId={selectedRefundAppointmentId}
           isProcessing={isProcessing}
           onProcess={async (appointmentId, reason) => {
             try {
@@ -157,7 +173,7 @@ export function AdminPaymentsPage() {
               fetchAppointments();
               setShowRefundModal(false);
               setSelectedAppointment(null);
-              setSelectedPaymentId(null);
+              setSelectedRefundAppointmentId(null);
             } catch {
               toast.error("Failed to process refund.");
             } finally {

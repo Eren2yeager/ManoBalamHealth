@@ -26,6 +26,13 @@ const statusTone: Record<string, string> = {
   pending_payment: "bg-orange-100 text-orange-700",
 };
 
+const formatMoney = (amountInPaise: number, currency = "INR") =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amountInPaise / 100);
+
 export function AdminReportsPage() {
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(initialEndDate);
@@ -116,7 +123,7 @@ export function AdminReportsPage() {
     {
       icon: CircleDollarSign,
       label: "Revenue",
-      value: `₹${(report?.totalRevenue ?? 0).toLocaleString("en-IN")}`,
+      value: formatMoney(report?.totalRevenue ?? 0),
       tone: "bg-amber-100 text-amber-700",
     },
     {

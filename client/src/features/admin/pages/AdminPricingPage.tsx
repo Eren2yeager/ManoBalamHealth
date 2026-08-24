@@ -7,9 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { AdminWorkspaceHeader } from "../components/AdminWorkspaceHeader";
 import { AdminUserLink } from "../components/AdminUserLink";
-import { getPendingPsychologists, setPsychologistFee, getPsychologistFeeHistory } from "../api/admin.api";
+import { bulkSetPsychologistFee, getAdminBookingSettings, getPendingPsychologists, setPsychologistFee, getPsychologistFeeHistory, setPsychologistPriority, updateAdminBookingSettings } from "../api/admin.api";
+import type { PendingPsychologistItem } from "../types/admin.types";
 import { toast } from "sonner";
-import { LoaderCircle, RefreshCw, IndianRupee, History, Search, CheckCircle2, CircleDollarSign } from "lucide-react";
+import { LoaderCircle, RefreshCw, IndianRupee, History, Search, CheckCircle2, CircleDollarSign, SlidersHorizontal, UsersRound, CalendarClock } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const formatRupees = (paise: number) =>
@@ -19,32 +20,54 @@ const formatRupees = (paise: number) =>
     maximumFractionDigits: 0,
   }).format(paise / 100);
 
+interface FeeHistoryItem {
+  id: string;
+  previousAmount: number;
+  newAmount: number;
+  changedBy: string;
+  changeReason?: string;
+  createdAt: string;
+}
+
 export function AdminPricingPage() {
-  const [psychologists, setPsychologists] = useState<any[]>([]);
+  const [psychologists, setPsychologists] = useState<PendingPsychologistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPsychologist, setSelectedPsychologist] = useState<any | null>(null);
+  const [selectedPsychologist, setSelectedPsychologist] = useState<PendingPsychologistItem | null>(null);
   const [feeDialogOpen, setFeeDialogOpen] = useState(false);
+  const [bulkFeeDialogOpen, setBulkFeeDialogOpen] = useState(false);
+  const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [feeHistory, setFeeHistory] = useState<any[]>([]);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [showScheduleSelection, setShowScheduleSelection] = useState(true);
+  const [feeHistory, setFeeHistory] = useState<FeeHistoryItem[]>([]);
   
   const [feeForm, setFeeForm] = useState({
     amount: "",
     reason: "",
   });
+  const [bulkFeeForm, setBulkFeeForm] = useState({
+    amount: "",
+    reason: "",
+  });
+  const [priorityForm, setPriorityForm] = useState({
+    bookingPriority: "0",
+  });
 
   const fetchPsychologists = useCallback(async () => {
     try {
       setLoading(true);
-      const [reviewQueue, approved] = await Promise.all([
+      const [reviewQueue, approved, bookingSettings] = await Promise.all([
         getPendingPsychologists({ page: 1, limit: 100 }),
         getPendingPsychologists({ page: 1, limit: 100, status: "approved" }),
+        getAdminBookingSettings(),
       ]);
       const psychologistsById = new Map(
         [...reviewQueue.items, ...approved.items].map((psychologist) => [psychologist.id, psychologist]),
       );
       setPsychologists([...psychologistsById.values()]);
+      setShowScheduleSelection(bookingSettings.showScheduleSelection);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to load psychologists";
       toast.error(errorMessage);
@@ -54,7 +77,10 @@ export function AdminPricingPage() {
   }, []);
 
   useEffect(() => {
-    fetchPsychologists();
+    const timer = window.setTimeout(() => {
+      void fetchPsychologists();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [fetchPsychologists]);
 
   const filteredPsychologists = psychologists.filter((psych) =>
@@ -83,6 +109,66 @@ export function AdminPricingPage() {
     }
   };
 
+  const handleBulkSetFee = async () => {
+    try {
+      setSaving(true);
+      const amountPaise = Math.round(Number(bulkFeeForm.amount) * 100);
+      const result = await bulkSetPsychologistFee({
+        psychologistIds: filteredPsychologists.map((psychologist) => psychologist.id),
+        amount: amountPaise,
+        currency: "INR",
+        reason: bulkFeeForm.reason || undefined,
+      });
+      toast.success(`Updated ${result.updatedCount} psychologist fees. ${result.skippedCount} already had this fee.`);
+      setBulkFeeDialogOpen(false);
+      setBulkFeeForm({ amount: "", reason: "" });
+      fetchPsychologists();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update fees";
+      toast.error(errorMessage);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSetPriority = async (psychologistId: string) => {
+    try {
+      setSaving(true);
+      await setPsychologistPriority(psychologistId, {
+        bookingPriority: Number(priorityForm.bookingPriority),
+      });
+      toast.success("Booking priority updated");
+      setPriorityDialogOpen(false);
+      setPriorityForm({ bookingPriority: "0" });
+      fetchPsychologists();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update priority";
+      toast.error(errorMessage);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleScheduleToggle = async () => {
+    const nextValue = !showScheduleSelection;
+    try {
+      setSettingsSaving(true);
+      setShowScheduleSelection(nextValue);
+      await updateAdminBookingSettings({ showScheduleSelection: nextValue });
+      toast.success(
+        nextValue
+          ? "Patients can now choose a preferred schedule window."
+          : "Schedule selection is hidden. Patients will receive priority-based assigned timing.",
+      );
+    } catch (err) {
+      setShowScheduleSelection(!nextValue);
+      const errorMessage = err instanceof Error ? err.message : "Failed to update booking settings";
+      toast.error(errorMessage);
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
   const handleViewHistory = async (psychologistId: string) => {
     try {
       const { data } = await getPsychologistFeeHistory(psychologistId, { page: 1, limit: 10 });
@@ -94,13 +180,21 @@ export function AdminPricingPage() {
     }
   };
 
-  const openFeeDialog = (psychologist: any) => {
+  const openFeeDialog = (psychologist: PendingPsychologistItem) => {
     setSelectedPsychologist(psychologist);
     setFeeForm({
       amount: psychologist.consultationFee ? String(psychologist.consultationFee.amount / 100) : "",
       reason: "",
     });
     setFeeDialogOpen(true);
+  };
+
+  const openPriorityDialog = (psychologist: PendingPsychologistItem) => {
+    setSelectedPsychologist(psychologist);
+    setPriorityForm({
+      bookingPriority: String(psychologist.bookingPriority ?? 0),
+    });
+    setPriorityDialogOpen(true);
   };
 
   if (loading) {
@@ -120,8 +214,20 @@ export function AdminPricingPage() {
           icon={CircleDollarSign}
           eyebrow="Pricing controls"
           title="Consultation pricing"
-          description="Set a controlled base fee, review its audit history, and make approval-ready pricing decisions."
-          actions={<Button onClick={fetchPsychologists} className="h-11 rounded-xl bg-white px-5 font-bold text-primary hover:bg-violet-50"><RefreshCw className="mr-2 size-4" />Refresh pricing</Button>}
+          description="Set controlled base fees and automatic-booking priority. Higher priority psychologists are matched first when suitable slots are available."
+          actions={
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => setBulkFeeDialogOpen(true)}
+                className="h-11 rounded-xl bg-white px-5 font-bold text-primary hover:bg-violet-50"
+                disabled={filteredPsychologists.length === 0}
+              >
+                <UsersRound className="mr-2 size-4" />
+                Set fee for all
+              </Button>
+              <Button onClick={fetchPsychologists} className="h-11 rounded-xl bg-white px-5 font-bold text-primary hover:bg-violet-50"><RefreshCw className="mr-2 size-4" />Refresh pricing</Button>
+            </div>
+          }
         />
 
         <Card>
@@ -135,6 +241,37 @@ export function AdminPricingPage() {
                 className="pl-10"
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden border-violet-100 bg-gradient-to-br from-white to-violet-50/60 shadow-sm">
+          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-violet-100 text-violet-700">
+                <CalendarClock className="size-5" />
+              </span>
+              <div>
+                <h2 className="font-black text-slate-950">Patient schedule selection</h2>
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                  {showScheduleSelection
+                    ? "ON: patients can choose a preferred time window. Matching still respects psychologist priority and availability."
+                    : "OFF: patients do not choose timing. The app assigns the next suitable session from priority psychologists' published availability."}
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              onClick={handleScheduleToggle}
+              disabled={settingsSaving}
+              className={`h-11 min-w-36 rounded-xl font-black ${
+                showScheduleSelection
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-slate-800 hover:bg-slate-900"
+              }`}
+            >
+              {settingsSaving && <LoaderCircle className="mr-2 size-4 animate-spin" />}
+              {showScheduleSelection ? "Schedule ON" : "Schedule OFF"}
+            </Button>
           </CardContent>
         </Card>
 
@@ -158,6 +295,12 @@ export function AdminPricingPage() {
                             : "Not set"}
                         </span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <SlidersHorizontal className="size-4 text-violet-500" />
+                        <span className="font-medium text-violet-700">
+                          Priority {psychologist.bookingPriority ?? 0}
+                        </span>
+                      </div>
                       <div className="text-slate-500">
                         {psychologist.specialization?.slice(0, 2).join(", ")}
                         {psychologist.specialization?.length > 2 && "..."}
@@ -172,6 +315,14 @@ export function AdminPricingPage() {
                     >
                       <History className="mr-2 size-4" />
                       History
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openPriorityDialog(psychologist)}
+                    >
+                      <SlidersHorizontal className="mr-2 size-4" />
+                      Priority
                     </Button>
                     <Button
                       size="sm"
@@ -216,7 +367,7 @@ export function AdminPricingPage() {
                 onChange={(e) => setFeeForm({ ...feeForm, amount: e.target.value })}
                 placeholder="500"
               />
-              <p className="text-xs text-slate-500">Range: ₹50 - ₹1,00,000 per 30-minute session</p>
+              <p className="text-xs text-slate-500">Range: ₹50 - ₹1,00,000 per booked session</p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="reason">Reason (optional)</Label>
@@ -236,6 +387,93 @@ export function AdminPricingPage() {
             <Button onClick={() => selectedPsychologist && handleSetFee(selectedPsychologist.id)} disabled={saving}>
               {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <CheckCircle2 className="mr-2 size-4" />}
               Update Fee
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkFeeDialogOpen} onOpenChange={setBulkFeeDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Fee for All Listed Psychologists</DialogTitle>
+            <DialogDescription>
+              This will update the consultation fee for {filteredPsychologists.length} psychologist{filteredPsychologists.length === 1 ? "" : "s"} currently shown on this page.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              This action records fee history for every psychologist whose fee changes. Use search first if you want to apply the fee to a smaller visible group.
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="bulkAmount">Fee amount (₹)</Label>
+              <Input
+                id="bulkAmount"
+                type="number"
+                min="50"
+                max="100000"
+                value={bulkFeeForm.amount}
+                onChange={(e) => setBulkFeeForm({ ...bulkFeeForm, amount: e.target.value })}
+                placeholder="500"
+              />
+              <p className="text-xs text-slate-500">Range: ₹50 - ₹1,00,000 per booked session</p>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="bulkReason">Reason (optional)</Label>
+              <Textarea
+                id="bulkReason"
+                value={bulkFeeForm.reason}
+                onChange={(e) => setBulkFeeForm({ ...bulkFeeForm, reason: e.target.value })}
+                placeholder="Example: Standard launch pricing for all active professionals"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkFeeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkSetFee} disabled={saving || filteredPsychologists.length === 0}>
+              {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <CheckCircle2 className="mr-2 size-4" />}
+              Update All Listed
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={priorityDialogOpen} onOpenChange={setPriorityDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Booking Priority</DialogTitle>
+            <DialogDescription>
+              Higher priority psychologists are selected first during automatic booking when they have a suitable available slot.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="rounded-2xl border border-violet-100 bg-violet-50 p-4 text-sm leading-6 text-violet-900">
+              <b>{selectedPsychologist?.name}</b> currently has priority{" "}
+              <b>{selectedPsychologist?.bookingPriority ?? 0}</b>. Use 0 for normal priority; use a higher number for earlier assignment.
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="bookingPriority">Booking priority</Label>
+              <Input
+                id="bookingPriority"
+                type="number"
+                min="0"
+                max="1000"
+                value={priorityForm.bookingPriority}
+                onChange={(e) => setPriorityForm({ bookingPriority: e.target.value })}
+                placeholder="0"
+              />
+              <p className="text-xs text-slate-500">Range: 0 - 1000. Higher number means higher automatic-booking priority.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPriorityDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => selectedPsychologist && handleSetPriority(selectedPsychologist.id)} disabled={saving}>
+              {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : <CheckCircle2 className="mr-2 size-4" />}
+              Update Priority
             </Button>
           </DialogFooter>
         </DialogContent>

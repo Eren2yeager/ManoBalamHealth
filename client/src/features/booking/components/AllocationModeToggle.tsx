@@ -1,20 +1,12 @@
-import { CheckCircle2, Sparkles, UserRoundSearch } from "lucide-react";
+import { CheckCircle2, Sparkles } from "lucide-react";
 import { useBookingStore } from "../store/bookingStore";
 
 const MODES = [
   {
-    value: "manual" as const,
-    label: "Choose my psychologist",
-    description:
-      "Explore verified profiles and choose the professional who feels right for you.",
-    icon: UserRoundSearch,
-    accent: "from-violet-100 to-purple-50 text-violet-700",
-  },
-  {
     value: "auto" as const,
-    label: "Match me automatically",
+    label: "Automatic priority matching",
     description:
-      "Tell us your preferred time and focus area, and we’ll find an available professional.",
+      "Tell us your preferred time and focus area, and we’ll match the highest-priority suitable professional with availability.",
     icon: Sparkles,
     accent: "from-blue-100 to-cyan-50 text-blue-700",
   },
@@ -28,13 +20,11 @@ export const AllocationModeToggle = () => {
       <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-600">
         Start your booking
       </p>
-      <h2 className="mt-2 text-2xl font-black text-slate-950">
-        How would you like to find support?
-      </h2>
+      <h2 className="mt-2 text-2xl font-black text-slate-950">Automatic matching is enabled</h2>
       <p className="mt-2 text-sm leading-6 text-slate-500">
-        You can choose directly or let the platform find the earliest suitable match.
+        Patients can browse psychologists for context, while booking is assigned automatically by admin priority and availability.
       </p>
-      <div className="mt-7 grid gap-4 md:grid-cols-2">
+      <div className="mt-7 grid gap-4">
         {MODES.map(({ value, label, description, icon: Icon, accent }) => {
           const selected = allocationMode === value;
           return (
@@ -59,7 +49,7 @@ export const AllocationModeToggle = () => {
               <h3 className="mt-7 text-xl font-black text-slate-950">{label}</h3>
               <p className="mt-3 text-sm leading-6 text-slate-500">{description}</p>
               <span className="mt-5 inline-flex rounded-full bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-600">
-                {value === "manual" ? "More personal control" : "Fastest suitable option"}
+                Admin-priority assignment
               </span>
             </button>
           );

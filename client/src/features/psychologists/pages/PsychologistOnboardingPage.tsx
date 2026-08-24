@@ -417,7 +417,7 @@ export function PsychologistOnboardingPage() {
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-bold">Years of experience<input disabled={isLocked} required min="0" type="number" value={form.experienceYears} onChange={(e) => setForm({ ...form, experienceYears: e.target.value })} className="h-12 rounded-xl border px-4 font-normal outline-none focus:border-primary focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100" /></label>
                 <div className="grid gap-2 text-sm font-bold">
-                  Base fee (₹, per 30-min video session)
+                  Session fee (set by admin)
                   <div className="flex h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-600">
                     {profile.consultationFee?.amount ? formatRupees(profile.consultationFee.amount) : "Not set by admin"}
                   </div>

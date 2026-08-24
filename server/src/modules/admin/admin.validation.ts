@@ -13,6 +13,14 @@ export const processRefundSchema = z.object({
   amount: z.number().positive().optional(), // omit for full refund
 });
 
+export const updatePsychologistPrioritySchema = z.object({
+  bookingPriority: z.coerce.number().int().min(0).max(1000),
+});
+
+export const updateBookingSettingsSchema = z.object({
+  showScheduleSelection: z.boolean(),
+});
+
 export const getPsychologistsSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),

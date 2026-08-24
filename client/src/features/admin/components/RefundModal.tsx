@@ -16,28 +16,37 @@ interface RefundModalProps {
   isOpen: boolean;
   onClose: () => void;
   appointment: AdminAppointmentItem | null;
-  /** paymentId is the ID used to issue the refund via the payments endpoint */
-  paymentId: string | null;
-  onProcess: (paymentId: string, reason: string) => void;
+  /** appointmentId is resolved by the backend to the paid payment record. */
+  appointmentId: string | null;
+  onProcess: (appointmentId: string, reason: string) => void;
   isProcessing: boolean;
 }
+
+const formatMoney = (amountInPaise?: number, currency = "INR") =>
+  typeof amountInPaise === "number"
+    ? new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+      }).format(amountInPaise / 100)
+    : "Unavailable";
 
 export function RefundModal({
   isOpen,
   onClose,
   appointment,
-  paymentId,
+  appointmentId,
   onProcess,
   isProcessing,
 }: RefundModalProps) {
   const [reason, setReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
 
-  if (!appointment || !paymentId) return null;
+  if (!appointment || !appointmentId) return null;
 
   const handleSubmit = () => {
     if (reason.trim().length < 10 || !confirmed) return;
-    onProcess(paymentId, reason.trim());
+    onProcess(appointmentId, reason.trim());
   };
 
   const handleClose = () => {
@@ -76,6 +85,10 @@ export function RefundModal({
             <p>
               <span className="block text-xs font-black uppercase tracking-[.12em] text-slate-400">Status</span>
               <span className="mt-1 block font-bold capitalize text-slate-950">{appointment.status.replace(/_/g, " ")}</span>
+            </p>
+            <p>
+              <span className="block text-xs font-black uppercase tracking-[.12em] text-slate-400">Paid amount</span>
+              <span className="mt-1 block font-bold text-slate-950">{formatMoney(appointment.fee?.amount, appointment.fee?.currency)}</span>
             </p>
           </div>
 

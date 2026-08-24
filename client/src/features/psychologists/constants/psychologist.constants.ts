@@ -42,11 +42,11 @@ export const LANGUAGES: string[] = [
 
 /**
  * Fee multipliers — MUST match server/src/modules/psychologist/psychologist.constants.ts.
- * The stored consultationFee.amount is the base fee in paise for a 30-min video session.
+ * The stored consultationFee.amount is the final admin-controlled session fee in paise.
  */
 export const FEE_MULTIPLIERS = {
-  mode: { video: 1, audio: 0.8, chat: 0.6 } as Record<"video" | "audio" | "chat", number>,
-  duration: { 30: 1, 45: 1.5, 60: 2 } as Record<30 | 45 | 60, number>,
+  mode: { video: 1, audio: 1, chat: 1 } as Record<"video" | "audio" | "chat", number>,
+  duration: { 30: 1, 45: 1, 60: 1 } as Record<30 | 45 | 60, number>,
 } as const;
 
 export const SESSION_MODES = ["chat", "audio", "video"] as const;
@@ -55,15 +55,15 @@ export const SESSION_DURATIONS = [30, 45, 60] as const;
 export type SessionMode = (typeof SESSION_MODES)[number];
 export type SessionDuration = (typeof SESSION_DURATIONS)[number];
 
-/** Compute the fee in paise for a mode/duration from the base fee (paise). */
+/** Return the admin-controlled booked-session fee in paise. */
 export function computeSessionFee(
   basePaise: number,
   mode: SessionMode,
   durationMinutes: SessionDuration,
 ): number {
-  return Math.round(
-    basePaise * FEE_MULTIPLIERS.mode[mode] * FEE_MULTIPLIERS.duration[durationMinutes],
-  );
+  void mode;
+  void durationMinutes;
+  return Math.max(0, Math.round(basePaise));
 }
 
 /** Session modality options for the filter UI. */

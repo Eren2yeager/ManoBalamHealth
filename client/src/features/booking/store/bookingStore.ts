@@ -8,7 +8,7 @@ interface AssignmentResult {
 }
 
 interface BookingState {
-  allocationMode: "manual" | "auto" | null;
+  allocationMode: "auto";
   selectedPsychologistId: string | null;
   selectedSlotId: string | null;
   preferredWindow: { from: string; to: string } | null;
@@ -19,7 +19,7 @@ interface BookingState {
   assignedPsychologistId: string | null;
   assignedFee: Money | null;
   scheduledAt: string | null;
-  setAllocationMode: (mode: "manual" | "auto") => void;
+  setAllocationMode: (mode: "auto") => void;
   setSelectedPsychologist: (psychologistId: string | null) => void;
   setManualSelection: (psychologistId: string, slotId: string) => void;
   setAutoSelection: (from: string, to: string, specialization?: string) => void;
@@ -30,7 +30,7 @@ interface BookingState {
 }
 
 const initialState = {
-  allocationMode: null,
+  allocationMode: "auto",
   selectedPsychologistId: null,
   selectedSlotId: null,
   preferredWindow: null,

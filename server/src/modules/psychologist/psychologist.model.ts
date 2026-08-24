@@ -23,6 +23,7 @@ export interface IPsychologistProfile extends Document {
   languages: string[];
   experienceYears: number;
   consultationFee: { amount: number; currency: string };
+  bookingPriority: number;
   bio: string;
   credentials: Types.DocumentArray<IPsychologistCredential>;
   licensedCountries: string[];
@@ -60,6 +61,7 @@ const psychologistSchema = new Schema<IPsychologistProfile>(
       amount: { type: Number, required: true, min: 0 },
       currency: { type: String, required: true, default: "INR" },
     },
+    bookingPriority: { type: Number, default: 0, min: 0, max: 1000, index: true },
     bio: { type: String, default: "" },
     credentials: [
       {

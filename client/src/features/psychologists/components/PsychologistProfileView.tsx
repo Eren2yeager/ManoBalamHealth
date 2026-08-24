@@ -169,9 +169,9 @@ export const PsychologistProfileView = ({
           />
           <TrustMetric
             icon={Banknote}
-            label="Sessions from"
+            label="Session fee"
             value={fee}
-            detail="Varies by mode & duration"
+            detail="Admin-controlled booked-session fee"
             color="emerald"
           />
           <TrustMetric
@@ -273,10 +273,10 @@ export const PsychologistProfileView = ({
             <section className="overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-xl shadow-violet-100/50">
               <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-white">
                 <p className="text-xs font-black uppercase tracking-[0.15em] text-violet-200">
-                  Book a consultation
+                  Automatic care matching
                 </p>
                 <p className="mt-3 text-3xl font-black">{fee}</p>
-                <p className="mt-1 text-xs text-violet-100/75">starting price — varies by session type</p>
+                <p className="mt-1 text-xs text-violet-100/75">admin-controlled booked-session fee</p>
               </div>
               {psychologist.priceMatrix && (
                 <div className="border-b border-slate-100 px-6 pt-5">
@@ -307,13 +307,13 @@ export const PsychologistProfileView = ({
               <div className="p-6">
                 <BookingBenefit
                   icon={CalendarCheck2}
-                  title="Choose a convenient time"
-                  description="See available appointments in your local timezone."
+                  title="Share your preferred time"
+                  description="The platform finds a suitable available professional for that window."
                 />
                 <BookingBenefit
                   icon={Clock3}
                   title="Simple guided booking"
-                  description="Select a session type, time, and securely confirm."
+                  description="Select a session type, review details, and securely confirm."
                 />
                 <BookingBenefit
                   icon={LockKeyhole}
@@ -326,8 +326,8 @@ export const PsychologistProfileView = ({
                     asChild
                     className="mt-6 h-12 w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 font-black shadow-lg shadow-violet-200"
                   >
-                    <Link to={`/book/${psychologist.id}`}>
-                      Book a session
+                    <Link to="/book">
+                      Start automatic matching
                       <ArrowRight className="ml-2 size-4" />
                     </Link>
                   </Button>
@@ -344,7 +344,7 @@ export const PsychologistProfileView = ({
                 )}
 
                 <p className="mt-4 text-center text-[11px] leading-5 text-slate-400">
-                  You will review all details before payment.
+                  You will review the matched professional and details before payment.
                 </p>
               </div>
             </section>

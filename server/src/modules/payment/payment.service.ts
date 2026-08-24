@@ -91,8 +91,9 @@ class PaymentService {
       };
     }
 
-    // Amount depends on session mode and slot duration, derived from the
-    // psychologist's base fee (paise, per 30-min video session).
+    // Amount is the admin-controlled session fee in paise. Slot duration is
+    // still passed for compatibility with the price matrix API, but checkout
+    // intentionally charges the exact fee set by admin.
     let durationMinutes = 30;
     if (appointment.slotId) {
       const slot = await AvailabilitySlotModel.findById(appointment.slotId);

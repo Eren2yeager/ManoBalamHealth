@@ -1,11 +1,12 @@
 import { PsychologistModel } from "../psychologist/psychologist.model";
+import { BookingSettingsModel } from "./bookingSettings.model";
 import { UserModel } from "../user/user.model";
 import { AppointmentModel, IAppointment } from "../appointment/appointment.model";
 import { PaymentModel } from "../payment/payment.model";
 import { ApiError } from "../../utils/ApiError";
 import { StatusCodes } from "../../constants/statusCodes.constant";
 import { ErrorCodes } from "../../constants/errorCodes.constant";
-import { UpdatePsychologistStatusRequest, ProcessRefundRequest, PsychologistListItem, AppointmentListItem, ReportsSummary } from "./admin.types";
+import { UpdatePsychologistStatusRequest, UpdatePsychologistPriorityRequest, ProcessRefundRequest, PsychologistListItem, AppointmentListItem, ReportsSummary } from "./admin.types";
 import { Types } from "mongoose";
 import { sendEmail } from "@/modules/notification/channels/email.channel";
 import { logger } from "@/utils/logger";
@@ -216,6 +217,7 @@ class AdminService {
         languages: psychologist.languages,
         experienceYears: psychologist.experienceYears,
         consultationFee: psychologist.consultationFee,
+        bookingPriority: psychologist.bookingPriority ?? 0,
         licensedCountries: psychologist.licensedCountries,
         bio: psychologist.bio,
         credentials: psychologist.credentials,
@@ -310,6 +312,61 @@ class AdminService {
     }
 
     return { id: psychologistId, verificationStatus: data.decision };
+  }
+
+  async updatePsychologistPriority(
+    psychologistId: string,
+    data: UpdatePsychologistPriorityRequest,
+    adminUserId: string,
+  ) {
+    const psychologist = await PsychologistModel.findById(psychologistId);
+    if (!psychologist) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Psychologist not found");
+    }
+
+    psychologist.bookingPriority = data.bookingPriority;
+    psychologist.reviewedBy = new Types.ObjectId(adminUserId);
+    await psychologist.save();
+
+    return {
+      id: psychologistId,
+      bookingPriority: psychologist.bookingPriority,
+    };
+  }
+
+  async getBookingSettings() {
+    const settings = await BookingSettingsModel.findOneAndUpdate(
+      { key: "booking" },
+      { $setOnInsert: { key: "booking", showScheduleSelection: true } },
+      { new: true, upsert: true },
+    ).lean();
+
+    return {
+      showScheduleSelection: settings.showScheduleSelection,
+      updatedAt: settings.updatedAt.toISOString(),
+    };
+  }
+
+  async updateBookingSettings(
+    data: { showScheduleSelection: boolean },
+    adminUserId: string,
+  ) {
+    const settings = await BookingSettingsModel.findOneAndUpdate(
+      { key: "booking" },
+      {
+        $set: {
+          showScheduleSelection: data.showScheduleSelection,
+          updatedBy: new Types.ObjectId(adminUserId),
+        },
+        $setOnInsert: { key: "booking" },
+      },
+      { new: true, upsert: true },
+    ).lean();
+
+    return {
+      showScheduleSelection: settings.showScheduleSelection,
+      updatedAt: settings.updatedAt.toISOString(),
+    };
   }
 
   /**
@@ -410,9 +467,16 @@ class AdminService {
     }
 
     const total = await AppointmentModel.countDocuments(filter);
+    const payments = await PaymentModel.find({
+      appointmentId: { $in: appointments.map((appointment) => appointment._id) },
+    }).lean();
+    const paymentsByAppointment = new Map(
+      payments.map((payment) => [payment.appointmentId.toString(), payment]),
+    );
 
     const data: AppointmentListItem[] = appointments.map((appt) => {
       const apptAny = appt as any;
+      const payment = paymentsByAppointment.get(appt._id.toString());
       return {
         id: appt._id.toString(),
         patient: { id: apptAny.patientId._id.toString(), name: apptAny.patientId.name, avatarUrl: apptAny.patientId.avatarUrl },
@@ -421,20 +485,38 @@ class AdminService {
         status: appt.status,
         scheduledAt: appt.scheduledAt.toISOString(),
         allocationMode: appt.allocationMode,
-        fee: (apptAny.psychologistId as any).consultationFee,
+        paymentId: payment?._id.toString(),
+        paymentStatus: payment?.status,
+        fee: payment
+          ? { amount: payment.amount, currency: payment.currency }
+          : (apptAny.psychologistId as any).consultationFee,
       };
     });
 
     return { data, meta: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) } };
   }
 
-  async getReportsSummary(): Promise<ReportsSummary> {
-    const totalAppointments = await AppointmentModel.countDocuments();
-    const completedAppointments = await AppointmentModel.countDocuments({ status: "completed" });
+  async getReportsSummary(query?: { from?: string; to?: string }): Promise<ReportsSummary> {
+    const dateFilter: Record<string, Date> = {};
+    if (query?.from) dateFilter.$gte = new Date(query.from);
+    if (query?.to) {
+      const inclusiveTo = new Date(query.to);
+      inclusiveTo.setHours(23, 59, 59, 999);
+      dateFilter.$lte = inclusiveTo;
+    }
+    const appointmentDateFilter = Object.keys(dateFilter).length
+      ? { scheduledAt: dateFilter }
+      : {};
+    const paymentDateFilter = Object.keys(dateFilter).length
+      ? { createdAt: dateFilter }
+      : {};
+
+    const totalAppointments = await AppointmentModel.countDocuments(appointmentDateFilter);
+    const completedAppointments = await AppointmentModel.countDocuments({ status: "completed", ...appointmentDateFilter });
     const totalPsychologists = await PsychologistModel.countDocuments({ verificationStatus: "approved" });
     const totalPatients = await UserModel.countDocuments({ role: "patient" });
 
-    const paidPayments = await PaymentModel.find({ status: "paid" });
+    const paidPayments = await PaymentModel.find({ status: "paid", ...paymentDateFilter });
     const totalRevenue = paidPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
     return {

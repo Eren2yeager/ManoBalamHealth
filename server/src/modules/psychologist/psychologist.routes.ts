@@ -8,6 +8,7 @@ import {
   getPsychologistsQuerySchema,
   uploadCredentialsSchema,
   setPsychologistFeeSchema,
+  bulkSetPsychologistFeeSchema,
 } from "./psychologist.validation";
 
 const router = Router();
@@ -61,6 +62,14 @@ router.patch(
 );
 
 // Admin-only fee management routes
+router.put(
+  "/fees/bulk",
+  requireAuth,
+  requireRole("admin"),
+  validate(bulkSetPsychologistFeeSchema),
+  psychologistController.bulkSetPsychologistFee,
+);
+
 router.put(
   "/:id/fee",
   requireAuth,

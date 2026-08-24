@@ -58,3 +58,11 @@ export const setPsychologistFeeSchema = z.object({
   currency: z.string().trim().length(3).default("INR"),
   reason: z.string().trim().max(500).optional(),
 });
+
+export const bulkSetPsychologistFeeSchema = setPsychologistFeeSchema.extend({
+  psychologistIds: z
+    .array(z.string().regex(/^[a-f\d]{24}$/i, "Invalid psychologist id"))
+    .min(1)
+    .max(500)
+    .optional(),
+});

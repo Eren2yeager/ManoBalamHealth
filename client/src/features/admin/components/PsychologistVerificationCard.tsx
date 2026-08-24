@@ -157,7 +157,7 @@ export function PsychologistVerificationCard({
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Base fee</p>
             <p className="mt-1 text-sm font-semibold text-slate-700">
               {formatFee(psychologist.consultationFee)}
-              <span className="ml-1 text-xs font-normal text-slate-400">per 30-min video session — other modes/durations derive from platform multipliers</span>
+              <span className="ml-1 text-xs font-normal text-slate-400">per booked session</span>
             </p>
           </div>
           <div className="mt-3 flex items-start gap-2 border-t border-slate-100 pt-3">

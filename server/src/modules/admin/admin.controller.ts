@@ -30,6 +30,25 @@ export class AdminController {
     res.status(StatusCodes.OK).json(ApiResponse.success(result, "Pending changes reviewed"));
   });
 
+  updatePsychologistPriority = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.updatePsychologistPriority(
+      req.params.id as string,
+      req.body,
+      req.user!.userId,
+    );
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "Psychologist booking priority updated"));
+  });
+
+  getBookingSettings = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.getBookingSettings();
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "Booking settings retrieved"));
+  });
+
+  updateBookingSettings = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.updateBookingSettings(req.body, req.user!.userId);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "Booking settings updated"));
+  });
+
   getAppointments = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const result = await adminService.getAppointments(req.query as any);
     res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Appointments retrieved successfully", result.meta));
@@ -50,12 +69,12 @@ export class AdminController {
     res.status(StatusCodes.OK).json(ApiResponse.success(result, "User details retrieved successfully"));
   });
 
-  getReportsSummary = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
-    const summary = await adminService.getReportsSummary();
+  getReportsSummary = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const summary = await adminService.getReportsSummary(req.query as { from?: string; to?: string });
     res.status(StatusCodes.OK).json(ApiResponse.success(summary, "Reports summary retrieved successfully"));
   });
 
-  // PATCH /admin/payments/:id/refund — body: { reason, amount? }
+  // PATCH /admin/payments/:id/refund — id is appointmentId, body: { reason, amount? }
   processRefund = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const result = await adminService.processRefund(req.params.id as string, req.body);
     res.status(StatusCodes.OK).json(ApiResponse.success(result, "Refund processed successfully"));

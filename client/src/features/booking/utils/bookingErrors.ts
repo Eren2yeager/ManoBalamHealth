@@ -8,7 +8,7 @@ export const getBookingErrorMessage = (error: unknown): string => {
     const code = apiError?.code;
 
     if (code === ErrorCodes.NO_PSYCHOLOGIST_AVAILABLE) {
-      return "We couldn't find an available psychologist for your preferred time. Try a different time window or specialization, or choose a psychologist manually.";
+      return "We couldn't find an available psychologist for your preferred time. Try a different time window or specialization.";
     }
 
     if (code === ErrorCodes.SLOT_ALREADY_BOOKED) {
@@ -16,7 +16,7 @@ export const getBookingErrorMessage = (error: unknown): string => {
     }
 
     if (code === ErrorCodes.PSYCHOLOGIST_NOT_VERIFIED) {
-      return "The selected psychologist is not available for booking yet. Please choose another.";
+      return "The matched psychologist is not available for booking yet. Please try a different time window.";
     }
 
     if (apiError?.message) {

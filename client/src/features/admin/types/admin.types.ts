@@ -13,6 +13,7 @@ export interface PendingPsychologistItem {
   languages: string[];
   experienceYears: number;
   consultationFee: { amount: number; currency: string };
+  bookingPriority: number;
   licensedCountries: string[];
   bio: string;
   credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
@@ -50,6 +51,8 @@ export interface AdminAppointmentItem {
   status: AppointmentStatus;
   mode?: "chat" | "audio" | "video";
   allocationMode?: "manual" | "auto" | "emergency";
+  paymentId?: string;
+  paymentStatus?: "created" | "paid" | "failed" | "refunded";
   fee?: { amount: number; currency: string };
   scheduledAt: string;
 }

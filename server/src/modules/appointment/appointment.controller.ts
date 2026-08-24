@@ -4,6 +4,11 @@ import { ApiResponse } from "@/utils/ApiResponse";
 import { appointmentService } from "./appointment.service";
 
 class AppointmentController {
+  getBookingSettings = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
+    const result = await appointmentService.getBookingSettings();
+    res.status(200).json(ApiResponse.success(result, "Booking settings retrieved successfully"));
+  });
+
   /**
    * Create appointment
    */

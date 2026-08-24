@@ -102,6 +102,20 @@ export class PsychologistController {
     res.status(200).json(ApiResponse.success(result, "Psychologist fee updated successfully"));
   });
 
+  bulkSetPsychologistFee = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const adminUserId = req.user!.userId;
+    const { amount, currency, reason, psychologistIds } = req.body;
+
+    const result = await psychologistService.bulkSetPsychologistFee(
+      amount,
+      currency,
+      adminUserId,
+      reason,
+      psychologistIds,
+    );
+    res.status(200).json(ApiResponse.success(result, "Psychologist fees updated successfully"));
+  });
+
   getFeeHistory = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const psychologistId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const page = parseInt(req.query.page as string) || 1;

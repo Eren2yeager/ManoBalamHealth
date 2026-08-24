@@ -52,6 +52,13 @@ const statusTone: Record<string, string> = {
   pending_payment: "bg-orange-50 text-orange-700 ring-orange-100",
 };
 
+const formatMoney = (amountInPaise: number, currency = "INR") =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amountInPaise / 100);
+
 function MetricCard({
   icon: Icon,
   label,
@@ -109,7 +116,7 @@ export function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<AdminAppointmentItem | null>(null);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [selectedRefundAppointmentId, setSelectedRefundAppointmentId] = useState<string | null>(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attention, setAttention] = useState<AdminAttentionSummary | null>(null);
@@ -163,15 +170,15 @@ export function AdminDashboardPage() {
     }
   };
 
-  const handleProcessRefund = async (paymentId: string, reason: string) => {
+  const handleProcessRefund = async (appointmentId: string, reason: string) => {
     try {
       setIsProcessing(true);
-      await refundPayment(paymentId, { reason });
+      await refundPayment(appointmentId, { reason });
       toast.success("Refund issued successfully");
       await fetchData();
       setShowRefundModal(false);
       setSelectedAppointment(null);
-      setSelectedPaymentId(null);
+      setSelectedRefundAppointmentId(null);
     } catch {
       toast.error("Failed to process refund");
     } finally {
@@ -214,7 +221,7 @@ export function AdminDashboardPage() {
     { icon: BadgeCheck, label: "Awaiting review", value: pendingPsychologists.length, note: "Professional applications", tone: "bg-violet-100 text-violet-700", delay: "" },
     { icon: CalendarDays, label: "Appointments", value: appointments.length, note: "Current operational window", tone: "bg-blue-100 text-blue-700", delay: "delay-[70ms]" },
     { icon: CheckCircle2, label: "Completed", value: completedCount, note: "Successfully delivered care", tone: "bg-emerald-100 text-emerald-700", delay: "delay-[140ms]" },
-    { icon: CircleDollarSign, label: "Revenue", value: `₹${(report?.totalRevenue ?? 0).toLocaleString("en-IN")}`, note: "Recorded paid payments", tone: "bg-amber-100 text-amber-700", delay: "delay-[210ms]" },
+    { icon: CircleDollarSign, label: "Revenue", value: formatMoney(report?.totalRevenue ?? 0), note: "Recorded paid payments", tone: "bg-amber-100 text-amber-700", delay: "delay-[210ms]" },
   ];
   const appointmentSummary = {
     active: appointments.filter((appointment) => appointment.status === "confirmed" || appointment.status === "in_progress").length,
@@ -457,7 +464,7 @@ export function AdminDashboardPage() {
                 {cancelledAppointments.map((appointment) => (
                   <article key={appointment.id} className="flex flex-col justify-between gap-5 rounded-3xl border border-rose-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center">
                     <div><AdminUserLink {...appointment.patient} /><p className="mt-1 flex items-center gap-1 text-sm text-slate-500">With <AdminUserLink {...appointment.psychologist} compact /></p><p className="mt-2 text-xs text-slate-400">{new Date(appointment.scheduledAt).toLocaleString()}</p></div>
-                    <Button onClick={() => { setSelectedAppointment(appointment); setSelectedPaymentId(appointment.id); setShowRefundModal(true); }} className="rounded-xl bg-rose-600 hover:bg-rose-700"><WalletCards className="mr-2 size-4" />Review refund</Button>
+                    <Button onClick={() => { setSelectedAppointment(appointment); setSelectedRefundAppointmentId(appointment.id); setShowRefundModal(true); }} className="rounded-xl bg-rose-600 hover:bg-rose-700"><WalletCards className="mr-2 size-4" />Review refund</Button>
                   </article>
                 ))}
               </div>
@@ -468,9 +475,9 @@ export function AdminDashboardPage() {
 
       <RefundModal
         isOpen={showRefundModal}
-        onClose={() => { setShowRefundModal(false); setSelectedAppointment(null); setSelectedPaymentId(null); }}
+        onClose={() => { setShowRefundModal(false); setSelectedAppointment(null); setSelectedRefundAppointmentId(null); }}
         appointment={selectedAppointment}
-        paymentId={selectedPaymentId}
+        appointmentId={selectedRefundAppointmentId}
         onProcess={handleProcessRefund}
         isProcessing={isProcessing}
       />

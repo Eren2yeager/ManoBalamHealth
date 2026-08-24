@@ -61,6 +61,7 @@ export class PsychologistService {
         languages: [],
         experienceYears: 0,
         consultationFee: { amount: 0, currency: "INR" },
+        bookingPriority: 0,
         bio: "",
         credentials: [],
         licensedCountries: [],
@@ -162,7 +163,7 @@ export class PsychologistService {
           select: "name avatarUrl",
           model: "User",
         })
-        .sort(sort)
+        .sort({ bookingPriority: -1, ...sort })
         .skip(skip)
         .limit(query.limit),
       PsychologistModel.countDocuments(filter),
@@ -498,6 +499,62 @@ export class PsychologistService {
       consultationFee: psychologist.consultationFee,
       previousAmount,
       newAmount: amount,
+    };
+  }
+
+  /**
+   * Admin-only: Set one consultation fee for many psychologists at once.
+   * Each changed psychologist still receives an individual audit-history row.
+   */
+  async bulkSetPsychologistFee(
+    amount: number,
+    currency: string,
+    adminUserId: string,
+    reason?: string,
+    psychologistIds?: string[],
+  ) {
+    const filter = psychologistIds?.length
+      ? { _id: { $in: psychologistIds.map((id) => new Types.ObjectId(id)) } }
+      : {};
+    const psychologists = await PsychologistModel.find(filter);
+
+    if (psychologists.length === 0) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "No psychologists found for fee update");
+    }
+
+    const changedPsychologists = psychologists.filter(
+      (psychologist) =>
+        psychologist.consultationFee.amount !== amount ||
+        psychologist.consultationFee.currency !== currency,
+    );
+
+    if (changedPsychologists.length > 0) {
+      await FeeHistoryModel.insertMany(
+        changedPsychologists.map((psychologist) => ({
+          psychologistId: psychologist._id,
+          previousAmount: psychologist.consultationFee.amount,
+          newAmount: amount,
+          currency,
+          changedBy: new Types.ObjectId(adminUserId),
+          changeReason: reason,
+        })),
+      );
+
+      await PsychologistModel.bulkWrite(
+        changedPsychologists.map((psychologist) => ({
+          updateOne: {
+            filter: { _id: psychologist._id },
+            update: { $set: { consultationFee: { amount, currency } } },
+          },
+        })),
+      );
+    }
+
+    return {
+      matchedCount: psychologists.length,
+      updatedCount: changedPsychologists.length,
+      skippedCount: psychologists.length - changedPsychologists.length,
+      consultationFee: { amount, currency },
     };
   }
 

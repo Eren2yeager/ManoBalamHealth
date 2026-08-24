@@ -56,11 +56,11 @@ export const getAdminReports = async (from: string, to: string): Promise<AdminRe
 };
 
 export const refundPayment = async (
-  paymentId: string,
+  appointmentId: string,
   payload: RefundDto
 ): Promise<{ paymentId: string; status: "refunded"; refundedAmount: number }> => {
   const { data } = await axiosInstance.patch<ApiSuccessResponse<{ paymentId: string; status: "refunded"; refundedAmount: number }>>(
-    `/admin/payments/${paymentId}/refund`,
+    `/admin/payments/${appointmentId}/refund`,
     payload
   );
   return data.data;
@@ -242,6 +242,49 @@ export const completeManualPayout = async (
 ): Promise<PayoutItem> => {
   const { data } = await axiosInstance.post<ApiSuccessResponse<PayoutItem>>(
     `/payouts/${payoutId}/manual-completion`,
+    payload,
+  );
+  return data.data;
+};
+
+export const bulkSetPsychologistFee = async (
+  payload: SetPsychologistFeeDto & { psychologistIds?: string[] },
+): Promise<{ matchedCount: number; updatedCount: number; skippedCount: number; consultationFee: { amount: number; currency: string } }> => {
+  const { data } = await axiosInstance.put<ApiSuccessResponse<{ matchedCount: number; updatedCount: number; skippedCount: number; consultationFee: { amount: number; currency: string } }>>(
+    "/psychologists/fees/bulk",
+    payload,
+  );
+  return data.data;
+};
+
+export const setPsychologistPriority = async (
+  id: string,
+  payload: { bookingPriority: number },
+): Promise<{ id: string; bookingPriority: number }> => {
+  const { data } = await axiosInstance.patch<ApiSuccessResponse<{ id: string; bookingPriority: number }>>(
+    `/admin/psychologists/${id}/priority`,
+    payload,
+  );
+  return data.data;
+};
+
+export interface BookingSettings {
+  showScheduleSelection: boolean;
+  updatedAt?: string;
+}
+
+export const getAdminBookingSettings = async (): Promise<BookingSettings> => {
+  const { data } = await axiosInstance.get<ApiSuccessResponse<BookingSettings>>(
+    "/admin/booking-settings",
+  );
+  return data.data;
+};
+
+export const updateAdminBookingSettings = async (
+  payload: { showScheduleSelection: boolean },
+): Promise<BookingSettings> => {
+  const { data } = await axiosInstance.patch<ApiSuccessResponse<BookingSettings>>(
+    "/admin/booking-settings",
     payload,
   );
   return data.data;

@@ -119,7 +119,6 @@ const router = createBrowserRouter([
             element: <RoleRoute allowed={["patient"]} />,
             children: [
               { path: "/book", element: <BookingFlowPage /> },
-              { path: "/book/:psychologistId", element: <BookingFlowPage /> },
             ],
           },
 

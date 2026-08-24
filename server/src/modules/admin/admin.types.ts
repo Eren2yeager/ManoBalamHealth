@@ -8,6 +8,10 @@ export interface ProcessRefundRequest {
   amount?: number; // omitted = full refund
 }
 
+export interface UpdatePsychologistPriorityRequest {
+  bookingPriority: number;
+}
+
 export interface PsychologistListItem {
   id: string;
   userId: string;
@@ -20,6 +24,7 @@ export interface PsychologistListItem {
   languages: string[];
   experienceYears: number;
   consultationFee: { amount: number; currency: string };
+  bookingPriority: number;
   licensedCountries: string[];
   bio: string;
   credentials: Array<{ docUrl: string; type: string; verified: boolean }>;
@@ -52,6 +57,8 @@ export interface AppointmentListItem {
   status: string;
   scheduledAt: string;
   allocationMode: string;
+  paymentId?: string;
+  paymentStatus?: string;
   fee: { amount: number; currency: string };
 }
 

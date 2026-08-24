@@ -4,6 +4,8 @@ import { requireAuth, requireRole } from "../../middlewares/auth.middleware";
 import { validate } from "../../middlewares/validate.middleware";
 import {
   updatePsychologistStatusSchema,
+  updatePsychologistPrioritySchema,
+  updateBookingSettingsSchema,
   processRefundSchema,
   getPsychologistsSchema,
   getAppointmentsSchema,
@@ -23,6 +25,11 @@ router.use(requireAuth, requireRole("admin"));
 router.get("/psychologists/pending", validate(getPsychologistsSchema, "query"), adminController.getPsychologists);
 router.patch("/psychologists/:id/verify", validate(updatePsychologistStatusSchema), adminController.updatePsychologistStatus);
 router.patch("/psychologists/:id/changes", validate(updatePsychologistStatusSchema), adminController.reviewPendingChanges);
+router.patch("/psychologists/:id/priority", validate(updatePsychologistPrioritySchema), adminController.updatePsychologistPriority);
+
+// Booking controls
+router.get("/booking-settings", adminController.getBookingSettings);
+router.patch("/booking-settings", validate(updateBookingSettingsSchema), adminController.updateBookingSettings);
 
 // User directory and account safety controls
 router.get("/users", validate(getUsersSchema, "query"), adminController.getUsers);
@@ -42,7 +49,7 @@ router.patch("/contact-requests/:id", validate(updateContactRequestSchema), admi
 // Audit logs
 router.get("/audit-logs", validate(getAuditLogsSchema, "query"), adminController.getAuditLogs);
 
-// Payment refunds — keyed by paymentId to match plan
+// Payment refunds — keyed by appointment id, then resolved to the paid payment record.
 router.patch("/payments/:id/refund", validate(processRefundSchema), adminController.processRefund);
 
 export default router;

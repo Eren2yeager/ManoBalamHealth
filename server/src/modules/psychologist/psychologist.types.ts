@@ -28,6 +28,7 @@ export interface PsychologistListResponse {
   languages: string[];
   experienceYears: number;
   consultationFee: { amount: number; currency: string };
+  bookingPriority: number;
   priceMatrix: PriceMatrix;
   rating: { average: number; count: number };
   isOnline: boolean;
@@ -42,6 +43,7 @@ export interface PsychologistDetailResponse {
   languages: string[];
   experienceYears: number;
   consultationFee: { amount: number; currency: string };
+  bookingPriority: number;
   priceMatrix: PriceMatrix;
   bio: string;
   rating: { average: number; count: number };
@@ -95,6 +97,7 @@ export function toPsychologistListResponse(
     languages: profile.languages,
     experienceYears: profile.experienceYears,
     consultationFee: profile.consultationFee,
+    bookingPriority: profile.bookingPriority ?? 0,
     priceMatrix: buildPriceMatrix(profile.consultationFee?.amount ?? 0),
     rating: profile.rating,
     isOnline: profile.isOnline,
@@ -114,6 +117,7 @@ export function toPsychologistDetailResponse(
     languages: profile.languages,
     experienceYears: profile.experienceYears,
     consultationFee: profile.consultationFee,
+    bookingPriority: profile.bookingPriority ?? 0,
     priceMatrix: buildPriceMatrix(profile.consultationFee?.amount ?? 0),
     bio: profile.bio,
     rating: profile.rating,

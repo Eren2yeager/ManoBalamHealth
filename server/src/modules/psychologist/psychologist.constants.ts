@@ -79,27 +79,27 @@ export const SESSION_DURATIONS: readonly SessionDuration[] = [30, 45, 60];
 export const SESSION_MODES: readonly SessionMode[] = ["chat", "audio", "video"];
 
 /**
- * The stored consultationFee.amount is the base fee in PAISE for a
- * 30-minute video session. Prices for other modes/durations derive from it.
+ * The stored consultationFee.amount is the final admin-controlled session fee
+ * in PAISE. Patients do not currently buy a separate duration/mode price
+ * variant, so checkout must charge this exact amount.
  */
 export const FEE_MULTIPLIERS = {
-  mode: { video: 1, audio: 0.8, chat: 0.6 } as Record<SessionMode, number>,
-  duration: { 30: 1, 45: 1.5, 60: 2 } as Record<SessionDuration, number>,
+  mode: { video: 1, audio: 1, chat: 1 } as Record<SessionMode, number>,
+  duration: { 30: 1, 45: 1, 60: 1 } as Record<SessionDuration, number>,
 } as const;
 
-/** Compute the fee in paise for a given mode and duration from the base fee (paise). */
+/** Return the admin-controlled booked-session fee in paise. */
 export function computeSessionFee(
   basePaise: number,
   mode: SessionMode,
   durationMinutes: number,
 ): number {
-  const modeMultiplier = FEE_MULTIPLIERS.mode[mode] ?? 1;
-  const durationMultiplier =
-    FEE_MULTIPLIERS.duration[durationMinutes as SessionDuration] ?? durationMinutes / 30;
-  return Math.round(basePaise * modeMultiplier * durationMultiplier);
+  void mode;
+  void durationMinutes;
+  return Math.max(0, Math.round(basePaise));
 }
 
-/** Full mode × duration price matrix in paise, derived from the base fee. */
+/** Full mode × duration display matrix in paise. Values currently match the admin-set fee. */
 export function buildPriceMatrix(basePaise: number): Record<SessionMode, Record<SessionDuration, number>> {
   const matrix = {} as Record<SessionMode, Record<SessionDuration, number>>;
   for (const mode of SESSION_MODES) {

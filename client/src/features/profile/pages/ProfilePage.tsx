@@ -11,6 +11,7 @@ import {
   Clock3,
   FileCheck2,
   HeartHandshake,
+  Inbox,
   Languages,
   LoaderCircle,
   Mail,
@@ -20,7 +21,10 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  UserCog,
   UserRound,
+  UsersRound,
+  WalletCards,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -117,6 +121,14 @@ export const ProfilePage = () => {
             (professionalProfile?.credentials.length ?? 0) >= 3,
             professionalProfile?.onboardingStatus === "approved",
           ]
+        : profile.role === "admin"
+          ? [
+              Boolean(profile.name),
+              Boolean(profile.email || profile.phone),
+              Boolean(profile.avatarUrl),
+              Boolean(profile.timezone),
+              profile.isVerified,
+            ]
         : [
             Boolean(profile.name),
             Boolean(profile.email || profile.phone),
@@ -158,6 +170,7 @@ export const ProfilePage = () => {
   const destination = roleDestinations[profile.role];
   const DestinationIcon = destination.icon;
   const isPsychologist = profile.role === "psychologist";
+  const isAdmin = profile.role === "admin";
 
   return (
     <main className="min-h-[calc(100vh-4.5rem)] bg-[radial-gradient(circle_at_8%_0%,rgba(221,214,254,.65),transparent_27%),radial-gradient(circle_at_95%_8%,rgba(191,219,254,.4),transparent_24%),#faf9ff] px-4 py-7 md:px-8 md:py-10">
@@ -165,23 +178,30 @@ export const ProfilePage = () => {
         <section className="relative overflow-hidden rounded-[2rem] bg-[#17142f] px-6 py-8 text-white shadow-[0_25px_70px_-35px_rgba(76,29,149,.8)] md:px-10 md:py-10">
           <div className="absolute -right-20 -top-28 size-80 rounded-full bg-violet-500/25 blur-3xl" />
           <div className="absolute bottom-0 right-8 hidden items-end gap-3 opacity-65 lg:flex">
-            <span className="grid size-24 place-items-center rounded-t-[2.4rem] bg-white/8">
+            <span className="grid size-24 animate-in slide-in-from-bottom-4 place-items-center rounded-t-[2.4rem] bg-white/8 duration-700">
               <UserRound className="size-10 text-violet-300" />
             </span>
-            <span className="grid size-36 place-items-center rounded-t-[3.5rem] bg-white/10">
-              <HeartHandshake className="size-14 text-rose-200" />
+            <span className="grid size-36 animate-in slide-in-from-bottom-6 place-items-center rounded-t-[3.5rem] bg-white/10 delay-100 duration-700">
+              {isAdmin ? <UserCog className="size-14 text-violet-200" /> : <HeartHandshake className="size-14 text-rose-200" />}
             </span>
-            <span className="grid size-20 place-items-center rounded-t-[2rem] bg-white/8">
+            <span className="grid size-20 animate-in slide-in-from-bottom-3 place-items-center rounded-t-[2rem] bg-white/8 delay-200 duration-700">
               <ShieldCheck className="size-8 text-emerald-200" />
             </span>
           </div>
           <div className="relative max-w-3xl animate-in fade-in slide-in-from-bottom-3 duration-700">
             <span className="inline-flex items-center gap-2 rounded-full border border-violet-300/20 bg-violet-300/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-violet-200">
               <Sparkles className="size-3.5" />
-              {isPsychologist ? "Professional identity" : "Your care account"}
+              {isAdmin ? "Admin workspace profile" : isPsychologist ? "Professional identity" : "Your care account"}
             </span>
             <h1 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">
-              {isPsychologist ? (
+              {isAdmin ? (
+                <>
+                  A cleaner profile for{" "}
+                  <span className="text-violet-300">
+                    focused operations
+                  </span>
+                </>
+              ) : isPsychologist ? (
                 <>
                   Build trust through a{" "}
                   <span className="text-violet-300">
@@ -198,7 +218,9 @@ export const ProfilePage = () => {
               )}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-violet-100/70">
-              {isPsychologist
+              {isAdmin
+                ? "Manage the identity and timezone used across your admin workspace without the extra patient-care profile fields."
+                : isPsychologist
                 ? "Manage your private account details while keeping your qualifications, clinical focus, credentials, and public practice profile clearly organized."
                 : "Manage the details used for your account, local scheduling, trusted contact, and personalized ManoBalamHealthCare experience."}
             </p>
@@ -220,7 +242,8 @@ export const ProfilePage = () => {
               <h2 className="mt-5 text-2xl font-black text-slate-950">
                 {profile.name}
               </h2>
-              <p className="mt-1 capitalize text-sm font-semibold text-violet-600">
+              <p className="mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-violet-50 px-3 py-1 text-sm font-black capitalize text-violet-700">
+                {isAdmin && <ShieldCheck className="size-3.5" />}
                 {profile.role}
               </p>
               <div className="mt-5 space-y-3 border-t border-slate-100 pt-5 text-left">
@@ -253,7 +276,7 @@ export const ProfilePage = () => {
               </Button>
             </section>
 
-            <section className="rounded-3xl border border-violet-100 bg-white p-5 shadow-sm">
+            <section className="animate-in fade-in slide-in-from-left-3 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm delay-100 duration-500">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.13em] text-slate-400">
@@ -271,29 +294,35 @@ export const ProfilePage = () => {
                 <div className={`h-full rounded-full bg-gradient-to-r from-violet-600 to-emerald-500 ${completionWidth(completion)}`} />
               </div>
               <p className="mt-3 text-xs leading-5 text-slate-500">
-                {isPsychologist
+                {isAdmin
+                  ? "Admin readiness focuses on workspace identity, secure access, and local operation time."
+                  : isPsychologist
                   ? "Professional readiness combines your account, clinical details, credentials, and approval."
                   : "Adding optional details helps keep your account ready for scheduling and support."}
               </p>
             </section>
 
-            <section className="flex gap-3 rounded-3xl border border-emerald-100 bg-emerald-50 p-5">
-              <BadgeCheck className="mt-0.5 size-5 shrink-0 text-emerald-700" />
-              <div>
-                <p className="text-sm font-black text-emerald-900">
-                  {isPsychologist
-                    ? professionalStatusLabel(professionalProfile)
-                    : profile.isVerified
-                      ? "Verified account"
-                      : "Verification pending"}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-emerald-800/75">
-                  {isPsychologist
-                    ? "Professional verification controls whether patients can discover and book your practice."
-                    : "Sensitive account fields cannot be changed from this profile form."}
-                </p>
-              </div>
-            </section>
+            {isAdmin ? (
+              <AdminQuickActions />
+            ) : (
+              <section className="animate-in fade-in slide-in-from-left-3 flex gap-3 rounded-3xl border border-emerald-100 bg-emerald-50 p-5 delay-150 duration-500">
+                <BadgeCheck className="mt-0.5 size-5 shrink-0 text-emerald-700" />
+                <div>
+                  <p className="text-sm font-black text-emerald-900">
+                    {isPsychologist
+                      ? professionalStatusLabel(professionalProfile)
+                      : profile.isVerified
+                        ? "Verified account"
+                        : "Verification pending"}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-emerald-800/75">
+                    {isPsychologist
+                      ? "Professional verification controls whether patients can discover and book your practice."
+                      : "Sensitive account fields cannot be changed from this profile form."}
+                  </p>
+                </div>
+              </section>
+            )}
           </aside>
 
           <div className="space-y-6">
@@ -304,6 +333,7 @@ export const ProfilePage = () => {
               profile={profile}
               onUpdated={setProfile}
               professional={isPsychologist}
+              admin={isAdmin}
             />
           </div>
         </div>
@@ -311,6 +341,44 @@ export const ProfilePage = () => {
     </main>
   );
 };
+
+function AdminQuickActions() {
+  const actions = [
+    { label: "Verifications", to: "/admin/verifications", icon: BadgeCheck, tone: "bg-violet-100 text-violet-700" },
+    { label: "Payouts", to: "/admin/payouts", icon: WalletCards, tone: "bg-emerald-100 text-emerald-700" },
+    { label: "Support inbox", to: "/admin/contact-requests", icon: Inbox, tone: "bg-blue-100 text-blue-700" },
+    { label: "Users", to: "/admin/users", icon: UsersRound, tone: "bg-amber-100 text-amber-700" },
+  ];
+
+  return (
+    <section className="animate-in fade-in slide-in-from-left-3 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm delay-150 duration-500">
+      <div className="flex items-center gap-3">
+        <span className="grid size-10 place-items-center rounded-2xl bg-violet-100 text-violet-700">
+          <UserCog className="size-5" />
+        </span>
+        <div>
+          <p className="text-sm font-black text-slate-950">Admin shortcuts</p>
+          <p className="text-xs text-slate-500">Jump to common operations.</p>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-2">
+        {actions.map(({ icon: Icon, ...action }) => (
+          <Link
+            key={action.to}
+            to={action.to}
+            className="group flex items-center gap-3 rounded-2xl border border-slate-100 p-3 transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50"
+          >
+            <span className={`grid size-9 place-items-center rounded-xl ${action.tone}`}>
+              <Icon className="size-4" />
+            </span>
+            <span className="text-sm font-black text-slate-700 group-hover:text-primary">{action.label}</span>
+            <ArrowRight className="ml-auto size-4 text-slate-300 group-hover:text-primary" />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function professionalStatusLabel(profile: PsychologistOnboarding | null) {
   if (!profile) return "Professional profile unavailable";

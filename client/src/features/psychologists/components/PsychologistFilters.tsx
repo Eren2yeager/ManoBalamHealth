@@ -26,7 +26,7 @@ function FilterSection({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <section className="border-b border-slate-100 pb-5 last:border-0 last:pb-0">
+    <section className="psychologist-filter-section border-b border-slate-100 pb-5 last:border-0 last:pb-0">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -69,7 +69,7 @@ export const PsychologistFilters = () => {
     specializations.length + languages.length + (minRating > 1 ? 1 : 0);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="psychologist-filters flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">

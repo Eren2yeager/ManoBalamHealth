@@ -1,0 +1,22 @@
+@import "@fontsource-variable/manrope";
+
+.about-page,
+.about-page-chrome {
+  font-family: "Manrope Variable", "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+.about-page :focus-visible,
+.about-page-chrome :focus-visible {
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-page *,
+  .about-page *::before,
+  .about-page *::after,
+  .about-page-chrome *,
+  .about-page-chrome *::before,
+  .about-page-chrome *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

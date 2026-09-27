@@ -17,7 +17,7 @@ const PAGE_SIZE = 10;
 type ListTab = "upcoming" | "past";
 
 const AppointmentListSkeleton = () => (
-  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+  <div className="appointments-skeleton-grid grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
     {Array.from({ length: 6 }).map((_, index) => (
       <div key={index} className="h-64 rounded-[1.75rem] border border-slate-100 bg-white p-4 sm:h-72 sm:p-5">
         <div className="flex items-center gap-3">
@@ -111,7 +111,7 @@ export const AppointmentList = () => {
       const isPatient = user?.role !== "psychologist";
 
       return (
-        <div className="relative flex flex-col items-center gap-6 overflow-hidden rounded-[2rem] border border-dashed border-violet-200 bg-gradient-to-br from-violet-50 to-white p-6 text-center sm:p-8">
+        <div className="appointments-empty relative flex flex-col items-center gap-6 overflow-hidden rounded-[2rem] border border-dashed border-violet-200 bg-gradient-to-br from-violet-50 to-white p-6 text-center sm:p-8">
           <div className="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full bg-violet-200/30 blur-2xl" />
           <span className="relative grid size-16 place-items-center rounded-[2rem] bg-violet-100 text-primary sm:size-20">
             {activeTab === "upcoming" ? (
@@ -150,7 +150,7 @@ export const AppointmentList = () => {
 
     return (
       <div className="space-y-8">
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="appointments-grid grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {appointments.map((appointment) => (
             <AppointmentCard key={appointment.id} appointment={appointment} />
           ))}
@@ -173,7 +173,7 @@ export const AppointmentList = () => {
   };
 
   return (
-    <div className="flex flex-col space-y-6 sm:space-y-8">
+    <section className="appointments-list-surface flex flex-col space-y-6 sm:space-y-8">
       {/* <SectionHeader
         title="Your sessions"
         description="View and manage all your appointments"
@@ -181,7 +181,7 @@ export const AppointmentList = () => {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="flex flex-col space-y-6 sm:space-y-8">
         <div className="flex justify-center">
-          <TabsList className="inline-flex h-10 w-full max-w-md gap-1 rounded-[2rem] bg-slate-100 p-1">
+          <TabsList className="appointments-tabs inline-flex h-10 w-full max-w-md gap-1 rounded-[2rem] bg-slate-100 p-1">
             <TabsTrigger
               value="upcoming"
               className="flex-1 rounded-[1.5rem] px-4 py-2 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
@@ -204,6 +204,6 @@ export const AppointmentList = () => {
           {renderContent()}
         </TabsContent>
       </Tabs>
-    </div>
+    </section>
   );
 };

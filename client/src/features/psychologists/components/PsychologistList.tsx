@@ -44,7 +44,7 @@ const animationClasses = [
 
 function CardSkeleton() {
   return (
-    <div className="rounded-[1.75rem] border border-slate-100 bg-white p-5">
+    <div className="psychologist-card-skeleton rounded-[1.75rem] border border-slate-100 bg-white p-5">
       <div className="flex items-start justify-between">
         <Skeleton className="size-18 rounded-2xl" />
         <Skeleton className="h-7 w-20 rounded-full" />
@@ -162,13 +162,13 @@ export const PsychologistList = () => {
   const onlineCount = enriched.filter((psychologist) => psychologist.isOnline).length;
 
   return (
-    <div>
-      <section className="relative overflow-hidden bg-gradient-to-br from-violet-50 via-purple-50/45 to-blue-50/50 px-4 py-12 md:px-8">
+    <div className="psychologist-directory">
+      <section className="psychologist-directory-hero relative overflow-hidden bg-gradient-to-br from-violet-50 via-purple-50/45 to-blue-50/50 px-4 py-12 md:px-8">
         <div className="pointer-events-none absolute -right-28 -top-32 size-96 rounded-full bg-violet-300/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-28 left-1/4 size-72 rounded-full bg-blue-300/15 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl">
-          <div className="grid items-end gap-8 lg:grid-cols-[1fr_auto]">
+          <div className="psychologist-directory-intro grid items-end gap-8 lg:grid-cols-[1fr_auto]">
             <div className="max-w-3xl animate-in fade-in slide-in-from-left-4 duration-700">
               <span className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white/75 px-4 py-2 text-xs font-black text-primary shadow-sm backdrop-blur">
                 <Sparkles className="size-3.5" />
@@ -186,18 +186,18 @@ export const PsychologistList = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-right-4 duration-700">
-              <div className="rounded-2xl border border-white bg-white/70 p-4 text-center shadow-sm backdrop-blur">
+            <div className="psychologist-directory-metrics grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-right-4 duration-700">
+              <div className="psychologist-directory-metric rounded-2xl border border-white bg-white/70 p-4 text-center shadow-sm backdrop-blur">
                 <Users className="mx-auto size-5 text-primary" />
                 <p className="mt-2 text-xl font-black text-slate-900">{total}</p>
                 <p className="text-[10px] font-semibold text-slate-500">Results</p>
               </div>
-              <div className="rounded-2xl border border-white bg-white/70 p-4 text-center shadow-sm backdrop-blur">
+              <div className="psychologist-directory-metric rounded-2xl border border-white bg-white/70 p-4 text-center shadow-sm backdrop-blur">
                 <CheckCircle2 className="mx-auto size-5 text-emerald-600" />
                 <p className="mt-2 text-xl font-black text-slate-900">100%</p>
                 <p className="text-[10px] font-semibold text-slate-500">Approved</p>
               </div>
-              <div className="rounded-2xl border border-white bg-white/70 p-4 text-center shadow-sm backdrop-blur">
+              <div className="psychologist-directory-metric rounded-2xl border border-white bg-white/70 p-4 text-center shadow-sm backdrop-blur">
                 <HeartHandshake className="mx-auto size-5 text-rose-500" />
                 <p className="mt-2 text-xl font-black text-slate-900">{onlineCount}</p>
                 <p className="text-[10px] font-semibold text-slate-500">Online</p>
@@ -205,7 +205,7 @@ export const PsychologistList = () => {
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 rounded-3xl border border-white bg-white/80 p-3 shadow-xl shadow-primary/5 backdrop-blur md:flex-row md:items-center">
+          <div className="psychologist-directory-toolbar mt-8 flex flex-col gap-3 rounded-3xl border border-white bg-white/80 p-3 shadow-xl shadow-primary/5 backdrop-blur md:flex-row md:items-center">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
               <Input
@@ -218,7 +218,7 @@ export const PsychologistList = () => {
                 <button
                   type="button"
                   onClick={() => setInputValue("")}
-                  className="absolute right-3 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-lg text-slate-400 hover:bg-white hover:text-slate-700"
+                  className="psychologist-search-clear absolute right-3 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-lg text-slate-400 hover:bg-white hover:text-slate-700"
                   aria-label="Clear search"
                 >
                   <X className="size-4" />
@@ -263,7 +263,7 @@ export const PsychologistList = () => {
             className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm"
             onClick={() => setMobileFiltersOpen(false)}
           />
-          <aside className="relative ml-auto h-full w-[min(88vw,360px)] animate-in slide-in-from-right overflow-y-auto bg-white p-6 shadow-2xl duration-300">
+          <aside className="psychologist-mobile-filters relative ml-auto h-full w-[min(88vw,360px)] animate-in slide-in-from-right overflow-y-auto bg-white p-6 shadow-2xl duration-300">
             <button
               type="button"
               onClick={() => setMobileFiltersOpen(false)}
@@ -285,9 +285,9 @@ export const PsychologistList = () => {
         </div>
       )}
 
-      <div className="mx-auto grid max-w-7xl gap-7 px-4 py-8 md:px-8 lg:grid-cols-[270px_1fr]">
+      <div className="psychologist-directory-content mx-auto grid max-w-7xl gap-7 px-4 py-8 md:px-8 lg:grid-cols-[270px_1fr]">
         <aside className="hidden lg:block">
-          <div className="sticky top-24 rounded-[1.75rem] border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="psychologist-filter-panel sticky top-24 rounded-[1.75rem] border border-slate-100 bg-white p-5 shadow-sm">
             <PsychologistFilters />
           </div>
         </aside>
@@ -339,13 +339,13 @@ export const PsychologistList = () => {
           )}
 
           {isInitialLoad ? (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="psychologist-results-grid grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }).map((_, index) => (
                 <CardSkeleton key={index} />
               ))}
             </div>
           ) : enriched.length === 0 ? (
-            <div className="flex min-h-96 flex-col items-center justify-center rounded-[2rem] border border-dashed border-violet-200 bg-gradient-to-br from-violet-50/70 to-white p-8 text-center">
+            <div className="psychologist-empty-state flex min-h-96 flex-col items-center justify-center rounded-[2rem] border border-dashed border-violet-200 bg-gradient-to-br from-violet-50/70 to-white p-8 text-center">
               <span className="grid size-16 place-items-center rounded-3xl bg-white text-primary shadow-lg">
                 <Search className="size-7" />
               </span>
@@ -369,7 +369,7 @@ export const PsychologistList = () => {
             </div>
           ) : (
             <div
-              className={`grid gap-5 transition-opacity duration-300 md:grid-cols-2 xl:grid-cols-3 ${
+              className={`psychologist-results-grid grid gap-5 transition-opacity duration-300 md:grid-cols-2 xl:grid-cols-3 ${
                 isFetching ? "opacity-55" : "opacity-100"
               }`}
             >
@@ -384,7 +384,7 @@ export const PsychologistList = () => {
           )}
 
           {!isInitialLoad && enriched.length > 0 && (
-            <div className="mt-8 flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-800">
+            <div className="psychologist-verification-note mt-8 flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-800">
               <ShieldCheck className="size-5 shrink-0" />
               Every profile shown here has passed the platform’s administrator
               verification process.

@@ -79,14 +79,16 @@ function DesktopPublicNavigation({
   homeTo = "/",
   openMenu,
   setOpenMenu,
+  about = false,
 }: {
   pathname: string;
   homeTo?: string;
   openMenu: string | null;
   setOpenMenu: (value: string | null) => void;
+  about?: boolean;
 }) {
   return (
-    <nav aria-label="Main navigation" className="hidden h-full items-center gap-0.5 xl:flex">
+    <nav aria-label="Main navigation" className={`hidden items-center gap-0.5 xl:flex ${about ? "h-11 rounded-2xl border border-white/10 bg-white/[.04] p-1" : "h-full"}`}>
       {publicNavigation.map((item) => {
         const active = isItemActive(item, pathname);
         if (!item.children && item.to) {
@@ -94,10 +96,10 @@ function DesktopPublicNavigation({
             <Link
               key={item.label}
               to={item.to === "/" ? homeTo : item.to}
-              className={`relative rounded-xl px-3 py-2 text-[13px] font-bold transition-colors ${active ? "bg-violet-50 text-primary" : "text-slate-600 hover:bg-slate-50 hover:text-primary"}`}
+              className={`relative rounded-xl px-3 py-2 text-[13px] font-bold transition-colors ${about ? "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400" : ""} ${active ? (about ? "bg-[#7c3aed] text-white shadow-sm" : "bg-violet-50 text-primary") : about ? "text-violet-100/75 hover:bg-white/[.07] hover:text-white" : "text-slate-600 hover:bg-slate-50 hover:text-primary"}`}
             >
               {item.label}
-              {active && <span className="absolute inset-x-3 -bottom-[17px] h-0.5 rounded-full bg-primary" />}
+              {active && !about && <span className="absolute inset-x-3 -bottom-[17px] h-0.5 rounded-full bg-primary" />}
             </Link>
           );
         }
@@ -118,7 +120,7 @@ function DesktopPublicNavigation({
             <button
               type="button"
               aria-expanded={open}
-              className={`flex h-full items-center gap-1 rounded-xl px-3 text-[13px] font-bold transition-colors ${active || open ? "text-primary" : "text-slate-600 hover:text-primary"}`}
+              className={`flex h-full items-center gap-1 rounded-xl px-3 text-[13px] font-bold transition-colors ${about ? "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400" : ""} ${active || open ? (about ? "bg-[#7c3aed] text-white shadow-sm" : "text-primary") : about ? "text-violet-100/75 hover:bg-white/[.07] hover:text-white" : "text-slate-600 hover:text-primary"}`}
               onClick={() => setOpenMenu(open ? null : item.label)}
             >
               {item.label}
@@ -178,10 +180,12 @@ function MobilePublicNavigation({
   close,
   homeTo = "/",
   showLogin = true,
+  about = false,
 }: {
   close: () => void;
   homeTo?: string;
   showLogin?: boolean;
+  about?: boolean;
 }) {
   const location = useLocation();
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -192,7 +196,7 @@ function MobilePublicNavigation({
         if (!item.children && item.to) {
           const Icon = item.icon;
           return (
-            <Link key={item.label} to={item.to === "/" ? homeTo : item.to} onClick={close} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold ${active ? "bg-violet-50 text-primary" : "text-slate-700 hover:bg-slate-50"}`}>
+            <Link key={item.label} to={item.to === "/" ? homeTo : item.to} onClick={close} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold ${about ? "min-h-11 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400" : ""} ${active ? (about ? "bg-[#7c3aed] text-white" : "bg-violet-50 text-primary") : about ? "text-violet-100/80 hover:bg-white/[.07] hover:text-white" : "text-slate-700 hover:bg-slate-50"}`}>
               {Icon && <Icon className="size-4" />}{item.label}
             </Link>
           );
@@ -202,15 +206,15 @@ function MobilePublicNavigation({
         const Icon = item.icon;
         return (
           <div key={item.label}>
-            <button type="button" onClick={() => setExpanded(open ? null : item.label)} className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-bold ${active ? "text-primary" : "text-slate-700 hover:bg-slate-50"}`}>
+            <button type="button" onClick={() => setExpanded(open ? null : item.label)} className={`flex min-h-11 w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-bold ${about ? active ? "text-violet-300" : "text-violet-100/80 hover:bg-white/[.07] hover:text-white" : active ? "text-primary" : "text-slate-700 hover:bg-slate-50"}`}>
               <span className="flex items-center gap-3">{Icon && <Icon className="size-4" />}{item.label}</span>
               <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
             <div className={`grid transition-all duration-300 ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
               <div className="overflow-hidden">
-                <div className="ml-4 grid gap-1 border-l border-violet-100 py-1 pl-3">
+                <div className={`ml-4 grid gap-1 border-l py-1 pl-3 ${about ? "border-white/10" : "border-violet-100"}`}>
                   {item.children.map((child) => (
-                    <Link key={child.to} to={child.to ?? "/"} onClick={close} className="rounded-lg px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-violet-50 hover:text-primary">{child.label}</Link>
+                    <Link key={child.to} to={child.to ?? "/"} onClick={close} className={`rounded-lg px-3 py-2.5 text-xs font-semibold ${about ? "text-violet-100/70 hover:bg-white/[.07] hover:text-white" : "text-slate-600 hover:bg-violet-50 hover:text-primary"}`}>{child.label}</Link>
                   ))}
                 </div>
               </div>
@@ -219,7 +223,7 @@ function MobilePublicNavigation({
         );
       })}
       {showLogin && (
-        <Link to="/login" onClick={close} className="mt-2 rounded-xl border border-violet-100 px-3 py-3 text-center text-sm font-bold text-primary sm:hidden">Log in</Link>
+        <Link to="/login" onClick={close} className={`mt-2 rounded-xl border px-3 py-3 text-center text-sm font-bold sm:hidden ${about ? "border-white/15 text-violet-100 hover:bg-white/[.07]" : "border-violet-100 text-primary"}`}>Log in</Link>
       )}
     </nav>
   );
@@ -228,6 +232,7 @@ function MobilePublicNavigation({
 export function Navbar() {
   const { user } = useAuth();
   const location = useLocation();
+  const isAboutPage = location.pathname === "/about";
   const { detectedCountryCode } = useGeoCountry();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -272,9 +277,9 @@ export function Navbar() {
 
   return (
     <>
-      <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${scrolled || isMobileMenuOpen || location.pathname !== "/" ? "border-slate-200/70 bg-white/96 shadow-[0_8px_35px_rgba(32,22,70,.07)] backdrop-blur-xl" : "border-transparent bg-white/80 backdrop-blur-lg"}`}>
-        <div className="mx-auto flex h-19 max-w-7xl items-center justify-between gap-4 px-4 md:px-7">
-          <BrandLogo to={homePath} />
+      <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${isAboutPage ? "about-page-chrome border-white/10 bg-[#18142f]/95 shadow-[0_12px_36px_-26px_rgba(124,58,237,.8)] backdrop-blur-xl" : scrolled || isMobileMenuOpen || location.pathname !== "/" ? "border-slate-200/70 bg-white/96 shadow-[0_8px_35px_rgba(32,22,70,.07)] backdrop-blur-xl" : "border-transparent bg-white/80 backdrop-blur-lg"}`}>
+        <div className={`mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 md:px-7 ${isAboutPage ? "h-20 max-[480px]:h-auto max-[480px]:flex-wrap max-[480px]:py-3" : "h-19"}`}>
+          <BrandLogo to={homePath} dark={isAboutPage} className={isAboutPage ? "rounded-2xl bg-white/[.05] p-1.5 pr-3 ring-1 ring-white/10" : undefined} imageClassName={isAboutPage ? "size-9" : undefined} />
 
           {!showPublicNavigation && user ? (
             <nav aria-label="Main navigation" className="hidden items-center gap-7 lg:flex">
@@ -289,10 +294,11 @@ export function Navbar() {
               homeTo={publicHomePath}
               openMenu={openMenu}
               setOpenMenu={setOpenMenu}
+              about={isAboutPage}
             />
           )}
 
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isAboutPage ? "max-[480px]:w-full max-[480px]:justify-end" : ""}`}>
             {user ? (
               <>
                 <Button variant="ghost" size="icon" className="rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700" onClick={handleCrisisToggle} disabled={isCrisisLoading} aria-label="Open crisis resources"><HeartHandshake /></Button>
@@ -304,16 +310,16 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Button asChild variant="ghost" className="hidden h-10 rounded-xl px-4 font-bold sm:inline-flex"><Link to="/login">Log in</Link></Button>
-                <Button asChild className="h-10 rounded-xl bg-gradient-to-r from-primary to-violet-600 px-4 font-bold shadow-lg shadow-primary/20 hover:opacity-90"><Link to="/register">Get started</Link></Button>
+                <Button asChild variant="ghost" className={`hidden rounded-xl px-4 font-bold sm:inline-flex ${isAboutPage ? "h-11 text-violet-100 hover:bg-white/[.07] hover:text-white" : "h-10"}`}><Link to="/login">Log in</Link></Button>
+                <Button asChild className={`rounded-xl px-4 font-bold ${isAboutPage ? "h-11 bg-[#7c3aed] text-white shadow-[0_12px_30px_-16px_rgba(76,29,149,.8)] hover:bg-[#6d28d9]" : "h-10 bg-gradient-to-r from-primary to-violet-600 shadow-lg shadow-primary/20 hover:opacity-90"}`}><Link to="/register">Get started</Link></Button>
               </>
             )}
-            <Button variant="ghost" size="icon" className={`rounded-xl ${user ? "lg:hidden" : "xl:hidden"}`} aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen((open) => !open)}>{isMobileMenuOpen ? <X /> : <Menu />}</Button>
+            <Button variant="ghost" size="icon" className={`rounded-xl ${isAboutPage ? "text-violet-100 hover:bg-white/[.07] hover:text-white" : ""} ${user ? "lg:hidden" : "xl:hidden"}`} aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen((open) => !open)}>{isMobileMenuOpen ? <X /> : <Menu />}</Button>
           </div>
         </div>
 
         {isMobileMenuOpen && (
-          <div className={`border-t border-slate-100 bg-white px-4 py-4 shadow-xl ${user ? "lg:hidden" : "xl:hidden"}`}>
+          <div className={`border-t px-4 py-4 shadow-xl ${isAboutPage ? "border-white/10 bg-[#18142f]" : "border-slate-100 bg-white"} ${user ? "lg:hidden" : "xl:hidden"}`}>
             <div className="mx-auto max-h-[calc(100vh-7rem)] max-w-7xl overflow-y-auto">
               {!showPublicNavigation && user ? (
                 <nav aria-label="Mobile navigation" className="grid gap-1">
@@ -326,6 +332,7 @@ export function Navbar() {
                   close={() => setIsMobileMenuOpen(false)}
                   homeTo={publicHomePath}
                   showLogin={!user}
+                  about={isAboutPage}
                 />
               )}
             </div>

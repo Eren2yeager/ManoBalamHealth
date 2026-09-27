@@ -1,0 +1,228 @@
+@import "@fontsource-variable/manrope";
+
+.psychologist-directory-page {
+  color: #312e81;
+  font-family: "Manrope Variable", "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+.psychologist-directory-page .psychologist-directory-hero {
+  margin-inline: auto;
+  max-width: 1440px;
+  padding-block: 36px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 88% -28%, rgb(196 181 253 / 0.35), transparent 34%),
+    linear-gradient(112deg, #312e81 0%, #4c1d95 64%, #6d28d9 100%);
+  box-shadow: 0 28px 70px -44px rgb(76 29 149 / 0.72);
+}
+
+.psychologist-directory-page .psychologist-directory-hero > .pointer-events-none {
+  opacity: 0.55;
+}
+
+.psychologist-directory-page .psychologist-directory-intro {
+  position: relative;
+}
+
+.psychologist-directory-page .psychologist-directory-intro > div:first-child > span {
+  border-color: rgb(221 214 254 / 0.35);
+  background: rgb(255 255 255 / 0.1);
+  color: #ede9fe;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.psychologist-directory-page .psychologist-directory-intro h1 {
+  max-width: 17ch;
+  color: #fff;
+  font-size: clamp(2.25rem, 4.2vw, 3.75rem);
+  font-weight: 760;
+  line-height: 1.03;
+  letter-spacing: -0.05em;
+}
+
+.psychologist-directory-page .psychologist-directory-intro h1 span {
+  color: #ddd6fe;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.psychologist-directory-page .psychologist-directory-intro p {
+  color: rgb(237 233 254 / 0.82);
+}
+
+.psychologist-directory-page .psychologist-directory-metric {
+  min-width: 104px;
+  border-color: rgb(221 214 254 / 0.22);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.1);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.psychologist-directory-page .psychologist-directory-metric svg,
+.psychologist-directory-page .psychologist-directory-metric p {
+  color: #f5f3ff;
+}
+
+.psychologist-directory-page .psychologist-directory-toolbar {
+  border-color: #ddd6fe;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 46px -36px rgb(76 29 149 / 0.7);
+  backdrop-filter: none;
+}
+
+.psychologist-directory-page .psychologist-directory-toolbar input,
+.psychologist-directory-page .psychologist-directory-toolbar > button {
+  min-height: 44px;
+  border: 1px solid #ede9fe;
+  border-radius: 12px;
+  background: #f5f3ff;
+  color: #312e81;
+}
+
+.psychologist-directory-page .psychologist-search-clear {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+
+.psychologist-directory-page .psychologist-directory-content {
+  align-items: start;
+}
+
+.psychologist-directory-page .psychologist-filter-panel,
+.psychologist-directory-page .psychologist-mobile-filters,
+.psychologist-directory-page .psychologist-card-skeleton,
+.psychologist-directory-page .psychologist-directory-card,
+.psychologist-directory-page .psychologist-empty-state {
+  border-color: #ddd6fe;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 22px 55px -42px rgb(76 29 149 / 0.5);
+}
+
+.psychologist-directory-page .psychologist-filter-section {
+  border-color: #ede9fe;
+}
+
+.psychologist-directory-page .psychologist-filter-section button {
+  min-height: 44px;
+}
+
+.psychologist-directory-page .psychologist-filter-section label {
+  min-height: 44px;
+  border-radius: 10px;
+  color: #6b5b95;
+}
+
+.psychologist-directory-page .psychologist-filter-section label:hover {
+  background: #f5f3ff;
+  color: #4c1d95;
+}
+
+.psychologist-directory-page .psychologist-filter-section input[type="range"] {
+  accent-color: #7c3aed;
+}
+
+.psychologist-directory-page .psychologist-results-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.psychologist-directory-page .psychologist-directory-card {
+  transform: none;
+  transition-duration: 180ms;
+}
+
+.psychologist-directory-page .psychologist-directory-card:hover {
+  transform: translateY(-3px);
+  border-color: #c4b5fd;
+  box-shadow: 0 26px 60px -42px rgb(76 29 149 / 0.62);
+}
+
+.psychologist-directory-page .psychologist-directory-card > div:first-child {
+  background: #f5f3ff;
+  opacity: 1;
+}
+
+.psychologist-directory-page .psychologist-directory-card > div:nth-child(2) {
+  display: none;
+}
+
+.psychologist-directory-page .psychologist-directory-card h3,
+.psychologist-directory-page main h2,
+.psychologist-directory-page main h3,
+.psychologist-directory-page .psychologist-filters h2 {
+  color: #312e81;
+}
+
+.psychologist-directory-page .psychologist-directory-card a {
+  min-height: 44px;
+  border-radius: 12px;
+  background: #7c3aed;
+  box-shadow: none;
+}
+
+.psychologist-directory-page .psychologist-verification-note {
+  border-color: #ddd6fe;
+  border-radius: 14px;
+  background: #ede9fe;
+  color: #4c1d95;
+}
+
+.psychologist-directory-page .psychologist-empty-state {
+  border-style: solid;
+}
+
+.psychologist-directory-page :focus-visible {
+  outline: 3px solid rgb(196 181 253 / 0.72);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .psychologist-directory-page .psychologist-directory-hero {
+    padding-block: 28px;
+  }
+
+  .psychologist-directory-page .psychologist-directory-intro h1 {
+    font-size: 2.2rem;
+    line-height: 1.08;
+  }
+
+  .psychologist-directory-page .psychologist-directory-metrics {
+    gap: 8px;
+  }
+
+  .psychologist-directory-page .psychologist-directory-metric {
+    min-width: 0;
+    padding: 12px 8px;
+  }
+
+  .psychologist-directory-page .psychologist-directory-toolbar {
+    padding: 10px;
+  }
+
+  .psychologist-directory-page .psychologist-results-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .psychologist-directory-page .psychologist-directory-content {
+    padding-inline: 16px;
+  }
+}
+
+@media (max-width: 359px) {
+  .psychologist-directory-page .psychologist-directory-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .psychologist-directory-page *,
+  .psychologist-directory-page *::before,
+  .psychologist-directory-page *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -37,7 +37,7 @@ export function BrandLogo({
               dark ? "text-white" : "text-slate-950",
             )}
           >
-            ManoBalamHealthCare
+            Manobalam Healthcare
           </span>
           <span
             className={cn(

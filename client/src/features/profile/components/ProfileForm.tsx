@@ -32,6 +32,7 @@ interface ProfileFormProps {
   onUpdated: (profile: UserProfile) => void;
   professional?: boolean;
   admin?: boolean;
+  student?: boolean;
 }
 
 type FormState = {
@@ -57,6 +58,7 @@ export const ProfileForm = ({
   onUpdated,
   professional = false,
   admin = false,
+  student = false,
 }: ProfileFormProps) => {
   const setUser = useUserStore((state) => state.setUser);
   const [form, setForm] = useState<FormState>(() => toFormState(profile));
@@ -121,9 +123,10 @@ export const ProfileForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <section className="animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm duration-500 sm:p-7">
+    <form onSubmit={handleSubmit} className={`${student ? "student-profile-form" : ""} space-y-6`}>
+      <section className={`${student ? "student-profile-form-section" : ""} animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm duration-500 sm:p-7`}>
         <SectionHeading
+          student={student}
           icon={UserRound}
           eyebrow={admin ? "Admin identity" : professional ? "Account identity" : "Personal details"}
           title={admin ? "Your workspace identity" : professional ? "Your personal account details" : "The basics about you"}
@@ -201,8 +204,9 @@ export const ProfileForm = ({
       </section>
 
       {!admin && (
-      <section className="animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-rose-100 bg-white p-5 shadow-sm delay-75 duration-500 sm:p-7">
+      <section className={`${student ? "student-profile-form-section student-profile-safety-section" : ""} animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-rose-100 bg-white p-5 shadow-sm delay-75 duration-500 sm:p-7`}>
         <SectionHeading
+          student={student}
           icon={HeartHandshake}
           eyebrow={professional ? "Personal safety" : "Safety contact"}
           title={
@@ -267,6 +271,7 @@ export const ProfileForm = ({
       {admin && (
         <section className="animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm delay-75 duration-500 sm:p-7">
           <SectionHeading
+            student={student}
             icon={ShieldCheck}
             eyebrow="Admin access"
             title="Operational permissions"
@@ -284,8 +289,9 @@ export const ProfileForm = ({
         </section>
       )}
 
-      <section className="animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-blue-100 bg-white p-5 shadow-sm delay-100 duration-500 sm:p-7">
+      <section className={`${student ? "student-profile-form-section student-profile-timezone-section" : ""} animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-blue-100 bg-white p-5 shadow-sm delay-100 duration-500 sm:p-7`}>
         <SectionHeading
+          student={student}
           icon={Clock3}
           eyebrow="Local time"
           title="Timezone and scheduling"
@@ -321,7 +327,7 @@ export const ProfileForm = ({
         </div>
       </section>
 
-      <div className=" bottom-4 z-10 flex flex-col-reverse gap-3 rounded-2xl border border-violet-100 bg-white/90 p-3 shadow-2xl shadow-violet-200/50 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+      <div className={`${student ? "student-profile-savebar" : ""} bottom-4 z-10 flex flex-col-reverse gap-3 rounded-2xl border border-violet-100 bg-white/90 p-3 shadow-2xl shadow-violet-200/50 backdrop-blur sm:flex-row sm:items-center sm:justify-between`}>
         <p className="px-2 text-xs font-semibold text-slate-500">
           {isDirty ? "You have unsaved changes." : "Everything is up to date."}
         </p>
@@ -360,12 +366,14 @@ function SectionHeading({
   title,
   description,
   color = "violet",
+  student = false,
 }: {
   icon: typeof UserRound;
   eyebrow: string;
   title: string;
   description: string;
   color?: "violet" | "rose" | "blue" | "emerald";
+  student?: boolean;
 }) {
   const colors = {
     violet: "bg-violet-100 text-violet-700",
@@ -382,7 +390,7 @@ function SectionHeading({
         <Icon className="size-5" />
       </span>
       <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">
+        <p className={`text-[11px] font-black text-slate-400 ${student ? "tracking-wide" : "uppercase tracking-[0.15em]"}`}>
           {eyebrow}
         </p>
         <h2 className="mt-1 text-xl font-black text-slate-950">{title}</h2>

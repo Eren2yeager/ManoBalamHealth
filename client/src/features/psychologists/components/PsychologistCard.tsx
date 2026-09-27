@@ -40,7 +40,7 @@ export const PsychologistCard = ({
 
   return (
     <article
-      className={`group relative flex h-full animate-in fade-in slide-in-from-bottom-4 flex-col overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white shadow-sm duration-500 hover:-translate-y-2 hover:border-violet-100 hover:shadow-2xl hover:shadow-primary/10 ${animationClass}`}
+      className={`psychologist-directory-card group relative flex h-full animate-in fade-in slide-in-from-bottom-4 flex-col overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white shadow-sm duration-500 hover:-translate-y-2 hover:border-violet-100 hover:shadow-2xl hover:shadow-primary/10 ${animationClass}`}
     >
       <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-br from-violet-100/75 via-purple-50 to-blue-50 opacity-80" />
       <div className="absolute -right-10 -top-10 size-28 rounded-full bg-primary/8 blur-2xl transition-transform duration-500 group-hover:scale-150" />

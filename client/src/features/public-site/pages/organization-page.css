@@ -1,0 +1,94 @@
+@import "@fontsource-variable/manrope";
+
+.organization-page {
+  font-family: "Manrope Variable", "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+.organization-page .organization-hero {
+  position: relative;
+  overflow: hidden;
+  border-color: #ddd6fe;
+  background:
+    radial-gradient(circle at 86% 8%, rgb(221 214 254 / 0.65), transparent 25%),
+    #fff;
+}
+
+.organization-page .organization-hero h1 {
+  max-width: 15ch;
+  color: #312e81;
+  font-weight: 760;
+}
+
+.organization-page .organization-hero-media {
+  background: #f5f3ff;
+}
+
+.organization-page .organization-hero-media img {
+  display: block;
+}
+
+.organization-page .organization-card {
+  min-height: 300px;
+  border-color: #ddd6fe;
+  border-radius: 16px;
+  box-shadow: 0 22px 55px -44px rgb(76 29 149 / 0.5);
+  transition-duration: 180ms;
+}
+
+.organization-page .organization-card:hover {
+  transform: translateY(-3px);
+  border-color: #c4b5fd;
+  box-shadow: 0 26px 60px -42px rgb(76 29 149 / 0.52);
+}
+
+.organization-page .organization-card h3 {
+  color: #312e81;
+}
+
+.organization-page .organization-card-media {
+  height: 190px;
+}
+
+.organization-page .organization-card-media img {
+  display: block;
+}
+
+.organization-page :focus-visible {
+  outline: 3px solid rgb(196 181 253 / 0.72);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .organization-page .organization-hero {
+    padding-block: 32px;
+  }
+
+  .organization-page .organization-hero h1 {
+    font-size: 2.4rem;
+    line-height: 1.08;
+  }
+
+  .organization-page .organization-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .organization-page .organization-card {
+    min-height: 0;
+    padding: 22px;
+  }
+
+  .organization-page .organization-card-media {
+    height: 180px;
+    margin-inline: -22px;
+    margin-top: -22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .organization-page *,
+  .organization-page *::before,
+  .organization-page *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

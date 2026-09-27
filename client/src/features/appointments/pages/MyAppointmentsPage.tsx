@@ -14,6 +14,7 @@ import { AppointmentList } from "../components/AppointmentList";
 import { getMyAppointments } from "../api/appointment.api";
 import type { AppointmentListItem } from "../types/appointment.types";
 import { getSessionAccessState } from "../utils/sessionAccess";
+import "./appointments-page.css";
 
 export const MyAppointmentsPage = () => {
   const [appointments, setAppointments] = useState<AppointmentListItem[]>([]);
@@ -63,11 +64,11 @@ export const MyAppointmentsPage = () => {
   }, [appointments]);
 
   return (
-    <div className="min-h-screen bg-slate-50/60">
+    <div className="appointments-page min-h-[100dvh] bg-[#f5f3ff]">
       {/* Header */}
       <header className="px-4 pt-6 md:px-8 md:pt-8">
         <div className="mx-auto max-w-7xl">
-          <div className="relative isolate overflow-hidden rounded-[2rem] bg-[#17142f] px-5 py-7 text-white shadow-[0_24px_70px_-30px_rgba(76,29,149,.65)] sm:px-8">
+          <div className="appointments-hero relative isolate overflow-hidden rounded-[2rem] bg-[#17142f] px-5 py-7 text-white shadow-[0_24px_70px_-30px_rgba(76,29,149,.65)] sm:px-8">
             <div className="absolute -right-24 -top-24 -z-10 size-80 rounded-full bg-violet-500/25 blur-3xl" />
             <div className="absolute bottom-0 left-12 -z-10 size-48 rounded-full bg-indigo-500/15 blur-2xl" />
             <Button variant="ghost" size="icon" asChild aria-label="Go back" className="rounded-xl">
@@ -104,7 +105,7 @@ export const MyAppointmentsPage = () => {
 
       {/* Main content */}
       <main className="mx-auto max-w-7xl px-4 py-7 md:px-8">
-        <section className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="appointments-metrics mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <PatientAppointmentMetric
             icon={Clock3}
             label="Upcoming"
@@ -163,7 +164,7 @@ function PatientAppointmentMetric({
   tone,
 }: PatientAppointmentMetricProps) {
   return (
-    <div className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-100/70">
+    <div className="appointment-metric group rounded-3xl border border-violet-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-100/70">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">

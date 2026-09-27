@@ -1,89 +1,42 @@
-import { BadgeCheck, BriefcaseBusiness, ImageIcon, Languages, ListChecks, ShieldCheck, Sparkles, UserRound } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { BadgeCheck, ImageIcon, Sparkles, UserRound } from "lucide-react";
 import type { CommitteeMember } from "../types/public-site.types";
 
 function getInitials(name: string) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
 }
 
-function TagList({ items }: { items: string[] }) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
-        <span key={item} className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">
-          {item}
-        </span>
-      ))}
-    </div>
-  );
+function getRole(member: CommitteeMember) {
+  return "position" in member ? member.position : member.designation;
 }
 
-function MemberSpecificInfo({ member }: { member: CommitteeMember }) {
+function getSimpleDetails(member: CommitteeMember) {
   switch (member.committeeType) {
     case "executive":
-      return (
-        <>
-          <InfoRow icon={ShieldCheck} label="Governance experience" value={member.governanceExperience} />
-          <InfoGroup icon={Sparkles} label="Leadership areas"><TagList items={member.leadershipAreas} /></InfoGroup>
-        </>
-      );
+      return member.leadershipAreas.slice(0, 2);
     case "administrative":
-      return (
-        <>
-          <InfoRow icon={BriefcaseBusiness} label="Operations experience" value={member.operationsExperience} />
-          <InfoGroup icon={ListChecks} label="Responsibilities"><TagList items={member.responsibilities} /></InfoGroup>
-        </>
-      );
+      return member.responsibilities.slice(0, 2);
     case "consultative":
-      return (
-        <>
-          <InfoRow icon={BriefcaseBusiness} label="Advisory experience" value={member.advisoryExperience} />
-          {member.specialties && <InfoGroup icon={Sparkles} label="Specialist areas"><TagList items={member.specialties} /></InfoGroup>}
-        </>
-      );
+      return member.specialties?.slice(0, 2) ?? ["External guidance"];
     case "technical":
-      return (
-        <>
-          <InfoRow icon={BriefcaseBusiness} label="Technical experience" value={member.technicalExperience} />
-          <InfoGroup icon={Sparkles} label="Technical skills"><TagList items={member.skills} /></InfoGroup>
-          <InfoGroup icon={ListChecks} label="Responsibilities"><TagList items={member.responsibilities} /></InfoGroup>
-        </>
-      );
+      return member.skills.slice(0, 2);
     case "clinical":
-      return (
-        <>
-          <InfoRow icon={BadgeCheck} label="Qualifications" value={member.qualifications} />
-          <InfoRow icon={BriefcaseBusiness} label="Clinical experience" value={member.clinicalExperience} />
-          <InfoGroup icon={Sparkles} label="Clinical specialties"><TagList items={member.specialties} /></InfoGroup>
-          <InfoGroup icon={Languages} label="Languages"><TagList items={member.languages} /></InfoGroup>
-        </>
-      );
+      return member.specialties.slice(0, 2);
   }
 }
 
-function InfoRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
-  return (
-    <div className="flex items-start gap-3 border-t border-violet-100 pt-4 dark:border-violet-900/50">
-      <Icon className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={1.8} aria-hidden="true" />
-      <div>
-        <p className="text-xs font-black text-violet-800 dark:text-violet-200">{label}</p>
-        <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-function InfoGroup({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: ReactNode }) {
-  return (
-    <div className="flex items-start gap-3">
-      <Icon className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={1.8} aria-hidden="true" />
-      <div>
-        <p className="mb-2 text-xs font-black text-violet-800 dark:text-violet-200">{label}</p>
-        {children}
-      </div>
-    </div>
-  );
+function getExperienceLine(member: CommitteeMember) {
+  switch (member.committeeType) {
+    case "executive":
+      return member.governanceExperience;
+    case "administrative":
+      return member.operationsExperience;
+    case "consultative":
+      return member.advisoryExperience;
+    case "technical":
+      return member.technicalExperience;
+    case "clinical":
+      return member.qualifications;
+  }
 }
 
 export function CommitteeGrid({ members }: { members: CommitteeMember[]; committeeSlug: string }) {
@@ -98,36 +51,59 @@ export function CommitteeGrid({ members }: { members: CommitteeMember[]; committ
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {members.map((member, index) => {
-        const position = "position" in member ? member.position : member.designation;
+        const role = getRole(member);
+        const details = getSimpleDetails(member);
         return (
           <article
             key={`${member.committeeType}-${member.name}-${index}`}
             tabIndex={0}
-            aria-label={`${member.name}, ${position}`}
+            aria-label={`${member.name}, ${role}`}
             style={{ animationDelay: `${Math.min(index * 90, 360)}ms`, animationFillMode: "both" }}
-            className="group grid overflow-hidden rounded-3xl border border-violet-100 bg-white outline-none transition duration-300 animate-in fade-in slide-in-from-bottom-3 hover:-translate-y-1 hover:border-violet-200 hover:shadow-[0_24px_60px_-32px_rgba(76,29,149,.32)] focus-visible:-translate-y-1 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-violet-100 motion-reduce:transform-none motion-reduce:animate-none dark:border-violet-900/50 dark:bg-slate-900 dark:focus-visible:ring-violet-900/50 sm:grid-cols-[180px_1fr]"
+            className="group rounded-[1.75rem] border border-violet-100 bg-white p-5 outline-none transition duration-300 animate-in fade-in slide-in-from-bottom-3 hover:-translate-y-1 hover:border-violet-200 hover:bg-violet-50/40 hover:shadow-[0_22px_55px_-36px_rgba(76,29,149,.38)] focus-visible:-translate-y-1 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-violet-100 motion-reduce:transform-none motion-reduce:animate-none dark:border-violet-900/50 dark:bg-slate-900 dark:hover:bg-violet-950/20 dark:focus-visible:ring-violet-900/50"
           >
-            <div className="relative min-h-64 overflow-hidden bg-violet-100 sm:min-h-full dark:bg-violet-950/60">
+            <div className="flex items-start gap-4">
               {member.imageUrl ? (
-                <img src={member.imageUrl} alt={`Portrait of ${member.name}`} className="absolute inset-0 size-full object-cover transition-transform duration-700 group-hover:scale-[1.04] group-focus-visible:scale-[1.04] motion-reduce:transform-none" loading="lazy" />
+                <img
+                  src={member.imageUrl}
+                  alt={`Portrait of ${member.name}`}
+                  className="size-18 shrink-0 rounded-3xl border border-violet-100 object-cover shadow-sm transition duration-300 group-hover:scale-[1.03] group-focus-visible:scale-[1.03] motion-reduce:transform-none dark:border-violet-900/60"
+                  loading="lazy"
+                />
               ) : (
-                <div className="flex size-full flex-col items-center justify-center bg-[linear-gradient(145deg,#ede9fe_0%,#f8f7ff_55%,#ddd6fe_100%)] text-violet-800 dark:bg-[linear-gradient(145deg,#261747_0%,#171526_55%,#31205a_100%)] dark:text-violet-200">
-                  <span className="grid size-20 place-items-center rounded-3xl border border-white/80 bg-white/75 text-2xl font-black shadow-sm dark:border-violet-800/50 dark:bg-violet-950/65">{getInitials(member.name) || <ImageIcon className="size-7" aria-hidden="true" />}</span>
-                  <span className="mt-4 text-xs font-bold">Photo to be added</span>
+                <div className="grid size-18 shrink-0 place-items-center rounded-3xl border border-violet-100 bg-[linear-gradient(145deg,#f5f3ff_0%,#ede9fe_100%)] text-lg font-black text-violet-800 shadow-sm dark:border-violet-900/60 dark:bg-[linear-gradient(145deg,#261747_0%,#171526_100%)] dark:text-violet-200">
+                  {getInitials(member.name) || <ImageIcon className="size-6" aria-hidden="true" />}
                 </div>
               )}
+
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-[.14em] text-primary">{role}</p>
+                <h3 className="mt-2 text-xl font-black tracking-[-.025em] text-slate-950 dark:text-white">{member.name}</h3>
+                {member.isExample && (
+                  <span className="mt-2 inline-flex rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">
+                    Representative profile
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-col p-6 sm:p-7">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-xs font-black uppercase tracking-[.14em] text-primary">{position}</p>
-                {member.isExample && <span className="rounded-full bg-violet-50 px-2 py-1 text-[10px] font-bold text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">Sample profile</span>}
+            <p className="mt-5 text-sm leading-6 text-slate-600 dark:text-slate-300">{member.bio}</p>
+
+            <div className="mt-5 rounded-2xl bg-violet-50/70 p-4 dark:bg-violet-950/25">
+              <div className="flex items-start gap-2.5">
+                <BadgeCheck className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={1.8} aria-hidden="true" />
+                <p className="text-xs font-bold leading-5 text-violet-900 dark:text-violet-100">{getExperienceLine(member)}</p>
               </div>
-              <h3 className="mt-3 text-2xl font-black tracking-[-.025em]">{member.name}</h3>
-              <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">{member.bio}</p>
-              <div className="mt-6 space-y-5"><MemberSpecificInfo member={member} /></div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {details.map((detail) => (
+                <span key={detail} className="inline-flex items-center gap-1.5 rounded-full border border-violet-100 bg-white px-3 py-1.5 text-xs font-bold text-violet-700 dark:border-violet-900/70 dark:bg-slate-950/40 dark:text-violet-300">
+                  <Sparkles className="size-3" aria-hidden="true" />
+                  {detail}
+                </span>
+              ))}
             </div>
           </article>
         );

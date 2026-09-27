@@ -1,0 +1,211 @@
+@import "@fontsource-variable/manrope";
+
+.appointments-page {
+  color: #312e81;
+  font-family: "Manrope Variable", "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+.appointments-page .appointments-hero {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid rgb(221 214 254 / 0.25);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 86% -15%, rgb(167 139 250 / 0.3), transparent 34%),
+    linear-gradient(112deg, #312e81 0%, #4c1d95 60%, #7c3aed 100%);
+  box-shadow: 0 28px 70px -42px rgb(76 29 149 / 0.7);
+}
+
+.appointments-page .appointments-hero::after {
+  content: "";
+  position: absolute;
+  width: 390px;
+  height: 390px;
+  right: -138px;
+  top: -245px;
+  z-index: -1;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 60px rgb(255 255 255 / 0.04),
+    0 0 0 120px rgb(255 255 255 / 0.025);
+}
+
+.appointments-page .appointments-hero h1 {
+  max-width: 18ch;
+  font-size: clamp(2.25rem, 4vw, 3.75rem);
+  font-weight: 760;
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+}
+
+.appointments-page .appointments-hero p {
+  color: rgb(237 233 254 / 0.8);
+}
+
+.appointments-page .appointments-hero a {
+  min-height: 44px;
+  border-radius: 12px;
+}
+
+.appointments-page .appointment-metric,
+.appointments-page .appointments-list-surface,
+.appointments-page .appointment-card,
+.appointments-page .appointments-empty {
+  border-color: #ddd6fe;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 22px 55px -42px rgb(76 29 149 / 0.48);
+}
+
+.appointments-page .appointment-metric {
+  min-height: 142px;
+}
+
+.appointments-page .appointment-metric > div > span {
+  border-radius: 12px;
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.appointments-page .appointment-metric p:first-child {
+  color: #6b5b95;
+  letter-spacing: 0.08em;
+}
+
+.appointments-page .appointment-metric p:nth-child(2) {
+  color: #312e81;
+}
+
+.appointments-page .appointments-list-surface {
+  padding: 20px;
+}
+
+.appointments-page .appointments-tabs {
+  min-height: 48px;
+  max-width: 100%;
+  border: 1px solid #ddd6fe;
+  border-radius: 14px;
+  background: #f5f3ff;
+}
+
+.appointments-page .appointments-tabs button {
+  min-height: 38px;
+  border-radius: 10px;
+  color: #6b5b95;
+}
+
+.appointments-page .appointments-tabs button[data-state="active"] {
+  color: #4c1d95;
+  box-shadow: 0 8px 24px -18px rgb(76 29 149 / 0.6);
+}
+
+.appointments-page .appointments-grid,
+.appointments-page .appointments-skeleton-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.appointments-page .appointments-skeleton-grid > div {
+  border-color: #ddd6fe;
+  border-radius: 16px;
+}
+
+.appointments-page .appointment-card {
+  min-height: 300px;
+  padding: 24px;
+  transform: none;
+}
+
+.appointments-page .appointment-card:hover {
+  transform: translateY(-3px);
+  border-color: #c4b5fd;
+  box-shadow: 0 26px 60px -40px rgb(76 29 149 / 0.58);
+}
+
+.appointments-page .appointment-card > div:first-of-type {
+  height: 72px;
+  background: #f5f3ff;
+  opacity: 1;
+}
+
+.appointments-page .appointment-card > div:nth-of-type(2) {
+  display: none;
+}
+
+.appointments-page .appointment-card h3 {
+  color: #312e81;
+  font-size: 1.125rem;
+  font-weight: 760;
+}
+
+.appointments-page .appointment-card .appointment-mode {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.appointments-page .appointment-card button {
+  min-height: 44px;
+}
+
+.appointments-page .appointment-card button[class*="from-violet"],
+.appointments-page .appointment-card div[class*="from-primary"] {
+  background: #7c3aed;
+  box-shadow: none;
+}
+
+.appointments-page .appointments-empty {
+  min-height: 320px;
+  justify-content: center;
+  border-style: solid;
+}
+
+.appointments-page :focus-visible {
+  outline: 3px solid rgb(196 181 253 / 0.7);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .appointments-page header {
+    padding-inline: 16px;
+    padding-top: 20px;
+  }
+
+  .appointments-page .appointments-hero {
+    min-height: 0;
+    padding: 22px 20px;
+  }
+
+  .appointments-page .appointments-hero h1 {
+    font-size: 2rem;
+    line-height: 1.08;
+  }
+
+  .appointments-page main {
+    padding-inline: 16px;
+  }
+
+  .appointments-page .appointments-list-surface {
+    padding: 16px;
+  }
+
+  .appointments-page .appointments-grid,
+  .appointments-page .appointments-skeleton-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .appointments-page .appointment-card {
+    min-height: 0;
+    padding: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .appointments-page *,
+  .appointments-page *::before,
+  .appointments-page *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

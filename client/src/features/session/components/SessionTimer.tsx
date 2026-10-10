@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 interface SessionTimerProps {
-  startTime?: string;
+  elapsedSeconds?: number;
+  activeStartedAt?: string;
+  purchasedDurationSeconds?: number;
   isActive?: boolean;
 }
 
@@ -18,24 +20,41 @@ const formatDuration = (totalSeconds: number): string => {
   return `${pad(minutes)}:${pad(seconds)}`;
 };
 
-export function SessionTimer({ startTime, isActive = false }: SessionTimerProps) {
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+export function SessionTimer({
+  elapsedSeconds = 0,
+  activeStartedAt,
+  purchasedDurationSeconds,
+  isActive = false,
+}: SessionTimerProps) {
+  const [displaySeconds, setDisplaySeconds] = useState(elapsedSeconds);
   const intervalRef = useRef<number | null>(null);
 
   const calculateInitialElapsed = useCallback(() => {
-    if (!startTime) return 0;
-    const start = new Date(startTime);
-    const now = new Date();
-    return Math.floor((now.getTime() - start.getTime()) / 1000);
-  }, [startTime]);
+    if (!isActive || !activeStartedAt) {
+      return elapsedSeconds;
+    }
+
+    const activeStartedAtDate = new Date(activeStartedAt);
+    const liveDelta = Math.max(
+      0,
+      Math.floor((Date.now() - activeStartedAtDate.getTime()) / 1000),
+    );
+    const total = elapsedSeconds + liveDelta;
+
+    if (typeof purchasedDurationSeconds === "number") {
+      return Math.min(total, purchasedDurationSeconds);
+    }
+
+    return total;
+  }, [activeStartedAt, elapsedSeconds, isActive, purchasedDurationSeconds]);
 
   const startTimer = useCallback(() => {
     if (intervalRef.current) return;
 
-    setElapsedSeconds(calculateInitialElapsed());
+    setDisplaySeconds(calculateInitialElapsed());
 
     intervalRef.current = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
+      setDisplaySeconds(calculateInitialElapsed());
     }, 1000);
   }, [calculateInitialElapsed]);
 
@@ -51,15 +70,20 @@ export function SessionTimer({ startTime, isActive = false }: SessionTimerProps)
       startTimer();
     } else {
       stopTimer();
+      setDisplaySeconds(calculateInitialElapsed());
     }
 
     return () => stopTimer();
-  }, [isActive, startTimer, stopTimer]);
+  }, [calculateInitialElapsed, isActive, startTimer, stopTimer]);
+
+  useEffect(() => {
+    setDisplaySeconds(calculateInitialElapsed());
+  }, [calculateInitialElapsed]);
 
   return (
-    <div className="flex items-center gap-2 font-mono text-lg">
-      <span className="text-muted-foreground">Session:</span>
-      <span className="font-semibold">{formatDuration(elapsedSeconds)}</span>
+    <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/70 px-3 py-1.5 font-mono text-sm text-white shadow-lg backdrop-blur">
+      <span className="text-white/65">Session</span>
+      <span className="font-semibold tracking-wide">{formatDuration(displaySeconds)}</span>
     </div>
   );
 }

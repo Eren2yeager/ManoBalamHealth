@@ -1,12 +1,12 @@
-import { Types } from "mongoose";
 import { SessionModel } from "./session.model";
 import { AppointmentModel } from "@/modules/appointment/appointment.model";
 import { PsychologistModel } from "@/modules/psychologist/psychologist.model";
-import { UserModel } from "@/modules/user/user.model";
 import { ApiError } from "@/utils/ApiError";
 import { StatusCodes } from "@/constants/statusCodes.constant";
 import { ErrorCodes } from "@/constants/errorCodes.constant";
 import { env } from "@/config/env";
+import redis from "@/config/redis";
+import { sessionLifecycleService } from "./sessionLifecycle.service";
 import {
   GetSessionResponse,
   UpdateSessionNotesRequest,
@@ -45,7 +45,11 @@ class SessionService {
     }
 
     // Check if appointment is confirmed
-    if (appointment.status !== "confirmed" && appointment.status !== "in_progress") {
+    if (
+      appointment.status !== "confirmed" &&
+      appointment.status !== "in_progress" &&
+      appointment.status !== "completed"
+    ) {
       throw new ApiError(StatusCodes.FORBIDDEN, ErrorCodes.FORBIDDEN_ROLE, "Session is not available for this appointment");
     }
 
@@ -59,7 +63,14 @@ class SessionService {
         roomId: `room-${appointment._id.toString()}`,
         mode: appointment.mode,
         status: "not_started",
+        durationSeconds: 0,
       });
+    }
+
+    await sessionLifecycleService.reconcileSession(session._id.toString(), null);
+    session = await SessionModel.findById(session._id);
+    if (!session) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Session not found");
     }
 
     // Prepare ICE servers from env
@@ -72,6 +83,18 @@ class SessionService {
       },
     ];
 
+    const patientUserId = apptAny.patientId._id.toString();
+    const psychologistUserId = apptAny.psychologistId.userId._id.toString();
+    const [patientSocketCount, psychologistSocketCount] = await Promise.all([
+      redis.scard(`session:${session._id.toString()}:user:${patientUserId}:sockets`),
+      redis.scard(`session:${session._id.toString()}:user:${psychologistUserId}:sockets`),
+    ]);
+    const currentDurationSeconds = sessionLifecycleService.getElapsedSeconds(
+      session,
+      new Date(),
+      session.purchasedDurationSeconds,
+    );
+
     // Build response
     return {
       sessionId: session._id.toString(),
@@ -80,6 +103,20 @@ class SessionService {
       roomId: session.roomId,
       status: session.status,
       startedAt: session.startedAt?.toISOString(),
+      activeTimingStartedAt: session.activeTimingStartedAt?.toISOString(),
+      endedAt: session.endedAt?.toISOString(),
+      durationSeconds: currentDurationSeconds,
+      purchasedDurationSeconds: session.purchasedDurationSeconds ?? 0,
+      remainingSeconds: Math.max(
+        0,
+        (session.purchasedDurationSeconds ?? 0) - currentDurationSeconds,
+      ),
+      participants: {
+        patientUserId,
+        psychologistUserId,
+        patientOnline: patientSocketCount > 0,
+        psychologistOnline: psychologistSocketCount > 0,
+      },
       iceServers,
     };
   }

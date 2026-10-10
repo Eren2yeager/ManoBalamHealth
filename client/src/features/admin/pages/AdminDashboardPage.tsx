@@ -189,7 +189,7 @@ export function AdminDashboardPage() {
     return (
       <DashboardLayout>
         <div className="grid min-h-[60vh] place-items-center">
-          <Card className="max-w-xl rounded-3xl border-rose-100">
+          <Card className="max-w-xl rounded-3xl">
             <CardContent className="p-9 text-center">
               <AlertCircle className="mx-auto size-12 text-rose-500" />
               <h2 className="mt-4 text-xl font-black">Dashboard data could not be loaded</h2>

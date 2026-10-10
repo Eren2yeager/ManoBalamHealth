@@ -6,6 +6,15 @@ import { setRulesSchema, getSlotsSchema } from "./availability.validation";
 
 const router = Router();
 
+router.get(
+  "/me/rules",
+  requireAuth,
+  requireActiveUser,
+  requireRole("psychologist"),
+  requireApprovedPsychologist,
+  availabilityController.getRules
+);
+
 router.patch(
   "/me/rules",
   requireAuth,

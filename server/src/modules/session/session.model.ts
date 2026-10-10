@@ -5,7 +5,9 @@ export interface ISession extends Document {
   roomId: string;
   mode: "chat" | "audio" | "video";
   status: "not_started" | "active" | "ended";
+  purchasedDurationSeconds?: number;
   startedAt?: Date;
+  activeTimingStartedAt?: Date;
   endedAt?: Date;
   durationSeconds?: number;
   psychologistNotes?: string;
@@ -18,7 +20,9 @@ const sessionSchema = new Schema<ISession>(
     roomId: { type: String, required: true, unique: true },
     mode: { type: String, enum: ["chat", "audio", "video"], required: true },
     status: { type: String, enum: ["not_started", "active", "ended"], default: "not_started" },
+    purchasedDurationSeconds: { type: Number },
     startedAt: { type: Date },
+    activeTimingStartedAt: { type: Date },
     endedAt: { type: Date },
     durationSeconds: { type: Number },
     psychologistNotes: { type: String },

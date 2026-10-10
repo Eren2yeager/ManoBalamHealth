@@ -1,9 +1,9 @@
 import { Server, Socket } from "socket.io";
-import { SocketEvents } from "../events";
 import { MessageModel } from "@/modules/chat/message.model";
 import { SessionModel } from "@/modules/session/session.model";
 import { AppointmentModel } from "@/modules/appointment/appointment.model";
 import { PsychologistModel } from "@/modules/psychologist/psychologist.model";
+import { sessionLifecycleService } from "@/modules/session/sessionLifecycle.service";
 
 interface AuthenticatedSocket extends Socket {
   user?: {
@@ -35,7 +35,11 @@ export const handleChat = (io: Server, socket: AuthenticatedSocket) => {
   const userId = socket.user.userId;
 
   // Join a chat room (session room)
-  const handleJoinRoom = async (sessionId: string) => {
+  const handleJoinRoom = async (payload: string | { sessionId: string }) => {
+    const sessionId =
+      typeof payload === "string" ? payload : payload?.sessionId;
+    if (!sessionId) return;
+
     // Verify that user has access to this session
     const session = await SessionModel.findById(sessionId).populate("appointmentId");
     if (!session) return;
@@ -63,6 +67,7 @@ export const handleChat = (io: Server, socket: AuthenticatedSocket) => {
     // Verify session
     const session = await SessionModel.findById(sessionId).populate("appointmentId");
     if (!session) return;
+    if (session.status === "ended") return;
 
     const appointment = session.appointmentId;
     if (!appointment) return;
@@ -70,6 +75,7 @@ export const handleChat = (io: Server, socket: AuthenticatedSocket) => {
     // Check user is participant
     const isParticipant = await isUserParticipant(userId, appointment._id);
     if (!isParticipant) return;
+    if (!(await sessionLifecycleService.canUseLiveSessionFeatures(sessionId))) return;
 
     // Create message
     const message = await MessageModel.create({
@@ -80,13 +86,31 @@ export const handleChat = (io: Server, socket: AuthenticatedSocket) => {
     });
 
     // Emit to room
-    io.to(`session:${sessionId}`).emit(SocketEvents.MESSAGE, {
-      id: message._id.toString(),
-      senderId: userId,
-      content,
-      attachmentUrl,
-      sentAt: message.sentAt.toISOString(),
+    io.to(`session:${sessionId}`).emit("chat:message", {
+      message: {
+        id: message._id.toString(),
+        senderId: userId,
+        content,
+        attachmentUrl,
+        sentAt: message.sentAt.toISOString(),
+      },
     });
+  };
+
+  const handleTyping = async (data: { sessionId: string }) => {
+    const { sessionId } = data;
+    const session = await SessionModel.findById(sessionId).populate("appointmentId");
+    if (!session) return;
+    if (session.status === "ended") return;
+
+    const appointment = session.appointmentId;
+    if (!appointment) return;
+
+    const isParticipant = await isUserParticipant(userId, (appointment as any)._id);
+    if (!isParticipant) return;
+    if (!(await sessionLifecycleService.canUseLiveSessionFeatures(sessionId))) return;
+
+    socket.to(`session:${sessionId}`).emit("chat:typing", { userId });
   };
 
   // Handle mark message as read
@@ -99,7 +123,7 @@ export const handleChat = (io: Server, socket: AuthenticatedSocket) => {
     // Emit read event to room
     const message = await MessageModel.findById(messageId);
     if (message) {
-      io.to(`session:${message.sessionId}`).emit(SocketEvents.MESSAGE_READ, {
+      io.to(`session:${message.sessionId}`).emit("chat:read", {
         messageId,
         readAt: new Date().toISOString(),
       });
@@ -107,7 +131,10 @@ export const handleChat = (io: Server, socket: AuthenticatedSocket) => {
   };
 
   // Register event listeners
+  socket.on("chat:join", handleJoinRoom);
   socket.on("chat:join-room", handleJoinRoom);
+  socket.on("chat:message", handleSendMessage);
   socket.on("chat:send-message", handleSendMessage);
+  socket.on("chat:typing", handleTyping);
   socket.on("chat:message-read", handleMessageRead);
 };

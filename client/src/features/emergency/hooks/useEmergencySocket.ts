@@ -1,120 +1,205 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEmergencyStore } from "../store/emergencyStore";
 import { connectSocket } from "@/lib/socket";
 import { useUserStore } from "@/stores/userStore";
-import { useGeoCountry } from "@/hooks/useGeoCountry";
 import type {
   EmergencyIncomingPayload,
-  EmergencyMatchedPayload,
-  EmergencyAssignedPayload,
+  EmergencyAcceptPayload,
+  EmergencyAlreadyTakenPayload,
 } from "../types/emergency.types";
 
-/**
- * Matches socket event contracts from FRONTEND_PLAN.md § 6.4 exactly.
- *
- * Patient flow:
- *   emit  "emergency:request"       { patientId, concern, country }
- *   on    "emergency:matched"       { psychologistId, sessionId }  → navigate to /session/:sessionId
- *
- * Psychologist flow:
- *   on    "emergency:incoming"      { patientId, concern, requestId }
- *   emit  "emergency:accept"        { requestId }
- *   on    "emergency:assigned"      { sessionId }                  → navigate to /session/:sessionId
- *   on    "emergency:already_taken" { requestId }
- */
+const TIMEOUT_SECONDS = 60;
+
 export function useEmergencySocket() {
   const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
-  const { detectedCountryCode } = useGeoCountry();
 
   const {
+    phase,
+    requestSentAt,
+    countdownSeconds,
+    setPhase,
+    setCurrentRequestId,
+    setConcernDescription,
+    setRequestSentAt,
+    setCountdownSeconds,
+    setMatchedPsychologist,
     setIncomingRequest,
+    addIgnoredRequestId,
     setRequestAlreadyTaken,
-    setRequestTimedOut,
-    setIsWaiting,
     reset,
+    ignoredRequestIds,
+    incomingRequest,
   } = useEmergencyStore();
+
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Restore countdown if request was already sent
+  useEffect(() => {
+    if (phase === "waiting" && requestSentAt) {
+      const elapsed = Math.floor(
+        (Date.now() - requestSentAt) / 1000
+      );
+      const remaining = Math.max(0, TIMEOUT_SECONDS - elapsed);
+      setCountdownSeconds(remaining);
+    }
+  }, [phase, requestSentAt, setCountdownSeconds]);
+
+  // Handle countdown timer
+  useEffect(() => {
+    if (phase === "waiting" && countdownSeconds > 0) {
+      timerRef.current = setInterval(() => {
+        setCountdownSeconds((prev) => {
+          if (prev <= 1) {
+            setPhase("idle");
+            reset();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [phase, countdownSeconds, setCountdownSeconds, setPhase, reset]);
 
   useEffect(() => {
     const socket = connectSocket();
 
-    // ── Patient listeners ────────────────────────────────────────────────
-    const onMatched = (payload: EmergencyMatchedPayload) => {
-      setIsWaiting(false);
-      navigate(`/session/${payload.sessionId}`);
+    // ── Patient listeners ───────────────────────────────────────────
+    const onAccept = (payload: EmergencyAcceptPayload) => {
+      if (phase === "waiting" || phase === "requesting") {
+        setMatchedPsychologist({
+          id: payload.psychologist.id,
+          userId: payload.psychologist.userId,
+          name: payload.psychologist.name,
+          avatarUrl: payload.psychologist.avatarUrl,
+          specialization: payload.psychologist.specialization,
+          languages: payload.psychologist.languages,
+          experienceYears: payload.psychologist.experienceYears,
+          consultationFee: payload.psychologist.consultationFee,
+          rating: payload.psychologist.rating,
+          bio: payload.psychologist.bio,
+          isOnline: payload.psychologist.isOnline,
+          appointmentId: payload.appointmentId,
+        });
+        setPhase("matched_waiting_confirm");
+      }
     };
 
-    // ── Psychologist listeners ───────────────────────────────────────────
+    // ── Psychologist listeners ──────────────────────────────────────
     const onIncoming = (payload: EmergencyIncomingPayload) => {
-      setIncomingRequest({
-        requestId: payload.requestId,
-        patientId: payload.patientId,
-        concern: payload.concern,
-        receivedAt: new Date().toISOString(),
-      });
+      if (
+        !incomingRequest &&
+        !ignoredRequestIds.includes(payload.requestId)
+      ) {
+        setIncomingRequest({
+          requestId: payload.requestId,
+          patientId: payload.patient.id,
+          patientName: payload.patient.name,
+          patientAvatarUrl: payload.patient.avatarUrl,
+          concern: payload.concernDescription,
+          concernDescription: payload.concernDescription,
+          receivedAt: new Date().toISOString(),
+        });
+      }
     };
 
-    const onAssigned = (payload: EmergencyAssignedPayload) => {
-      navigate(`/session/${payload.sessionId}`);
+    const onAssigned = (payload: { appointmentId: string }) => {
+      navigate(`/session/${payload.appointmentId}`);
     };
 
-    const onAlreadyTaken = () => {
+    const onAlreadyTaken = (_payload: EmergencyAlreadyTakenPayload) => {
       setIncomingRequest(null);
       setRequestAlreadyTaken(true);
     };
 
-    socket.on("emergency:matched", onMatched);
-    socket.on("emergency:incoming", onIncoming);
+    socket.on("emergency:accept", onAccept);
+    socket.on("emergency:request", onIncoming);
     socket.on("emergency:assigned", onAssigned);
-    socket.on("emergency:already_taken", onAlreadyTaken);
+    socket.on("emergency:already-taken", onAlreadyTaken);
 
     return () => {
-      socket.off("emergency:matched", onMatched);
-      socket.off("emergency:incoming", onIncoming);
+      socket.off("emergency:accept", onAccept);
+      socket.off("emergency:request", onIncoming);
       socket.off("emergency:assigned", onAssigned);
-      socket.off("emergency:already_taken", onAlreadyTaken);
+      socket.off("emergency:already-taken", onAlreadyTaken);
     };
-  }, [setIncomingRequest, setRequestAlreadyTaken, setIsWaiting, navigate]);
+  }, [
+    user,
+    phase,
+    incomingRequest,
+    ignoredRequestIds,
+    setPhase,
+    setMatchedPsychologist,
+    setIncomingRequest,
+    addIgnoredRequestId,
+    setRequestAlreadyTaken,
+    navigate,
+  ]);
 
   /**
    * Patient: emit emergency:request via socket.
-   * Plan § 6.4: payload is { patientId, concern, country }
    */
   const requestEmergency = useCallback(
-    (concern: string) => {
+    (concernDescription: string) => {
       if (!user) return;
       const socket = connectSocket();
-      setIsWaiting(true);
-      setRequestTimedOut(false);
-      setRequestAlreadyTaken(false);
+      const requestId = crypto.randomUUID();
+
+      setConcernDescription(concernDescription.trim() || null);
+      setCurrentRequestId(requestId);
+      setRequestSentAt(Date.now());
+      setCountdownSeconds(TIMEOUT_SECONDS);
+      setPhase("waiting");
+
       socket.emit("emergency:request", {
-        patientId: user.id,
-        concern,
-        country: detectedCountryCode ?? "",
+        requestId,
+        concernDescription: concernDescription.trim() || undefined,
       });
     },
-    [user, detectedCountryCode, setIsWaiting, setRequestTimedOut, setRequestAlreadyTaken]
+    [user, setConcernDescription, setCurrentRequestId, setRequestSentAt, setCountdownSeconds, setPhase]
   );
 
   /**
    * Psychologist: emit emergency:accept via socket.
-   * Plan § 6.4: payload is { requestId }
    */
-  const acceptEmergency = useCallback((requestId: string) => {
-    const socket = connectSocket();
-    socket.emit("emergency:accept", { requestId });
-  }, []);
+  const acceptEmergency = useCallback(
+    (requestId: string) => {
+      const socket = connectSocket();
+      socket.emit("emergency:accept", { requestId });
+    },
+    []
+  );
 
   /**
-   * Patient: client-side timeout path — no server event, just clear local state.
-   * Plan § 6.4: "Frontend must also handle a client-side timeout (e.g. 60s with no
-   * emergency:matched received) — this is a frontend-only concern, not a separate backend event"
+   * Patient: Cancel the current request
    */
   const cancelRequest = useCallback(() => {
-    setIsWaiting(false);
-    setRequestTimedOut(true);
-  }, [setIsWaiting, setRequestTimedOut]);
+    if (timerRef.current) clearInterval(timerRef.current);
+    reset();
+  }, [reset]);
 
-  return { requestEmergency, acceptEmergency, cancelRequest, reset };
+  /**
+   * Patient: Confirm the matched session
+   */
+  const confirmSession = useCallback(() => {
+    const store = useEmergencyStore.getState();
+    if (store.matchedPsychologist) {
+      navigate(
+        `/session/${store.matchedPsychologist.appointmentId}`
+      );
+    }
+  }, [navigate]);
+
+  return {
+    requestEmergency,
+    acceptEmergency,
+    cancelRequest,
+    confirmSession,
+    reset,
+  };
 }

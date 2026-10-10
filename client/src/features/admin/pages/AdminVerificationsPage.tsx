@@ -7,7 +7,7 @@ import { PsychologistVerificationCard } from "../components/PsychologistVerifica
 import { getPendingPsychologists, verifyPsychologist } from "../api/admin.api";
 import type { PendingPsychologistItem, VerifyPsychologistDto } from "../types/admin.types";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { CheckCircle2, AlertCircle, RefreshCw, Sparkles } from "lucide-react";
 
 export function AdminVerificationsPage() {
   const [psychologists, setPsychologists] = useState<PendingPsychologistItem[]>([]);
@@ -55,10 +55,13 @@ export function AdminVerificationsPage() {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
+        <div className="space-y-6">
+          <Skeleton className="h-40 rounded-[2rem]" />
+          <div className="grid gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-80 rounded-[2rem]" />
+            ))}
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -67,55 +70,85 @@ export function AdminVerificationsPage() {
   if (error) {
     return (
       <DashboardLayout>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
-              <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
-              <p className="text-muted-foreground mb-6">{error}</p>
-              <Button onClick={fetchPsychologists}>
+        <div className="grid min-h-[60vh] place-items-center">
+          <Card className="max-w-xl rounded-[2rem]">
+            <CardContent className="p-9 text-center">
+              <AlertCircle className="mx-auto size-12 text-rose-500" />
+              <h2 className="mt-4 text-xl font-black text-slate-950">
+                Something went wrong
+              </h2>
+              <p className="mt-2 text-sm text-slate-500">{error}</p>
+              <Button onClick={fetchPsychologists} className="mt-6 h-11 rounded-xl">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Try Again
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Psychologist Verifications</h1>
-        <Button variant="outline" onClick={fetchPsychologists} disabled={isLoading}>
-          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
-      </div>
-
-      {psychologists.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-12">
-              <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No pending verifications</h3>
-              <p className="text-muted-foreground">Great job keeping up with new signups!</p>
+      <div className="space-y-6">
+        {/* Hero Section */}
+        <section className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-violet-600 via-primary to-indigo-700 p-7 text-white shadow-xl md:p-10">
+          <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 left-1/3 size-64 rounded-full bg-white/10 blur-3xl" />
+          
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="mb-4 flex items-center gap-2 text-sm font-bold text-violet-100">
+                <span className="grid size-9 place-items-center rounded-xl bg-white/15">
+                  <Sparkles className="size-4" />
+                </span>
+                Psychologist Reviews
+              </div>
+              <h1 className="text-3xl font-black tracking-[-0.035em] md:text-4xl">
+                Pending Verifications
+              </h1>
+              <p className="mt-3 max-w-lg text-sm leading-relaxed text-violet-100/80">
+                Review and verify new psychologist applications to ensure platform quality.
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {psychologists.map((psych) => (
-            <PsychologistVerificationCard
-              key={psych.id}
-              psychologist={psych}
-              onVerify={handleVerify}
-              isProcessing={isProcessing}
-            />
-          ))}
-        </div>
-      )}
+
+            <Button
+              onClick={fetchPsychologists}
+              className="h-11 rounded-xl bg-white px-6 font-bold text-primary hover:bg-violet-50"
+            >
+              <RefreshCw className="mr-2 size-4" />
+              Refresh
+            </Button>
+          </div>
+        </section>
+
+        {/* Content Section */}
+        {psychologists.length === 0 ? (
+          <Card className="rounded-[2rem] border border-slate-100 bg-white shadow-sm">
+            <CardContent className="p-12 text-center">
+              <CheckCircle2 className="mx-auto size-16 text-emerald-500" />
+              <h3 className="mt-4 text-lg font-black text-slate-900">
+                No pending verifications
+              </h3>
+              <p className="mt-2 text-sm text-slate-500">
+                Great job keeping up with new signups! All applications have been reviewed.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {psychologists.map((psychologist) => (
+              <PsychologistVerificationCard
+                key={psychologist.id}
+                psychologist={psychologist}
+                onVerify={handleVerify}
+                isProcessing={isProcessing}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </DashboardLayout>
   );
 }

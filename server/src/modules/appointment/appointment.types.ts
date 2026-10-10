@@ -38,7 +38,16 @@ export interface AppointmentListItemResponse {
   mode: string;
   status: string;
   scheduledAt: string;
+  scheduledEndsAt: string;
+  sessionAccessStartsAt: string;
+  purchasedDurationSeconds: number;
   allocationMode: string;
+  hasFeedback: boolean;
+  feedback?: {
+    rating: number;
+    comment?: string;
+    createdAt: string;
+  };
 }
 
 export interface AppointmentDetailResponse {
@@ -48,9 +57,18 @@ export interface AppointmentDetailResponse {
   mode: string;
   status: string;
   scheduledAt: string;
+  scheduledEndsAt: string;
+  sessionAccessStartsAt: string;
+  purchasedDurationSeconds: number;
   concernDescription?: string;
   allocationMode: string;
   payment: { status: string; amount: number; currency: string } | null;
+  hasFeedback: boolean;
+  feedback?: {
+    rating: number;
+    comment?: string;
+    createdAt: string;
+  };
 }
 
 export interface CancelAppointmentRequest {

@@ -1,50 +1,84 @@
 import { create } from "zustand";
-import type { IncomingEmergencyRequest } from "../types/emergency.types";
+import { persist, createJSONStorage } from "zustand/middleware";
+import type {
+  IncomingEmergencyRequest,
+  EmergencyPhase,
+  MatchedPsychologist,
+} from "../types/emergency.types";
 
 /**
  * Emergency store — tracks UI state driven entirely by socket events.
- * No REST API involvement; the emergency flow is socket-only per FRONTEND_PLAN.md § 6.4.
+ * Persisted to localStorage so state survives refreshes.
  */
 interface EmergencyState {
-  /** Patient side: whether we are currently waiting for a match */
-  isWaiting: boolean;
-  /** Patient side: countdown seconds remaining (starts at 60) */
+  // Patient side
+  phase: EmergencyPhase;
+  currentRequestId: string | null;
+  concernDescription: string | null;
+  requestSentAt: number | null; // timestamp
   countdownSeconds: number;
-  /** Patient side: timed out with no match */
-  requestTimedOut: boolean;
+  matchedPsychologist: MatchedPsychologist | null;
 
-  /** Psychologist side: pending incoming request (if any) */
+  // Psychologist side
   incomingRequest: IncomingEmergencyRequest | null;
-  /** Psychologist side: request was already taken by another psychologist */
+  ignoredRequestIds: string[];
   requestAlreadyTaken: boolean;
 
-  setIsWaiting: (waiting: boolean) => void;
+  // Actions
+  setPhase: (phase: EmergencyPhase) => void;
+  setCurrentRequestId: (id: string | null) => void;
+  setConcernDescription: (description: string | null) => void;
+  setRequestSentAt: (time: number | null) => void;
   setCountdownSeconds: (seconds: number | ((prev: number) => number)) => void;
-  setRequestTimedOut: (timedOut: boolean) => void;
+  setMatchedPsychologist: (psychologist: MatchedPsychologist | null) => void;
   setIncomingRequest: (request: IncomingEmergencyRequest | null) => void;
+  addIgnoredRequestId: (id: string) => void;
   setRequestAlreadyTaken: (taken: boolean) => void;
   reset: () => void;
 }
 
 const initialState = {
-  isWaiting: false,
+  phase: "idle" as EmergencyPhase,
+  currentRequestId: null,
+  concernDescription: null,
+  requestSentAt: null,
   countdownSeconds: 60,
-  requestTimedOut: false,
+  matchedPsychologist: null,
   incomingRequest: null,
+  ignoredRequestIds: [],
   requestAlreadyTaken: false,
 };
 
-export const useEmergencyStore = create<EmergencyState>((set) => ({
-  ...initialState,
+export const useEmergencyStore = create<EmergencyState>()(
+  persist(
+    (set) => ({
+      ...initialState,
 
-  setIsWaiting: (waiting) => set({ isWaiting: waiting }),
-  setCountdownSeconds: (seconds) =>
-    set((state) => ({
-      countdownSeconds:
-        typeof seconds === "function" ? seconds(state.countdownSeconds) : seconds,
-    })),
-  setRequestTimedOut: (timedOut) => set({ requestTimedOut: timedOut }),
-  setIncomingRequest: (request) => set({ incomingRequest: request }),
-  setRequestAlreadyTaken: (taken) => set({ requestAlreadyTaken: taken }),
-  reset: () => set(initialState),
-}));
+      setPhase: (phase) => set({ phase }),
+      setCurrentRequestId: (id) => set({ currentRequestId: id }),
+      setConcernDescription: (description) =>
+        set({ concernDescription: description }),
+      setRequestSentAt: (time) => set({ requestSentAt: time }),
+      setCountdownSeconds: (seconds) =>
+        set((state) => ({
+          countdownSeconds:
+            typeof seconds === "function"
+              ? seconds(state.countdownSeconds)
+              : seconds,
+        })),
+      setMatchedPsychologist: (psychologist) =>
+        set({ matchedPsychologist: psychologist }),
+      setIncomingRequest: (request) => set({ incomingRequest: request }),
+      addIgnoredRequestId: (id) =>
+        set((state) => ({
+          ignoredRequestIds: [...state.ignoredRequestIds, id],
+        })),
+      setRequestAlreadyTaken: (taken) => set({ requestAlreadyTaken: taken }),
+      reset: () => set(initialState),
+    }),
+    {
+      name: "emergency-storage",
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+);

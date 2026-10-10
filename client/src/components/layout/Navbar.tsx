@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowRight, ChevronDown, HeartHandshake, Menu, Sparkles, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,6 @@ import { EmergencyRequestButton } from "@/features/emergency/components/Emergenc
 import { CrisisBanner } from "@/features/crisis/components/CrisisBanner";
 import { getCrisisResources } from "@/features/crisis/api/crisis.api";
 import { useGeoCountry } from "@/hooks/useGeoCountry";
-import { logout as logoutApi } from "@/features/auth/api/auth.api";
-import { toast } from "sonner";
 import type { CrisisResource } from "@/features/crisis/types/crisis.types";
 import type { Role } from "@/types/global.types";
 import { BrandLogo } from "@/components/brand/BrandLogo";
@@ -220,9 +218,8 @@ function MobilePublicNavigation({
 }
 
 export function Navbar() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const { detectedCountryCode } = useGeoCountry();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -254,17 +251,6 @@ export function Navbar() {
       }
     }
     setCrisisBannerVisible(true);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logoutApi();
-    } catch {
-      // Local authentication must still be cleared if the server session expired.
-    }
-    logout();
-    navigate("/");
-    toast.success("Logged out successfully");
   };
 
   const homePath = user ? roleHome[user.role] : "/";
@@ -307,7 +293,6 @@ export function Navbar() {
                   <Avatar className="size-8">{user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}<AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">{user.name.charAt(0).toUpperCase()}</AvatarFallback></Avatar>
                   <span className="max-w-28 truncate text-sm font-semibold text-slate-700">{user.name}</span>
                 </Link>
-                <Button variant="outline" className="hidden h-10 rounded-xl px-4 font-semibold md:inline-flex" onClick={handleLogout}>Log out</Button>
               </>
             ) : (
               <>
@@ -327,7 +312,6 @@ export function Navbar() {
                   {authenticatedLinks.map((item) => <Link key={item.to} to={item.to} onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-violet-50 hover:text-primary">{item.label}</Link>)}
                   <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-violet-50 hover:text-primary">Profile</Link>
                   {isPatient && <EmergencyRequestButton className="mt-2 w-full justify-center" />}
-                  <Button variant="outline" className="mt-2 w-full rounded-xl" onClick={handleLogout}>Log out</Button>
                 </nav>
               ) : (
                 <MobilePublicNavigation

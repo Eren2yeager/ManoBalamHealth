@@ -42,7 +42,7 @@ export function BrandLogo({
           <span
             className={cn(
               "hidden text-[10px] font-medium sm:block",
-              dark ? "text-slate-400" : "text-slate-500",
+              dark ? "text-white/70" : "text-slate-500",
             )}
           >
             Empowering your mind

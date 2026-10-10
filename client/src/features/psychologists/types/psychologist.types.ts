@@ -21,6 +21,7 @@ export interface PsychologistDetail extends PsychologistListItem {
   credentials?: PsychologistCredential[];
   missingFields?: string[];
   submittedAt?: string;
+  isAcceptingEmergency?: boolean;
 }
 
 export type PsychologistOnboardingStatus =

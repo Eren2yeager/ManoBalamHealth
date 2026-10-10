@@ -11,13 +11,13 @@ export function AssessmentProgress({
 
   return (
     <div className="mb-8">
-      <div className="flex justify-between text-sm text-muted-foreground mb-2">
+      <div className="flex justify-between text-sm font-semibold text-slate-700 mb-3">
         <span>Question {currentStep + 1} of {totalSteps}</span>
         <span>{percentage}%</span>
       </div>
-      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+      <div className="relative w-full h-3 bg-slate-100 rounded-[1.5rem] overflow-hidden">
         <div
-          className="h-full bg-primary transition-all duration-300"
+          className="h-full bg-gradient-to-r from-primary to-violet-600 transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>

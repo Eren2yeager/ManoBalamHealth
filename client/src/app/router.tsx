@@ -17,6 +17,7 @@ import { FAQPage } from "../features/public-site/pages/FAQPage";
 import { ContactPage } from "../features/public-site/pages/ContactPage";
 import { PublicNotFoundPage } from "../features/public-site/pages/PublicNotFoundPage";
 import { LegalPage } from "../features/public-site/pages/LegalPage";
+import { CrisisPage } from "../features/crisis/pages/CrisisPage";
 
 // Protected (all roles)
 import { HomePage } from "../features/shared/pages/HomePage";
@@ -30,8 +31,10 @@ import { SessionRoomPage } from "../features/session/pages/SessionRoomPage";
 import { FeedbackPage } from "../features/feedback/pages/FeedbackPage";
 import { AssessmentHubPage } from "../features/assessment/pages/AssessmentHubPage";
 import { AssessmentPage } from "../features/assessment/pages/AssessmentPage";
+import { AssessmentHistoryPage } from "../features/assessment/pages/AssessmentHistoryPage";
 import { EmergencyPage } from "../features/emergency/pages/EmergencyPage";
 import { EmergencySessionPage } from "../features/emergency/pages/EmergencySessionPage";
+import { EmergencyNotification } from "../features/emergency/components/EmergencyNotification";
 
 // Psychologist-only
 import { PsychologistDashboard } from "../features/psychologists/pages/PsychologistDashboard";
@@ -51,6 +54,16 @@ import { GuestRoute } from "../routes/GuestRoute";
 import { NavbarLayout } from "../components/layout/NavbarLayout";
 import { RouteErrorPage } from "../components/feedback/RouteErrorPage";
 import { ApprovedPsychologistRoute } from "../routes/ApprovedPsychologistRoute";
+import { useUserStore } from "@/stores/userStore";
+import { useEmergencySocket } from "@/features/emergency/hooks/useEmergencySocket";
+
+function SessionSocketListener() {
+  const isAuthenticated = useUserStore((state) => state.isAuthenticated);
+  if (isAuthenticated) {
+    useEmergencySocket();
+  }
+  return null;
+}
 
 const router = createBrowserRouter([
   // ── Public (unauthenticated only) ────────────────────────────────────────
@@ -68,6 +81,7 @@ const router = createBrowserRouter([
       { path: "/faq", element: <FAQPage /> },
       { path: "/contact", element: <ContactPage /> },
       { path: "/legal/:document", element: <LegalPage /> },
+      { path: "/crisis", element: <CrisisPage /> },
       { path: "*", element: <PublicNotFoundPage /> },
     ],
   },
@@ -116,17 +130,37 @@ const router = createBrowserRouter([
 
           // Assessment
           { path: "/assessment", element: <AssessmentHubPage /> },
+          { path: "/assessment/history", element: <AssessmentHistoryPage /> },
           { path: "/assessment/:type", element: <AssessmentPage /> },
           { path: "/assessment/:type/result", element: <AssessmentPage /> },
 
           // Emergency request screen
           { path: "/emergency", element: <EmergencyPage /> },
+          { path: "/crisis", element: <CrisisPage /> },
         ],
       },
 
       // Full-screen realtime rooms intentionally render without the app navbar.
-      { path: "/session/:appointmentId", element: <SessionRoomPage /> },
-      { path: "/emergency/session/:sessionId", element: <EmergencySessionPage /> },
+      { 
+        path: "/session/:appointmentId", 
+        element: (
+          <>
+            <SessionSocketListener />
+            <EmergencyNotification />
+            <SessionRoomPage />
+          </>
+        ) 
+      },
+      { 
+        path: "/emergency/session/:sessionId", 
+        element: (
+          <>
+            <SessionSocketListener />
+            <EmergencyNotification />
+            <EmergencySessionPage />
+          </>
+        ) 
+      },
     ],
   },
 
@@ -152,7 +186,16 @@ const router = createBrowserRouter([
       {
         element: <ApprovedPsychologistRoute />,
         children: [
-          { path: "/psychologist/session/:appointmentId", element: <SessionRoomPage /> },
+          { 
+            path: "/psychologist/session/:appointmentId", 
+            element: (
+              <>
+                <SessionSocketListener />
+                <EmergencyNotification />
+                <SessionRoomPage />
+              </>
+            ) 
+          },
         ],
       },
     ],

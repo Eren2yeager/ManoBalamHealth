@@ -290,7 +290,7 @@ export const ProfileForm = ({
         </div>
       </section>
 
-      <div className="sticky bottom-4 z-10 flex flex-col-reverse gap-3 rounded-2xl border border-violet-100 bg-white/90 p-3 shadow-2xl shadow-violet-200/50 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+      <div className=" bottom-4 z-10 flex flex-col-reverse gap-3 rounded-2xl border border-violet-100 bg-white/90 p-3 shadow-2xl shadow-violet-200/50 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
         <p className="px-2 text-xs font-semibold text-slate-500">
           {isDirty ? "You have unsaved changes." : "Everything is up to date."}
         </p>

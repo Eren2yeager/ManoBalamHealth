@@ -7,6 +7,7 @@ import {
   RotateCcw,
   Save,
   ShieldAlert,
+  ShieldCheck,
   UserRound,
 } from "lucide-react";
 import { AxiosError } from "axios";
@@ -30,6 +31,8 @@ interface ProfileFormProps {
   profile: UserProfile;
   onUpdated: (profile: UserProfile) => void;
   professional?: boolean;
+  admin?: boolean;
+  student?: boolean;
 }
 
 type FormState = {
@@ -54,6 +57,8 @@ export const ProfileForm = ({
   profile,
   onUpdated,
   professional = false,
+  admin = false,
+  student = false,
 }: ProfileFormProps) => {
   const setUser = useUserStore((state) => state.setUser);
   const [form, setForm] = useState<FormState>(() => toFormState(profile));
@@ -118,14 +123,17 @@ export const ProfileForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <section className="rounded-3xl border border-violet-100 bg-white p-5 shadow-sm sm:p-7">
+    <form onSubmit={handleSubmit} className={`${student ? "student-profile-form" : ""} space-y-6`}>
+      <section className={`${student ? "student-profile-form-section" : ""} animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm duration-500 sm:p-7`}>
         <SectionHeading
+          student={student}
           icon={UserRound}
-          eyebrow={professional ? "Account identity" : "Personal details"}
-          title={professional ? "Your personal account details" : "The basics about you"}
+          eyebrow={admin ? "Admin identity" : professional ? "Account identity" : "Personal details"}
+          title={admin ? "Your workspace identity" : professional ? "Your personal account details" : "The basics about you"}
           description={
-            professional
+            admin
+              ? "Keep the display name and timezone used across your admin workspace accurate."
+              : professional
               ? "These private account details are separate from the clinical information patients see on your public profile."
               : "Keep your account information accurate so care and reminders reach the right person."
           }
@@ -144,55 +152,61 @@ export const ProfileForm = ({
             />
           </label>
 
-          <label className="grid gap-2">
-            <Label htmlFor="age">Age</Label>
-            <Input
-              id="age"
-              type="number"
-              min={13}
-              max={120}
-              value={form.age}
-              onChange={(event) => update("age", event.target.value)}
-              placeholder="Your age"
-              className="h-12 rounded-xl border-slate-200 bg-slate-50/60 px-4"
-            />
-          </label>
+          {!admin && (
+            <>
+              <label className="grid gap-2">
+                <Label htmlFor="age">Age</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  min={13}
+                  max={120}
+                  value={form.age}
+                  onChange={(event) => update("age", event.target.value)}
+                  placeholder="Your age"
+                  className="h-12 rounded-xl border-slate-200 bg-slate-50/60 px-4"
+                />
+              </label>
 
-          <div className="grid gap-2">
-            <Label htmlFor="gender">Gender</Label>
-            <Select
-              value={form.gender || "not_set"}
-              onValueChange={(value) =>
-                update(
-                  "gender",
-                  value === "not_set"
-                    ? ""
-                    : (value as Exclude<FormState["gender"], "">),
-                )
-              }
-            >
-              <SelectTrigger
-                id="gender"
-                className="h-12 w-full rounded-xl border-slate-200 bg-slate-50/60 px-4"
-              >
-                <SelectValue placeholder="Select gender" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="not_set">Not specified</SelectItem>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-                <SelectItem value="prefer_not_to_say">
-                  Prefer not to say
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="grid gap-2">
+                <Label htmlFor="gender">Gender</Label>
+                <Select
+                  value={form.gender || "not_set"}
+                  onValueChange={(value) =>
+                    update(
+                      "gender",
+                      value === "not_set"
+                        ? ""
+                        : (value as Exclude<FormState["gender"], "">),
+                    )
+                  }
+                >
+                  <SelectTrigger
+                    id="gender"
+                    className="h-12 w-full rounded-xl border-slate-200 bg-slate-50/60 px-4"
+                  >
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="not_set">Not specified</SelectItem>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="prefer_not_to_say">
+                      Prefer not to say
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
-      <section className="rounded-3xl border border-rose-100 bg-white p-5 shadow-sm sm:p-7">
+      {!admin && (
+      <section className={`${student ? "student-profile-form-section student-profile-safety-section" : ""} animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-rose-100 bg-white p-5 shadow-sm delay-75 duration-500 sm:p-7`}>
         <SectionHeading
+          student={student}
           icon={HeartHandshake}
           eyebrow={professional ? "Personal safety" : "Safety contact"}
           title={
@@ -252,9 +266,32 @@ export const ProfileForm = ({
           </Button>
         )}
       </section>
+      )}
 
-      <section className="rounded-3xl border border-blue-100 bg-white p-5 shadow-sm sm:p-7">
+      {admin && (
+        <section className="animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm delay-75 duration-500 sm:p-7">
+          <SectionHeading
+            student={student}
+            icon={ShieldCheck}
+            eyebrow="Admin access"
+            title="Operational permissions"
+            description="Your admin role controls protected workspaces for verification, payouts, reports, crisis visibility, and account safety."
+            color="emerald"
+          />
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            {["Verification control", "Money workflows", "User safety"].map((item) => (
+              <div key={item} className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+                <p className="text-sm font-black text-emerald-900">{item}</p>
+                <p className="mt-1 text-xs leading-5 text-emerald-800/70">Protected admin-only access</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className={`${student ? "student-profile-form-section student-profile-timezone-section" : ""} animate-in fade-in slide-in-from-bottom-3 rounded-3xl border border-blue-100 bg-white p-5 shadow-sm delay-100 duration-500 sm:p-7`}>
         <SectionHeading
+          student={student}
           icon={Clock3}
           eyebrow="Local time"
           title="Timezone and scheduling"
@@ -290,7 +327,7 @@ export const ProfileForm = ({
         </div>
       </section>
 
-      <div className=" bottom-4 z-10 flex flex-col-reverse gap-3 rounded-2xl border border-violet-100 bg-white/90 p-3 shadow-2xl shadow-violet-200/50 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+      <div className={`${student ? "student-profile-savebar" : ""} bottom-4 z-10 flex flex-col-reverse gap-3 rounded-2xl border border-violet-100 bg-white/90 p-3 shadow-2xl shadow-violet-200/50 backdrop-blur sm:flex-row sm:items-center sm:justify-between`}>
         <p className="px-2 text-xs font-semibold text-slate-500">
           {isDirty ? "You have unsaved changes." : "Everything is up to date."}
         </p>
@@ -329,17 +366,20 @@ function SectionHeading({
   title,
   description,
   color = "violet",
+  student = false,
 }: {
   icon: typeof UserRound;
   eyebrow: string;
   title: string;
   description: string;
-  color?: "violet" | "rose" | "blue";
+  color?: "violet" | "rose" | "blue" | "emerald";
+  student?: boolean;
 }) {
   const colors = {
     violet: "bg-violet-100 text-violet-700",
     rose: "bg-rose-100 text-rose-700",
     blue: "bg-blue-100 text-blue-700",
+    emerald: "bg-emerald-100 text-emerald-700",
   };
 
   return (
@@ -350,7 +390,7 @@ function SectionHeading({
         <Icon className="size-5" />
       </span>
       <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">
+        <p className={`text-[11px] font-black text-slate-400 ${student ? "tracking-wide" : "uppercase tracking-[0.15em]"}`}>
           {eyebrow}
         </p>
         <h2 className="mt-1 text-xl font-black text-slate-950">{title}</h2>

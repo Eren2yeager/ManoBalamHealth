@@ -12,6 +12,8 @@ import assessmentRoutes from "@/modules/assessment/assessment.routes";
 import crisisRoutes from "@/modules/crisis/crisis.routes";
 import adminRoutes from "@/modules/admin/admin.routes";
 import contactRoutes from "@/modules/contact/contact.routes";
+import payoutDetailsRoutes from "@/modules/payout/payout-details.routes";
+import payoutRoutes from "@/modules/payout/payout.routes";
 
 const router = Router();
 
@@ -28,5 +30,7 @@ router.use("/assessments", assessmentRoutes);
 router.use("/crisis", crisisRoutes);
 router.use("/admin", adminRoutes);
 router.use("/contact", contactRoutes);
+router.use("/payout-details", payoutDetailsRoutes);
+router.use("/payouts", payoutRoutes);
 
 export default router;

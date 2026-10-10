@@ -6,6 +6,12 @@ import { createAppointmentSchema, getMyAppointmentsSchema, cancelAppointmentSche
 
 const router = Router();
 
+router.get(
+  "/booking-settings",
+  requireAuth,
+  appointmentController.getBookingSettings,
+);
+
 // Create appointment (patient only)
 router.post(
   "/",

@@ -13,6 +13,14 @@ export const processRefundSchema = z.object({
   amount: z.number().positive().optional(), // omit for full refund
 });
 
+export const updatePsychologistPrioritySchema = z.object({
+  bookingPriority: z.coerce.number().int().min(0).max(1000),
+});
+
+export const updateBookingSettingsSchema = z.object({
+  showScheduleSelection: z.boolean(),
+});
+
 export const getPsychologistsSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
@@ -33,4 +41,34 @@ export const getAppointmentsSchema = z.object({
       z.literal("no_show"),
     ])
     .optional(),
+});
+
+export const getUsersSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(25),
+  role: z.enum(["patient", "psychologist"]).optional(),
+  status: z.enum(["active", "inactive"]).optional(),
+  search: z.string().trim().min(1).max(100).optional(),
+});
+
+export const updateUserActivitySchema = z.object({
+  isActive: z.boolean(),
+  reason: z.string().trim().min(10).max(1000),
+});
+
+export const getContactRequestsSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(25),
+  status: z.enum(["new", "in_progress", "resolved"]).optional(),
+  search: z.string().trim().min(1).max(100).optional(),
+});
+
+export const updateContactRequestSchema = z.object({
+  status: z.enum(["new", "in_progress", "resolved"]),
+});
+
+export const getAuditLogsSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(25),
+  action: z.string().trim().min(1).max(100).optional(),
 });

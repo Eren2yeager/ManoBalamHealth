@@ -1,9 +1,12 @@
 import { Server, Socket } from "socket.io";
+import { isValidObjectId } from "mongoose";
 import { MessageModel } from "@/modules/chat/message.model";
-import { SessionModel } from "@/modules/session/session.model";
-import { AppointmentModel } from "@/modules/appointment/appointment.model";
-import { PsychologistModel } from "@/modules/psychologist/psychologist.model";
 import { sessionLifecycleService } from "@/modules/session/sessionLifecycle.service";
+import {
+  extractSessionId,
+  isSessionParticipant,
+  safeHandler,
+} from "@/sockets/utils/sessionAuth";
 
 interface AuthenticatedSocket extends Socket {
   user?: {
@@ -12,125 +15,121 @@ interface AuthenticatedSocket extends Socket {
   };
 }
 
-const isUserParticipant = async (userId: string, appointmentId: any): Promise<boolean> => {
-  const appointment = await AppointmentModel.findById(appointmentId)
-    .populate("psychologistId");
-  if (!appointment) return false;
+const MAX_MESSAGE_LENGTH = 2000;
+const MAX_ATTACHMENT_URL_LENGTH = 1024;
 
-  const apptAny = appointment as any;
+// Simple sliding-window rate limit per socket: 20 messages / 10 seconds.
+const RATE_LIMIT_WINDOW_MS = 10_000;
+const RATE_LIMIT_MAX = 20;
 
-  // Check patient
-  if (apptAny.patientId.toString() === userId) return true;
-
-  // Check psychologist
-  const psychologist = await PsychologistModel.findById(apptAny.psychologistId);
-  if (psychologist && psychologist.userId.toString() === userId) return true;
-
-  return false;
+const isSafeAttachmentUrl = (url: string): boolean => {
+  if (url.length > MAX_ATTACHMENT_URL_LENGTH) return false;
+  try {
+    return new URL(url).protocol === "https:";
+  } catch {
+    return false;
+  }
 };
+
+const roomOf = (sessionId: string) => `session:${sessionId}`;
 
 export const handleChat = (io: Server, socket: AuthenticatedSocket) => {
   if (!socket.user) return;
 
   const userId = socket.user.userId;
+  const sendTimestamps: number[] = [];
 
-  // Join a chat room (session room)
-  const handleJoinRoom = async (payload: string | { sessionId: string }) => {
-    const sessionId =
-      typeof payload === "string" ? payload : payload?.sessionId;
-    if (!sessionId) return;
-
-    // Verify that user has access to this session
-    const session = await SessionModel.findById(sessionId).populate("appointmentId");
-    if (!session) return;
-
-    // Get appointment
-    const appointment = session.appointmentId;
-    if (!appointment) return;
-
-    // Check if user is a participant
-    const isParticipant = await isUserParticipant(userId, appointment._id);
-    if (!isParticipant) return;
-
-    // Join the room
-    socket.join(`session:${sessionId}`);
+  const isRateLimited = (): boolean => {
+    const now = Date.now();
+    while (sendTimestamps.length && now - sendTimestamps[0] > RATE_LIMIT_WINDOW_MS) {
+      sendTimestamps.shift();
+    }
+    if (sendTimestamps.length >= RATE_LIMIT_MAX) return true;
+    sendTimestamps.push(now);
+    return false;
   };
 
-  // Handle sending a chat message
-  const handleSendMessage = async (data: {
-    sessionId: string;
-    content: string;
-    attachmentUrl?: string;
-  }) => {
-    const { sessionId, content, attachmentUrl } = data;
+  const handleJoinRoom = safeHandler("chat:join", async (payload: unknown) => {
+    const sessionId = extractSessionId(payload);
+    if (!sessionId) return;
+    if (!(await isSessionParticipant(sessionId, userId))) return;
+    await socket.join(roomOf(sessionId));
+  });
 
-    // Verify session
-    const session = await SessionModel.findById(sessionId).populate("appointmentId");
-    if (!session) return;
-    if (session.status === "ended") return;
+  const handleSendMessage = safeHandler("chat:message", async (data: unknown) => {
+    if (!data || typeof data !== "object") return;
+    const { sessionId, content, attachmentUrl } = data as {
+      sessionId?: unknown;
+      content?: unknown;
+      attachmentUrl?: unknown;
+    };
 
-    const appointment = session.appointmentId;
-    if (!appointment) return;
+    if (typeof sessionId !== "string") return;
+    const trimmed = typeof content === "string" ? content.trim() : "";
+    if (trimmed.length > MAX_MESSAGE_LENGTH) return;
 
-    // Check user is participant
-    const isParticipant = await isUserParticipant(userId, appointment._id);
-    if (!isParticipant) return;
+    let safeAttachmentUrl: string | undefined;
+    if (attachmentUrl !== undefined && attachmentUrl !== null && attachmentUrl !== "") {
+      if (typeof attachmentUrl !== "string" || !isSafeAttachmentUrl(attachmentUrl)) return;
+      safeAttachmentUrl = attachmentUrl;
+    }
+
+    // A message must carry text, an attachment, or both.
+    if (!trimmed && !safeAttachmentUrl) return;
+
+    if (isRateLimited()) return;
+    if (!(await isSessionParticipant(sessionId, userId))) return;
     if (!(await sessionLifecycleService.canUseLiveSessionFeatures(sessionId))) return;
 
-    // Create message
     const message = await MessageModel.create({
-      sessionId: session._id,
+      sessionId,
       senderId: userId,
-      content,
-      attachmentUrl,
+      content: trimmed,
+      attachmentUrl: safeAttachmentUrl,
     });
 
-    // Emit to room
-    io.to(`session:${sessionId}`).emit("chat:message", {
+    io.to(roomOf(sessionId)).emit("chat:message", {
       message: {
         id: message._id.toString(),
         senderId: userId,
-        content,
-        attachmentUrl,
+        content: trimmed,
+        attachmentUrl: safeAttachmentUrl,
         sentAt: message.sentAt.toISOString(),
       },
     });
-  };
+  });
 
-  const handleTyping = async (data: { sessionId: string }) => {
-    const { sessionId } = data;
-    const session = await SessionModel.findById(sessionId).populate("appointmentId");
-    if (!session) return;
-    if (session.status === "ended") return;
+  const handleTyping = safeHandler("chat:typing", async (data: unknown) => {
+    const sessionId = extractSessionId(data);
+    if (!sessionId) return;
+    // Room membership implies the participant check already passed on join.
+    if (!socket.rooms.has(roomOf(sessionId))) return;
+    socket.to(roomOf(sessionId)).emit("chat:typing", { userId });
+  });
 
-    const appointment = session.appointmentId;
-    if (!appointment) return;
+  const handleMessageRead = safeHandler("chat:message-read", async (data: unknown) => {
+    if (!data || typeof data !== "object") return;
+    const { messageId } = data as { messageId?: unknown };
+    if (typeof messageId !== "string" || !isValidObjectId(messageId)) return;
 
-    const isParticipant = await isUserParticipant(userId, (appointment as any)._id);
-    if (!isParticipant) return;
-    if (!(await sessionLifecycleService.canUseLiveSessionFeatures(sessionId))) return;
-
-    socket.to(`session:${sessionId}`).emit("chat:typing", { userId });
-  };
-
-  // Handle mark message as read
-  const handleMessageRead = async (data: { messageId: string }) => {
-    const { messageId } = data;
-    await MessageModel.findByIdAndUpdate(messageId, {
-      readAt: new Date(),
-    });
-
-    // Emit read event to room
     const message = await MessageModel.findById(messageId);
-    if (message) {
-      io.to(`session:${message.sessionId}`).emit("chat:read", {
-        messageId,
-        readAt: new Date().toISOString(),
-      });
-    }
-  };
+    if (!message || message.readAt) return;
 
-  // Register event listeners
+    // Only the recipient (a session participant who is not the sender) may
+    // mark a message as read.
+    if (message.senderId.toString() === userId) return;
+    const sessionId = message.sessionId.toString();
+    if (!(await isSessionParticipant(sessionId, userId))) return;
+
+    message.readAt = new Date();
+    await message.save();
+
+    io.to(roomOf(sessionId)).emit("chat:read", {
+      messageId,
+      readAt: message.readAt.toISOString(),
+    });
+  });
+
   socket.on("chat:join", handleJoinRoom);
   socket.on("chat:join-room", handleJoinRoom);
   socket.on("chat:message", handleSendMessage);

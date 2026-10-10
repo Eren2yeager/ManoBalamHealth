@@ -40,10 +40,11 @@ export const PsychologistProfileView = ({
   psychologist,
 }: PsychologistProfileViewProps) => {
   const role = useUserStore((state) => state.user?.role);
-  const fee = formatFee(
-    psychologist.consultationFee.amount,
-    psychologist.consultationFee.currency,
-  );
+  const currency = psychologist.consultationFee.currency;
+  // Cheapest option from the server-derived price matrix (chat / 30 min).
+  const startingPaise =
+    psychologist.priceMatrix?.chat?.[30] ?? psychologist.consultationFee.amount;
+  const fee = formatFee(startingPaise, currency);
   const initials = psychologist.name
     .split(" ")
     .filter(Boolean)
@@ -103,7 +104,7 @@ export const PsychologistProfileView = ({
                       : "bg-slate-300"
                   }`}
                 />
-                {psychologist.isOnline ? "Online now" : "Currently offline"}
+                {psychologist.isOnline ? "Online" : "Offline"}
               </span>
             </div>
 
@@ -170,7 +171,7 @@ export const PsychologistProfileView = ({
             icon={Banknote}
             label="Session fee"
             value={fee}
-            detail="Per consultation"
+            detail="Admin-controlled booked-session fee"
             color="emerald"
           />
           <TrustMetric
@@ -272,21 +273,47 @@ export const PsychologistProfileView = ({
             <section className="overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-xl shadow-violet-100/50">
               <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-white">
                 <p className="text-xs font-black uppercase tracking-[0.15em] text-violet-200">
-                  Book a consultation
+                  Automatic care matching
                 </p>
                 <p className="mt-3 text-3xl font-black">{fee}</p>
-                <p className="mt-1 text-xs text-violet-100/75">per session</p>
+                <p className="mt-1 text-xs text-violet-100/75">admin-controlled booked-session fee</p>
               </div>
+              {psychologist.priceMatrix && (
+                <div className="border-b border-slate-100 px-6 pt-5">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-left font-black uppercase tracking-wide text-slate-400">
+                        <th className="pb-2">Mode</th>
+                        <th className="pb-2">30 min</th>
+                        <th className="pb-2">45 min</th>
+                        <th className="pb-2">60 min</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(["chat", "audio", "video"] as const).map((mode) => (
+                        <tr key={mode} className="border-t border-slate-100">
+                          <td className="py-2 font-black capitalize text-slate-700">{mode}</td>
+                          {([30, 45, 60] as const).map((duration) => (
+                            <td key={duration} className="py-2 font-semibold text-slate-600">
+                              {formatFee(psychologist.priceMatrix![mode][duration], currency)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               <div className="p-6">
                 <BookingBenefit
                   icon={CalendarCheck2}
-                  title="Choose a convenient time"
-                  description="See available appointments in your local timezone."
+                  title="Share your preferred time"
+                  description="The platform finds a suitable available professional for that window."
                 />
                 <BookingBenefit
                   icon={Clock3}
                   title="Simple guided booking"
-                  description="Select a session type, time, and securely confirm."
+                  description="Select a session type, review details, and securely confirm."
                 />
                 <BookingBenefit
                   icon={LockKeyhole}
@@ -299,8 +326,8 @@ export const PsychologistProfileView = ({
                     asChild
                     className="mt-6 h-12 w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 font-black shadow-lg shadow-violet-200"
                   >
-                    <Link to={`/book/${psychologist.id}`}>
-                      Book a session
+                    <Link to="/book">
+                      Start automatic matching
                       <ArrowRight className="ml-2 size-4" />
                     </Link>
                   </Button>
@@ -317,7 +344,7 @@ export const PsychologistProfileView = ({
                 )}
 
                 <p className="mt-4 text-center text-[11px] leading-5 text-slate-400">
-                  You will review all details before payment.
+                  You will review the matched professional and details before payment.
                 </p>
               </div>
             </section>

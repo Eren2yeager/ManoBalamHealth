@@ -9,6 +9,7 @@ import { ForgotPasswordPage } from "../features/auth/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "../features/auth/pages/ResetPasswordPage";
 import { AboutPage } from "../features/public-site/pages/AboutPage";
 import { AboutDetailPage } from "../features/public-site/pages/AboutDetailPage";
+import { OrganizationPage } from "../features/public-site/pages/OrganizationPage";
 import { OrganizationDetailPage } from "../features/public-site/pages/OrganizationDetailPage";
 import { ServiceDetailPage } from "../features/public-site/pages/ServiceDetailPage";
 import { MentalHealthAssessmentPage } from "../features/public-site/pages/MentalHealthAssessmentPage";
@@ -35,10 +36,12 @@ import { AssessmentHistoryPage } from "../features/assessment/pages/AssessmentHi
 import { EmergencyPage } from "../features/emergency/pages/EmergencyPage";
 import { EmergencySessionPage } from "../features/emergency/pages/EmergencySessionPage";
 import { EmergencyNotification } from "../features/emergency/components/EmergencyNotification";
+import { SessionSocketListener } from "./SessionSocketListener";
 
 // Psychologist-only
 import { PsychologistDashboard } from "../features/psychologists/pages/PsychologistDashboard";
 import { PsychologistOnboardingPage } from "../features/psychologists/pages/PsychologistOnboardingPage";
+import { PsychologistEarningsPage } from "../features/psychologists/pages/PsychologistEarningsPage";
 import { AvailabilityPage } from "../features/availability/pages/AvailabilityPage";
 import { PsychologistAppointmentsPage } from "../features/appointments/pages/PsychologistAppointmentsPage";
 
@@ -47,6 +50,14 @@ import { AdminDashboardPage } from "../features/admin/pages/AdminDashboardPage";
 import { AdminVerificationsPage } from "../features/admin/pages/AdminVerificationsPage";
 import { AdminReportsPage } from "../features/admin/pages/AdminReportsPage";
 import { AdminPaymentsPage } from "../features/admin/pages/AdminPaymentsPage";
+import { AdminPricingPage } from "../features/admin/pages/AdminPricingPage";
+import { AdminPayoutsPage } from "../features/admin/pages/AdminPayoutsPage";
+import { AdminUsersPage } from "../features/admin/pages/AdminUsersPage";
+import { AdminUserDetailPage } from "../features/admin/pages/AdminUserDetailPage";
+import { AdminAppointmentsPage } from "../features/admin/pages/AdminAppointmentsPage";
+import { AdminContactRequestsPage } from "../features/admin/pages/AdminContactRequestsPage";
+import { AdminAuditLogsPage } from "../features/admin/pages/AdminAuditLogsPage";
+import { AdminCrisisMonitorPage } from "../features/admin/pages/AdminCrisisMonitorPage";
 // Guards
 import { ProtectedRoute } from "../routes/ProtectedRoute";
 import { RoleRoute } from "../routes/RoleRoute";
@@ -54,16 +65,6 @@ import { GuestRoute } from "../routes/GuestRoute";
 import { NavbarLayout } from "../components/layout/NavbarLayout";
 import { RouteErrorPage } from "../components/feedback/RouteErrorPage";
 import { ApprovedPsychologistRoute } from "../routes/ApprovedPsychologistRoute";
-import { useUserStore } from "@/stores/userStore";
-import { useEmergencySocket } from "@/features/emergency/hooks/useEmergencySocket";
-
-function SessionSocketListener() {
-  const isAuthenticated = useUserStore((state) => state.isAuthenticated);
-  if (isAuthenticated) {
-    useEmergencySocket();
-  }
-  return null;
-}
 
 const router = createBrowserRouter([
   // ── Public (unauthenticated only) ────────────────────────────────────────
@@ -74,6 +75,7 @@ const router = createBrowserRouter([
       { path: "/", element: <LandingPage /> },
       { path: "/about", element: <AboutPage /> },
       { path: "/about/:slug", element: <AboutDetailPage /> },
+      { path: "/organization", element: <OrganizationPage /> },
       { path: "/organization/:slug", element: <OrganizationDetailPage /> },
       { path: "/services/:slug", element: <ServiceDetailPage /> },
       { path: "/mental-health-assessment", element: <MentalHealthAssessmentPage /> },
@@ -117,7 +119,6 @@ const router = createBrowserRouter([
             element: <RoleRoute allowed={["patient"]} />,
             children: [
               { path: "/book", element: <BookingFlowPage /> },
-              { path: "/book/:psychologistId", element: <BookingFlowPage /> },
             ],
           },
 
@@ -174,6 +175,7 @@ const router = createBrowserRouter([
         children: [
           { path: "/psychologist/dashboard", element: <PsychologistDashboard /> },
           { path: "/psychologist/onboarding", element: <PsychologistOnboardingPage /> },
+          { path: "/psychologist/earnings", element: <PsychologistEarningsPage /> },
           {
             element: <ApprovedPsychologistRoute />,
             children: [
@@ -211,8 +213,16 @@ const router = createBrowserRouter([
         children: [
           { path: "/admin/dashboard", element: <AdminDashboardPage /> },
           { path: "/admin/verifications", element: <AdminVerificationsPage /> },
+          { path: "/admin/appointments", element: <AdminAppointmentsPage /> },
           { path: "/admin/reports", element: <AdminReportsPage /> },
           { path: "/admin/payments", element: <AdminPaymentsPage /> },
+          { path: "/admin/pricing", element: <AdminPricingPage /> },
+          { path: "/admin/payouts", element: <AdminPayoutsPage /> },
+          { path: "/admin/users", element: <AdminUsersPage /> },
+          { path: "/admin/users/:id", element: <AdminUserDetailPage /> },
+          { path: "/admin/contact-requests", element: <AdminContactRequestsPage /> },
+          { path: "/admin/crisis", element: <AdminCrisisMonitorPage /> },
+          { path: "/admin/audit-logs", element: <AdminAuditLogsPage /> },
         ],
       },
     ],

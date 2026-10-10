@@ -1,0 +1,38 @@
+[
+  {
+    "committeeType": "clinical",
+    "name": "Dr. Isha Kapoor",
+    "designation": "Clinical Ambassador",
+    "qualifications": "MPhil, Clinical Psychology",
+    "clinicalExperience": "13 years in adult mental healthcare",
+    "specialties": ["Anxiety", "Mood disorders", "Public education"],
+    "languages": ["English", "Hindi"],
+    "bio": "Promotes responsible mental-health awareness and evidence-informed public education.",
+    "imageUrl": "https://i.pravatar.cc/900?img=49",
+    "isExample": true
+  },
+  {
+    "committeeType": "clinical",
+    "name": "Dr. Rahul Sen",
+    "designation": "Clinical Ambassador",
+    "qualifications": "MD, Psychiatry",
+    "clinicalExperience": "16 years in psychiatric care",
+    "specialties": ["Psychiatry", "Early intervention", "Recovery care"],
+    "languages": ["English", "Hindi", "Bengali"],
+    "bio": "Supports informed conversations about psychiatric care, early support, and recovery.",
+    "imageUrl": "https://i.pravatar.cc/900?img=52",
+    "isExample": true
+  },
+  {
+    "committeeType": "clinical",
+    "name": "Neha Pillai",
+    "designation": "Clinical Ambassador",
+    "qualifications": "MSc, Counselling Psychology",
+    "clinicalExperience": "8 years in counselling practice",
+    "specialties": ["Counselling", "Stress management", "Young adults"],
+    "languages": ["English", "Hindi", "Malayalam"],
+    "bio": "Encourages accessible, stigma-free conversations about emotional wellbeing and support.",
+    "imageUrl": "https://i.pravatar.cc/900?img=25",
+    "isExample": true
+  }
+]

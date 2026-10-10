@@ -56,8 +56,6 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
     allocationMode,
     mode,
     concernDescription,
-    selectedPsychologistId,
-    selectedSlotId,
     preferredWindow,
     specialization,
     scheduledAt,
@@ -76,8 +74,7 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
     data: PsychologistDetail | null;
   }>({ id: null, data: null });
 
-  const resolvedPsychologistId =
-    assignedPsychologistId ?? selectedPsychologistId;
+  const resolvedPsychologistId = assignedPsychologistId;
   const assignedPsychologist =
     psychologistState.id === resolvedPsychologistId
       ? psychologistState.data
@@ -172,22 +169,14 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
     setIsProcessing(true);
 
     try {
-      const appointment =
-        allocationMode === "manual"
-          ? await createAppointment({
-              allocationMode: "manual",
-              slotId: selectedSlotId!,
-              mode,
-              concernDescription: concernDescription || undefined,
-            })
-          : await createAppointment({
-              allocationMode: "auto",
-              preferredFrom: preferredWindow!.from,
-              preferredTo: preferredWindow!.to,
-              mode,
-              specialization: specialization ?? undefined,
-              concernDescription: concernDescription || undefined,
-            });
+      const appointment = await createAppointment({
+        allocationMode: "auto",
+        preferredFrom: preferredWindow?.from,
+        preferredTo: preferredWindow?.to,
+        mode,
+        specialization: specialization ?? undefined,
+        concernDescription: concernDescription || undefined,
+      });
 
       setAssignmentResult({
         psychologistId: appointment.psychologistId,
@@ -267,7 +256,7 @@ export const BookingSummary = ({ onBack }: BookingSummaryProps) => {
           <SummaryItem
             icon={HeartHandshake}
             label="Booking path"
-            value={allocationMode === "auto" ? "Automatic match" : "Chosen professional"}
+            value="Automatic priority match"
           />
           <SummaryItem
             icon={MessageSquareText}

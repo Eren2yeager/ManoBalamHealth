@@ -20,20 +20,79 @@ export class AdminController {
     res.status(StatusCodes.OK).json(ApiResponse.success(result, "Psychologist status updated"));
   });
 
+  // PATCH /admin/psychologists/:id/changes — body: { decision, rejectionReason? }
+  reviewPendingChanges = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.reviewPendingChanges(
+      req.params.id as string,
+      req.body,
+      req.user!.userId,
+    );
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "Pending changes reviewed"));
+  });
+
+  updatePsychologistPriority = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.updatePsychologistPriority(
+      req.params.id as string,
+      req.body,
+      req.user!.userId,
+    );
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "Psychologist booking priority updated"));
+  });
+
+  getBookingSettings = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.getBookingSettings();
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "Booking settings retrieved"));
+  });
+
+  updateBookingSettings = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.updateBookingSettings(req.body, req.user!.userId);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "Booking settings updated"));
+  });
+
   getAppointments = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const result = await adminService.getAppointments(req.query as any);
     res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Appointments retrieved successfully", result.meta));
   });
 
-  getReportsSummary = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
-    const summary = await adminService.getReportsSummary();
+  getUsers = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.getUsers(req.validatedData?.query as any);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Users retrieved successfully", result.meta));
+  });
+
+  updateUserActivity = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.updateUserActivity(req.params.id as string, req.body, req.user!.userId);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "User account status updated"));
+  });
+
+  getUserDetail = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.getUserDetail(req.params.id as string);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "User details retrieved successfully"));
+  });
+
+  getReportsSummary = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const summary = await adminService.getReportsSummary(req.query as { from?: string; to?: string });
     res.status(StatusCodes.OK).json(ApiResponse.success(summary, "Reports summary retrieved successfully"));
   });
 
-  // PATCH /admin/payments/:id/refund — body: { reason, amount? }
+  // PATCH /admin/payments/:id/refund — id is appointmentId, body: { reason, amount? }
   processRefund = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const result = await adminService.processRefund(req.params.id as string, req.body);
     res.status(StatusCodes.OK).json(ApiResponse.success(result, "Refund processed successfully"));
+  });
+
+  getContactRequests = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.getContactRequests(req.validatedData?.query as any);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Contact requests retrieved successfully", result.meta));
+  });
+
+  updateContactRequest = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.updateContactRequest(req.params.id as string, req.body);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result, "Contact request updated successfully"));
+  });
+
+  getAuditLogs = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await adminService.getAuditLogs(req.validatedData?.query as any);
+    res.status(StatusCodes.OK).json(ApiResponse.success(result.data, "Audit logs retrieved successfully", result.meta));
   });
 }
 

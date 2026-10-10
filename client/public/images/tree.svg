@@ -1,0 +1,121 @@
+<svg viewBox="0 0 280 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated growing tree loader">
+  <title>ManoBalam tree loader</title>
+  <defs>
+    <linearGradient id="mbhc-trunk" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6" />
+      <stop offset="1" stop-color="#5b21b6" />
+    </linearGradient>
+    <radialGradient id="mbhc-leaf-light" cx="38%" cy="28%" r="72%">
+      <stop offset="0" stop-color="#f5f3ff" />
+      <stop offset="0.45" stop-color="#c4b5fd" />
+      <stop offset="1" stop-color="#7c3aed" />
+    </radialGradient>
+    <radialGradient id="mbhc-leaf-deep" cx="35%" cy="25%" r="78%">
+      <stop offset="0" stop-color="#ddd6fe" />
+      <stop offset="0.5" stop-color="#8b5cf6" />
+      <stop offset="1" stop-color="#6d28d9" />
+    </radialGradient>
+  </defs>
+
+  <style>
+    :root {
+      --mbhc-loader-duration: 6000ms;
+    }
+
+    .mbhc-tree-ground {
+      opacity: 0.14;
+    }
+
+    .mbhc-tree-trunk,
+    .mbhc-canopy,
+    .mbhc-tree-sparkles {
+      transform-box: fill-box;
+      transform-origin: center bottom;
+    }
+
+    .mbhc-tree-trunk {
+      animation: mbhc-trunk-grow var(--mbhc-loader-duration) ease-in-out infinite;
+    }
+
+    .mbhc-tree-trunk path:not(:first-child) {
+      fill: none;
+      stroke: #7c3aed;
+      stroke-width: 6;
+      stroke-linecap: round;
+    }
+
+    .mbhc-canopy-back {
+      animation: mbhc-canopy-bloom var(--mbhc-loader-duration) 180ms ease-in-out infinite;
+    }
+
+    .mbhc-canopy-front {
+      animation: mbhc-canopy-bloom var(--mbhc-loader-duration) 420ms ease-in-out infinite;
+    }
+
+    .mbhc-tree-sparkles {
+      transform-origin: center;
+      animation: mbhc-sparkle var(--mbhc-loader-duration) 650ms ease-in-out infinite;
+    }
+
+    @keyframes mbhc-trunk-grow {
+      0%, 100% { opacity: 0.7; transform: scaleY(0.76); }
+      48%, 72% { opacity: 1; transform: scaleY(1); }
+    }
+
+    @keyframes mbhc-canopy-bloom {
+      0%, 100% { opacity: 0.24; transform: scale(0.62); }
+      50%, 76% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes mbhc-sparkle {
+      0%, 25%, 100% { opacity: 0; transform: scale(0.75); }
+      58%, 78% { opacity: 0.9; transform: scale(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .mbhc-tree-trunk,
+      .mbhc-canopy,
+      .mbhc-tree-sparkles {
+        animation: none !important;
+        opacity: 1;
+        transform: none;
+      }
+      .mbhc-tree-sparkles { opacity: 0.7; }
+    }
+  </style>
+
+  <ellipse class="mbhc-tree-ground" cx="140" cy="269" rx="66" ry="12" fill="#8b5cf6" />
+
+  <g class="mbhc-tree-trunk">
+    <path d="M128 270c8-39 10-80 10-126h12c0 45 2 86 11 126Z" fill="url(#mbhc-trunk)" />
+    <path d="M140 205c-18-18-31-35-39-54" />
+    <path d="M146 183c19-18 33-39 42-61" />
+    <path d="M141 165c-5-24-5-44 0-62" />
+    <path d="M136 222c-21-14-38-28-51-45" />
+    <path d="M151 226c20-13 37-29 52-49" />
+  </g>
+
+  <g class="mbhc-canopy mbhc-canopy-back" fill="url(#mbhc-leaf-deep)">
+    <circle cx="84" cy="139" r="32" />
+    <circle cx="196" cy="132" r="34" />
+    <circle cx="114" cy="95" r="37" />
+    <circle cx="169" cy="88" r="39" />
+    <circle cx="141" cy="61" r="34" />
+  </g>
+
+  <g class="mbhc-canopy mbhc-canopy-front" fill="url(#mbhc-leaf-light)">
+    <circle cx="112" cy="146" r="35" />
+    <circle cx="170" cy="145" r="36" />
+    <circle cx="141" cy="116" r="42" />
+    <circle cx="94" cy="107" r="24" />
+    <circle cx="192" cy="101" r="25" />
+  </g>
+
+  <g class="mbhc-tree-sparkles" fill="#f5f3ff">
+    <circle cx="103" cy="75" r="3" />
+    <circle cx="181" cy="69" r="2.5" />
+    <circle cx="72" cy="121" r="2.5" />
+    <circle cx="211" cy="118" r="3" />
+    <circle cx="150" cy="42" r="2.5" />
+  </g>
+</svg>

@@ -1,22 +1,17 @@
 import { z } from "zod";
 
-// Manual mode schema
-const createAppointmentManualSchema = z.object({
-  allocationMode: z.literal("manual"),
-  slotId: z.string().min(1),
-  mode: z.union([z.literal("chat"), z.literal("audio"), z.literal("video")]),
-  concernDescription: z.string().optional(),
-});
-
 // Auto mode schema
 const createAppointmentAutoSchema = z.object({
   allocationMode: z.literal("auto"),
-  preferredFrom: z.string().min(1),
-  preferredTo: z.string().min(1),
+  preferredFrom: z.string().min(1).optional(),
+  preferredTo: z.string().min(1).optional(),
   mode: z.union([z.literal("chat"), z.literal("audio"), z.literal("video")]),
   specialization: z.string().optional(),
   concernDescription: z.string().optional(),
-});
+}).refine(
+  (data) => (!data.preferredFrom && !data.preferredTo) || Boolean(data.preferredFrom && data.preferredTo),
+  { message: "preferredFrom and preferredTo must be provided together", path: ["preferredFrom"] },
+);
 
 // Emergency mode schema
 const createAppointmentEmergencySchema = z.object({
@@ -28,7 +23,6 @@ const createAppointmentEmergencySchema = z.object({
 
 // Discriminated union for create
 export const createAppointmentSchema = z.discriminatedUnion("allocationMode", [
-  createAppointmentManualSchema,
   createAppointmentAutoSchema,
   createAppointmentEmergencySchema,
 ]);

@@ -25,14 +25,8 @@ export const publicNavigation: PublicNavItem[] = [
   },
   {
     label: "Organization",
+    to: "/organization",
     icon: Building2,
-    children: [
-      { label: "Executive Committee", to: "/organization/executive-committee", description: "Strategy, governance, and accountability" },
-      { label: "Administrative Committee", to: "/organization/administrative-committee", description: "Operations and service coordination" },
-      { label: "Consultative Committee", to: "/organization/consultative-committee", description: "Community and stakeholder guidance" },
-      { label: "Technical Committee", to: "/organization/technical-committee", description: "Safety, technology, and data standards" },
-      { label: "Clinical Ambassadors", to: "/organization/clinical-ambassadors", description: "Clinical awareness and professional outreach" },
-    ],
   },
   {
     label: "Services",

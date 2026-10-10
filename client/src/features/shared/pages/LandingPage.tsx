@@ -323,7 +323,9 @@ function HowItWorks() {
       <Reveal className="mx-auto max-w-7xl">
         <div className="grid gap-6 rounded-3xl border border-violet-100 bg-white p-6 shadow-[0_18px_55px_rgba(109,40,217,.06)] lg:grid-cols-[220px_1fr] lg:items-center">
           <div className="border-violet-100 lg:border-r lg:pr-7">
-            <h2 className="text-xl font-black text-[#10152f]">How ManoBalamHealthCare works</h2>
+            <h2 className="text-balance text-xl font-black break-words text-[#10152f]">
+              How ManoBalamHealthCare works
+            </h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               Five simple steps towards professional support.
             </p>
@@ -376,7 +378,7 @@ function ServiceGrid() {
         {services.map(({ icon: Icon, title, text, tone, to }, index) => (
           <Reveal key={title} delayIndex={index}>
             <Link to={to} className="group block">
-              <article className="flex h-full items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-violet-100 hover:shadow-lg">
+              <article className="flex flex-col h-full  gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-violet-100 hover:shadow-lg">
                 <span className={`grid size-13 shrink-0 place-items-center rounded-xl ${tone}`}>
                   <Icon className="size-6 transition-transform group-hover:scale-110" />
                 </span>
@@ -412,8 +414,8 @@ function PsychologistPreviewCard({
     <Reveal delayIndex={delayIndex}>
       <Link to={`/psychologists/${psychologist.id}`} className="group block h-full">
         <article className="h-full rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:-translate-y-2 hover:border-violet-100 hover:shadow-xl">
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-violet-100 to-blue-100">
-            <div className="grid h-28 place-items-center">
+          <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gradient-to-br from-violet-100 to-blue-100">
+            <div className="grid size-full place-items-center">
               {psychologist.avatarUrl ? (
                 <img
                   src={psychologist.avatarUrl}
@@ -502,7 +504,7 @@ function PsychologistPreview() {
       {loading ? (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-64 rounded-2xl" />
+            <Skeleton key={index} className="aspect-square rounded-2xl" />
           ))}
         </div>
       ) : psychologists.length > 0 ? (

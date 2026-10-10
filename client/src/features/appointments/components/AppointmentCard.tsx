@@ -43,7 +43,7 @@ export const AppointmentCard = ({ appointment }: AppointmentCardProps) => {
 
   return (
     <article
-      className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-2 hover:border-violet-100 hover:shadow-2xl hover:shadow-primary/10 sm:p-5"
+      className="appointment-card group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-2 hover:border-violet-100 hover:shadow-2xl hover:shadow-primary/10 sm:p-5"
       onClick={() => navigate(`/appointments/${appointment.id}`)}
     >
       <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-br from-violet-100/60 via-purple-50 to-blue-50 opacity-70 sm:h-20" />
@@ -67,7 +67,7 @@ export const AppointmentCard = ({ appointment }: AppointmentCardProps) => {
 
           <div className="flex flex-col items-end gap-2">
             <AppointmentStatusBadge status={appointment.status} />
-            <span className={`flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold capitalize ${modeConfig.bg} ${modeConfig.color} sm:px-2.5`}>
+            <span className={`appointment-mode flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold capitalize ${modeConfig.bg} ${modeConfig.color} sm:px-2.5`}>
               <ModeIcon className="size-3" />
               {modeConfig.label}
             </span>

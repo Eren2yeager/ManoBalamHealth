@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RefundModal } from "../components/RefundModal";
+import { AdminWorkspaceHeader } from "../components/AdminWorkspaceHeader";
+import { AdminUserLink } from "../components/AdminUserLink";
 import { getAdminAppointments, refundPayment } from "../api/admin.api";
 import type { AdminAppointmentItem } from "../types/admin.types";
 import { formatInViewerTz } from "@/lib/timezone";
 import { toast } from "sonner";
-import { CheckCircle2, RefreshCw, Sparkles, Users, Calendar, CircleDollarSign } from "lucide-react";
+import { CheckCircle2, RefreshCw, Users, Calendar, CircleDollarSign, ReceiptText } from "lucide-react";
 
 const statusTone: Record<string, string> = {
   completed: "bg-emerald-100 text-emerald-700",
@@ -19,13 +21,22 @@ const statusTone: Record<string, string> = {
   pending_payment: "bg-orange-100 text-orange-700",
 };
 
+const formatMoney = (amountInPaise?: number, currency = "INR") =>
+  typeof amountInPaise === "number"
+    ? new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+      }).format(amountInPaise / 100)
+    : "Payment amount unavailable";
+
 export function AdminPaymentsPage() {
   const [appointments, setAppointments] = useState<AdminAppointmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] =
     useState<AdminAppointmentItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [selectedRefundAppointmentId, setSelectedRefundAppointmentId] = useState<string | null>(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
 
   const fetchAppointments = async () => {
@@ -41,7 +52,10 @@ export function AdminPaymentsPage() {
   };
 
   useEffect(() => {
-    fetchAppointments();
+    const timeoutId = window.setTimeout(() => {
+      void fetchAppointments();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   if (isLoading) {
@@ -62,36 +76,13 @@ export function AdminPaymentsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-violet-600 via-primary to-indigo-700 p-7 text-white shadow-xl md:p-10">
-          <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 left-1/3 size-64 rounded-full bg-white/10 blur-3xl" />
-          
-          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="mb-4 flex items-center gap-2 text-sm font-bold text-violet-100">
-                <span className="grid size-9 place-items-center rounded-xl bg-white/15">
-                  <Sparkles className="size-4" />
-                </span>
-                Payments & Refunds
-              </div>
-              <h1 className="text-3xl font-black tracking-[-0.035em] md:text-4xl">
-                Payment History
-              </h1>
-              <p className="mt-3 max-w-lg text-sm leading-relaxed text-violet-100/80">
-                Review completed appointment payments and process refunds when needed.
-              </p>
-            </div>
-
-            <Button
-              onClick={fetchAppointments}
-              className="h-11 rounded-xl bg-white px-6 font-bold text-primary hover:bg-violet-50"
-            >
-              <RefreshCw className="mr-2 size-4" />
-              Refresh
-            </Button>
-          </div>
-        </section>
+        <AdminWorkspaceHeader
+          icon={ReceiptText}
+          eyebrow="Payments & refunds"
+          title="Payment operations"
+          description="Review completed-session payments and issue a documented refund when the care outcome requires it."
+          actions={<Button onClick={fetchAppointments} className="h-11 rounded-xl bg-white px-5 font-bold text-primary hover:bg-violet-50"><RefreshCw className="mr-2 size-4" />Refresh records</Button>}
+        />
 
         {/* Content Section */}
         {appointments.length === 0 ? (
@@ -121,7 +112,7 @@ export function AdminPaymentsPage() {
                       </div>
                       <div>
                         <CardTitle className="text-base font-black text-slate-950">
-                          {appointment.patient.name} → {appointment.psychologist.name}
+                          <span className="flex flex-wrap items-center gap-1"><AdminUserLink {...appointment.patient} compact /><span className="text-slate-400">→</span><AdminUserLink {...appointment.psychologist} compact /></span>
                         </CardTitle>
                       </div>
                     </div>
@@ -141,11 +132,15 @@ export function AdminPaymentsPage() {
                         <Calendar className="size-4" />
                         <span>{formatInViewerTz(appointment.scheduledAt)}</span>
                       </div>
+                      <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                        <CircleDollarSign className="size-4 text-emerald-600" />
+                        <span>{formatMoney(appointment.fee?.amount, appointment.fee?.currency)}</span>
+                      </div>
                     </div>
                     <Button
                       onClick={() => {
                         setSelectedAppointment(appointment);
-                        setSelectedPaymentId(appointment.id);
+                        setSelectedRefundAppointmentId(appointment.id);
                         setShowRefundModal(true);
                       }}
                       className="h-11 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 font-bold shadow-md hover:from-rose-700 hover:to-red-700"
@@ -165,10 +160,10 @@ export function AdminPaymentsPage() {
           onClose={() => {
             setShowRefundModal(false);
             setSelectedAppointment(null);
-            setSelectedPaymentId(null);
+            setSelectedRefundAppointmentId(null);
           }}
           appointment={selectedAppointment}
-          paymentId={selectedPaymentId}
+          appointmentId={selectedRefundAppointmentId}
           isProcessing={isProcessing}
           onProcess={async (appointmentId, reason) => {
             try {
@@ -178,7 +173,7 @@ export function AdminPaymentsPage() {
               fetchAppointments();
               setShowRefundModal(false);
               setSelectedAppointment(null);
-              setSelectedPaymentId(null);
+              setSelectedRefundAppointmentId(null);
             } catch {
               toast.error("Failed to process refund.");
             } finally {

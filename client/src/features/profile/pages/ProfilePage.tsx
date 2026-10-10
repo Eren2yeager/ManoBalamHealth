@@ -11,6 +11,7 @@ import {
   Clock3,
   FileCheck2,
   HeartHandshake,
+  Inbox,
   Languages,
   LoaderCircle,
   Mail,
@@ -20,7 +21,10 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  UserCog,
   UserRound,
+  UsersRound,
+  WalletCards,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +37,7 @@ import { getMyPsychologistOnboarding } from "@/features/psychologists/api/psycho
 import type { PsychologistOnboarding } from "@/features/psychologists/types/psychologist.types";
 import { useAuth } from "@/hooks/useAuth";
 import { logout as logoutApi } from "@/features/auth/api/auth.api";
+import "./student-profile.css";
 
 const roleDestinations = {
   patient: {
@@ -117,6 +122,14 @@ export const ProfilePage = () => {
             (professionalProfile?.credentials.length ?? 0) >= 3,
             professionalProfile?.onboardingStatus === "approved",
           ]
+        : profile.role === "admin"
+          ? [
+              Boolean(profile.name),
+              Boolean(profile.email || profile.phone),
+              Boolean(profile.avatarUrl),
+              Boolean(profile.timezone),
+              profile.isVerified,
+            ]
         : [
             Boolean(profile.name),
             Boolean(profile.email || profile.phone),
@@ -135,8 +148,8 @@ export const ProfilePage = () => {
 
   if (loadFailed || !profile) {
     return (
-      <main className="grid min-h-[70vh] place-items-center bg-[#faf9ff] px-4">
-        <div className="max-w-md rounded-3xl border border-rose-100 bg-white p-8 text-center shadow-xl">
+      <main className="profile-load-error grid min-h-[70vh] place-items-center bg-[#f5f3ff] px-4">
+        <div className="max-w-md rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-[0_24px_70px_-42px_rgba(76,29,149,.45)]">
           <RefreshCcw className="mx-auto size-9 text-rose-500" />
           <h1 className="mt-5 text-2xl font-black text-slate-950">
             Profile unavailable
@@ -158,30 +171,56 @@ export const ProfilePage = () => {
   const destination = roleDestinations[profile.role];
   const DestinationIcon = destination.icon;
   const isPsychologist = profile.role === "psychologist";
+  const isAdmin = profile.role === "admin";
+  const isPatient = profile.role === "patient";
+
+  if (isPatient) {
+    return (
+      <PatientProfileLayout
+        profile={profile}
+        completion={completion}
+        destination={roleDestinations.patient}
+        onLogout={handleLogout}
+        onAvatarUpdated={(avatarUrl) =>
+          setProfile((current) =>
+            current ? { ...current, avatarUrl } : current,
+          )
+        }
+        onProfileUpdated={setProfile}
+      />
+    );
+  }
 
   return (
-    <main className="min-h-[calc(100vh-4.5rem)] bg-[radial-gradient(circle_at_8%_0%,rgba(221,214,254,.65),transparent_27%),radial-gradient(circle_at_95%_8%,rgba(191,219,254,.4),transparent_24%),#faf9ff] px-4 py-7 md:px-8 md:py-10">
+    <main className={`${isPatient ? "student-profile-page" : ""} min-h-[calc(100vh-4.5rem)] bg-[radial-gradient(circle_at_8%_0%,rgba(221,214,254,.65),transparent_27%),radial-gradient(circle_at_95%_8%,rgba(191,219,254,.4),transparent_24%),#faf9ff] px-4 py-7 md:px-8 md:py-10`}>
       <div className="mx-auto max-w-7xl">
-        <section className="relative overflow-hidden rounded-[2rem] bg-[#17142f] px-6 py-8 text-white shadow-[0_25px_70px_-35px_rgba(76,29,149,.8)] md:px-10 md:py-10">
+        <section className={`${isPatient ? "student-profile-hero" : ""} relative overflow-hidden rounded-[2rem] bg-[#17142f] px-6 py-8 text-white shadow-[0_25px_70px_-35px_rgba(76,29,149,.8)] md:px-10 md:py-10`}>
           <div className="absolute -right-20 -top-28 size-80 rounded-full bg-violet-500/25 blur-3xl" />
           <div className="absolute bottom-0 right-8 hidden items-end gap-3 opacity-65 lg:flex">
-            <span className="grid size-24 place-items-center rounded-t-[2.4rem] bg-white/8">
+            <span className="grid size-24 animate-in slide-in-from-bottom-4 place-items-center rounded-t-[2.4rem] bg-white/8 duration-700">
               <UserRound className="size-10 text-violet-300" />
             </span>
-            <span className="grid size-36 place-items-center rounded-t-[3.5rem] bg-white/10">
-              <HeartHandshake className="size-14 text-rose-200" />
+            <span className="grid size-36 animate-in slide-in-from-bottom-6 place-items-center rounded-t-[3.5rem] bg-white/10 delay-100 duration-700">
+              {isAdmin ? <UserCog className="size-14 text-violet-200" /> : <HeartHandshake className="size-14 text-rose-200" />}
             </span>
-            <span className="grid size-20 place-items-center rounded-t-[2rem] bg-white/8">
+            <span className="grid size-20 animate-in slide-in-from-bottom-3 place-items-center rounded-t-[2rem] bg-white/8 delay-200 duration-700">
               <ShieldCheck className="size-8 text-emerald-200" />
             </span>
           </div>
           <div className="relative max-w-3xl animate-in fade-in slide-in-from-bottom-3 duration-700">
-            <span className="inline-flex items-center gap-2 rounded-full border border-violet-300/20 bg-violet-300/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-violet-200">
+            <span className={`inline-flex items-center gap-2 rounded-full border border-violet-300/20 bg-violet-300/10 px-3 py-1.5 text-xs font-black text-violet-200 ${isPatient ? "tracking-wide" : "uppercase tracking-[0.16em]"}`}>
               <Sparkles className="size-3.5" />
-              {isPsychologist ? "Professional identity" : "Your care account"}
+              {isAdmin ? "Admin workspace profile" : isPsychologist ? "Professional identity" : "Your care account"}
             </span>
             <h1 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">
-              {isPsychologist ? (
+              {isAdmin ? (
+                <>
+                  A cleaner profile for{" "}
+                  <span className="text-violet-300">
+                    focused operations
+                  </span>
+                </>
+              ) : isPsychologist ? (
                 <>
                   Build trust through a{" "}
                   <span className="text-violet-300">
@@ -198,19 +237,22 @@ export const ProfilePage = () => {
               )}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-violet-100/70">
-              {isPsychologist
+              {isAdmin
+                ? "Manage the identity and timezone used across your admin workspace without the extra patient-care profile fields."
+                : isPsychologist
                 ? "Manage your private account details while keeping your qualifications, clinical focus, credentials, and public practice profile clearly organized."
                 : "Manage the details used for your account, local scheduling, trusted contact, and personalized ManoBalamHealthCare experience."}
             </p>
           </div>
         </section>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[330px_1fr]">
-          <aside className="h-fit space-y-5 lg:sticky lg:top-24">
-            <section className="overflow-hidden rounded-[2rem] border border-violet-100 bg-white p-6 text-center shadow-xl shadow-violet-100/40">
+        <div className={`${isPatient ? "student-profile-workspace" : ""} mt-6 grid gap-6 lg:grid-cols-[330px_1fr]`}>
+          <aside className={`${isPatient ? "student-profile-sidebar" : ""} h-fit space-y-5 lg:sticky lg:top-24`}>
+            <section className={`${isPatient ? "student-profile-summary" : ""} overflow-hidden rounded-[2rem] border border-violet-100 bg-white p-6 text-center shadow-xl shadow-violet-100/40`}>
               <AvatarUpload
                 currentAvatarUrl={profile.avatarUrl}
                 name={profile.name}
+                student={isPatient}
                 onAvatarUpdated={(avatarUrl) =>
                   setProfile((current) =>
                     current ? { ...current, avatarUrl } : current,
@@ -220,7 +262,8 @@ export const ProfilePage = () => {
               <h2 className="mt-5 text-2xl font-black text-slate-950">
                 {profile.name}
               </h2>
-              <p className="mt-1 capitalize text-sm font-semibold text-violet-600">
+              <p className="mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-violet-50 px-3 py-1 text-sm font-black capitalize text-violet-700">
+                {isAdmin && <ShieldCheck className="size-3.5" />}
                 {profile.role}
               </p>
               <div className="mt-5 space-y-3 border-t border-slate-100 pt-5 text-left">
@@ -253,10 +296,10 @@ export const ProfilePage = () => {
               </Button>
             </section>
 
-            <section className="rounded-3xl border border-violet-100 bg-white p-5 shadow-sm">
+            <section className={`${isPatient ? "student-profile-readiness" : ""} animate-in fade-in slide-in-from-left-3 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm delay-100 duration-500`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.13em] text-slate-400">
+                  <p className={`text-xs font-black text-slate-400 ${isPatient ? "tracking-wide" : "uppercase tracking-[0.13em]"}`}>
                     Profile readiness
                   </p>
                   <p className="mt-2 text-2xl font-black text-slate-950">
@@ -271,32 +314,39 @@ export const ProfilePage = () => {
                 <div className={`h-full rounded-full bg-gradient-to-r from-violet-600 to-emerald-500 ${completionWidth(completion)}`} />
               </div>
               <p className="mt-3 text-xs leading-5 text-slate-500">
-                {isPsychologist
+                {isAdmin
+                  ? "Admin readiness focuses on workspace identity, secure access, and local operation time."
+                  : isPsychologist
                   ? "Professional readiness combines your account, clinical details, credentials, and approval."
                   : "Adding optional details helps keep your account ready for scheduling and support."}
               </p>
             </section>
 
-            <section className="flex gap-3 rounded-3xl border border-emerald-100 bg-emerald-50 p-5">
-              <BadgeCheck className="mt-0.5 size-5 shrink-0 text-emerald-700" />
-              <div>
-                <p className="text-sm font-black text-emerald-900">
-                  {isPsychologist
-                    ? professionalStatusLabel(professionalProfile)
-                    : profile.isVerified
-                      ? "Verified account"
-                      : "Verification pending"}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-emerald-800/75">
-                  {isPsychologist
-                    ? "Professional verification controls whether patients can discover and book your practice."
-                    : "Sensitive account fields cannot be changed from this profile form."}
-                </p>
-              </div>
-            </section>
+            {isAdmin ? (
+              <AdminQuickActions />
+            ) : (
+              <section className={`${isPatient ? "student-profile-verification" : ""} animate-in fade-in slide-in-from-left-3 flex gap-3 rounded-3xl border border-emerald-100 bg-emerald-50 p-5 delay-150 duration-500`}>
+                <BadgeCheck className="mt-0.5 size-5 shrink-0 text-emerald-700" />
+                <div>
+                  <p className="text-sm font-black text-emerald-900">
+                    {isPsychologist
+                      ? professionalStatusLabel(professionalProfile)
+                      : profile.isVerified
+                        ? "Verified account"
+                        : "Verification pending"}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-emerald-800/75">
+                    {isPsychologist
+                      ? "Professional verification controls whether patients can discover and book your practice."
+                      : "Sensitive account fields cannot be changed from this profile form."}
+                  </p>
+                </div>
+              </section>
+            )}
           </aside>
 
-          <div className="space-y-6">
+          <div className={`${isPatient ? "student-profile-content" : ""} space-y-6`}>
+            {isPatient && <PatientCareShortcuts />}
             {isPsychologist && (
               <PsychologistProfessionalOverview profile={professionalProfile} />
             )}
@@ -304,6 +354,8 @@ export const ProfilePage = () => {
               profile={profile}
               onUpdated={setProfile}
               professional={isPsychologist}
+              admin={isAdmin}
+              student={isPatient}
             />
           </div>
         </div>
@@ -311,6 +363,217 @@ export const ProfilePage = () => {
     </main>
   );
 };
+
+function PatientProfileLayout({
+  profile,
+  completion,
+  destination,
+  onLogout,
+  onAvatarUpdated,
+  onProfileUpdated,
+}: {
+  profile: UserProfile;
+  completion: number;
+  destination: (typeof roleDestinations)["patient"];
+  onLogout: () => void;
+  onAvatarUpdated: (avatarUrl: string) => void;
+  onProfileUpdated: (profile: UserProfile) => void;
+}) {
+  const DestinationIcon = destination.icon;
+
+  return (
+    <main className="student-profile-page min-h-[calc(100vh-4.5rem)] px-4 py-7 md:px-8 md:py-10">
+      <div className="mx-auto max-w-7xl">
+        <section className="student-profile-card overflow-hidden border border-[#ddd6fe] bg-white">
+          <div className="student-profile-cover relative overflow-hidden bg-[#312e81] px-6 py-9 text-white sm:px-10 sm:py-11">
+            <div className="relative z-10 max-w-3xl">
+              <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-violet-200">
+                <Sparkles className="size-3.5" />
+                Your care account
+              </span>
+              <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] sm:text-5xl">
+                A profile that keeps your care{" "}
+                <span className="text-violet-300">personal and prepared</span>
+              </h1>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-violet-100/75">
+                Manage the details used for your account, local scheduling, trusted contact, and personalized ManoBalamHealthCare experience.
+              </p>
+            </div>
+          </div>
+
+          <div className="student-profile-identity px-5 pb-7 sm:px-10 sm:pb-9">
+            <div className="student-profile-identity-row flex flex-col gap-5 border-b border-[#ede9fe] pb-7 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-end">
+                <AvatarUpload
+                  currentAvatarUrl={profile.avatarUrl}
+                  name={profile.name}
+                  student
+                  onAvatarUpdated={onAvatarUpdated}
+                />
+                <div className="min-w-0 pb-2">
+                  <h2 className="truncate text-3xl font-black text-[#312e81] sm:text-4xl">
+                    {profile.name}
+                  </h2>
+                  <p className="mt-2 text-base font-semibold capitalize text-[#6b5b95]">
+                    {profile.role}
+                  </p>
+                </div>
+              </div>
+              <div className="student-profile-verified flex max-w-sm gap-3 rounded-xl border border-[#ddd6fe] bg-[#f5f3ff] p-4">
+                <BadgeCheck className="mt-0.5 size-5 shrink-0 text-[#7c3aed]" />
+                <div>
+                  <p className="text-sm font-black text-[#4c1d95]">
+                    {profile.isVerified ? "Verified account" : "Verification pending"}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-[#6b5b95]">
+                    Sensitive account fields cannot be changed from this profile form.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="student-profile-info-grid mt-7 grid gap-4 md:grid-cols-2">
+              {profile.email && <ProfileInfoTile icon={Mail} label="Email" value={profile.email} />}
+              {profile.phone && <ProfileInfoTile icon={Phone} label="Phone" value={profile.phone} />}
+              <ProfileInfoTile icon={MapPin} label="Country" value={profile.country} />
+              <ProfileInfoTile icon={Clock3} label="Timezone" value={profile.timezone} />
+            </div>
+
+            <div className="student-profile-readiness-panel mt-7 grid gap-5 border border-[#ddd6fe] p-5 sm:grid-cols-[auto_1fr] sm:items-center sm:p-6">
+              <div>
+                <p className="text-4xl font-black text-[#7c3aed]">{completion}%</p>
+                <p className="mt-2 text-sm font-semibold text-[#6b5b95]">Profile readiness</p>
+              </div>
+              <div>
+                <div className="h-2 overflow-hidden rounded-full bg-[#ede9fe]">
+                  <div className={`h-full rounded-full bg-[#7c3aed] ${completionWidth(completion)}`} />
+                </div>
+                <p className="mt-3 text-xs leading-5 text-[#6b5b95]">
+                  Adding optional details helps keep your account ready for scheduling and support.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button asChild variant="outline" className="h-11 rounded-xl border-[#ddd6fe] bg-[#f5f3ff] font-bold text-[#4c1d95]">
+                <Link to={destination.to}>
+                  <DestinationIcon className="mr-2 size-4" />
+                  {destination.label}
+                  <ArrowRight className="ml-2 size-4" />
+                </Link>
+              </Button>
+              <Button variant="ghost" className="h-11 rounded-xl font-semibold text-slate-600 hover:bg-rose-50 hover:text-rose-700" onClick={onLogout}>
+                Log out
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <div className="mt-7 space-y-6">
+          <PatientCareShortcuts />
+          <ProfileForm
+            profile={profile}
+            onUpdated={onProfileUpdated}
+            student
+          />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function ProfileInfoTile({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Mail;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="student-profile-info-tile flex min-w-0 items-center gap-4 bg-[#f5f3ff] p-5">
+      <Icon className="size-5 shrink-0 text-[#7c3aed]" />
+      <div className="min-w-0">
+        <p className="text-xs font-medium text-[#7c719d]">{label}</p>
+        <p className="mt-1 truncate text-sm font-bold text-[#312e81]">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function PatientCareShortcuts() {
+  const actions = [
+    { label: "Book a session", to: "/book", icon: CalendarDays, tone: "bg-violet-100 text-violet-700" },
+    { label: "Find psychologists", to: "/psychologists", icon: UsersRound, tone: "bg-emerald-100 text-emerald-700" },
+    { label: "Assessments", to: "/assessment", icon: FileCheck2, tone: "bg-blue-100 text-blue-700" },
+    { label: "Urgent support", to: "/emergency", icon: HeartHandshake, tone: "bg-rose-100 text-rose-700" },
+  ];
+
+  return (
+    <section className="student-profile-shortcuts rounded-3xl border border-violet-100 bg-white p-6 shadow-sm">
+      <p className="text-xs font-black tracking-wide text-violet-600">
+        Care shortcuts
+      </p>
+      <h2 className="mt-2 text-2xl font-black text-slate-950">
+        Continue your care journey
+      </h2>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        {actions.map(({ icon: Icon, ...action }) => (
+          <Link
+            key={action.to}
+            to={action.to}
+            className="group flex items-center gap-3 rounded-2xl border border-slate-100 p-4 transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+          >
+            <span className={`grid size-10 place-items-center rounded-xl ${action.tone}`}>
+              <Icon className="size-4" />
+            </span>
+            <span className="font-black text-slate-800 group-hover:text-primary">{action.label}</span>
+            <ArrowRight className="ml-auto size-4 text-slate-300 group-hover:text-primary" />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AdminQuickActions() {
+  const actions = [
+    { label: "Verifications", to: "/admin/verifications", icon: BadgeCheck, tone: "bg-violet-100 text-violet-700" },
+    { label: "Payouts", to: "/admin/payouts", icon: WalletCards, tone: "bg-emerald-100 text-emerald-700" },
+    { label: "Support inbox", to: "/admin/contact-requests", icon: Inbox, tone: "bg-blue-100 text-blue-700" },
+    { label: "Users", to: "/admin/users", icon: UsersRound, tone: "bg-amber-100 text-amber-700" },
+  ];
+
+  return (
+    <section className="animate-in fade-in slide-in-from-left-3 rounded-3xl border border-violet-100 bg-white p-5 shadow-sm delay-150 duration-500">
+      <div className="flex items-center gap-3">
+        <span className="grid size-10 place-items-center rounded-2xl bg-violet-100 text-violet-700">
+          <UserCog className="size-5" />
+        </span>
+        <div>
+          <p className="text-sm font-black text-slate-950">Admin shortcuts</p>
+          <p className="text-xs text-slate-500">Jump to common operations.</p>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-2">
+        {actions.map(({ icon: Icon, ...action }) => (
+          <Link
+            key={action.to}
+            to={action.to}
+            className="group flex items-center gap-3 rounded-2xl border border-slate-100 p-3 transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50"
+          >
+            <span className={`grid size-9 place-items-center rounded-xl ${action.tone}`}>
+              <Icon className="size-4" />
+            </span>
+            <span className="text-sm font-black text-slate-700 group-hover:text-primary">{action.label}</span>
+            <ArrowRight className="ml-auto size-4 text-slate-300 group-hover:text-primary" />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function professionalStatusLabel(profile: PsychologistOnboarding | null) {
   if (!profile) return "Professional profile unavailable";
@@ -528,7 +791,7 @@ function InfoLine({
 
 function ProfileSkeleton() {
   return (
-    <main className="min-h-screen bg-[#faf9ff] px-4 py-8 md:px-8">
+    <main className="student-profile-skeleton min-h-[100dvh] bg-[#faf9ff] px-4 py-8 md:px-8">
       <div className="mx-auto max-w-7xl">
         <Skeleton className="h-72 rounded-[2rem]" />
         <div className="mt-6 grid gap-6 lg:grid-cols-[330px_1fr]">

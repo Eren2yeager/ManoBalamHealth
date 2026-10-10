@@ -5,6 +5,7 @@ import { PsychologistModel } from "@/modules/psychologist/psychologist.model";
 import { UserModel } from "@/modules/user/user.model";
 import { PaymentModel } from "@/modules/payment/payment.model";
 import { FeedbackModel } from "@/modules/feedback/feedback.model";
+import { BookingSettingsModel } from "@/modules/admin/bookingSettings.model";
 import { appointmentLifecycleService } from "./appointmentLifecycle.service";
 import { resolveAppointmentTiming } from "./appointmentTiming";
 import { ApiError } from "@/utils/ApiError";
@@ -20,6 +21,18 @@ import {
 } from "./appointment.types";
 
 class AppointmentService {
+  async getBookingSettings() {
+    const settings = await BookingSettingsModel.findOneAndUpdate(
+      { key: "booking" },
+      { $setOnInsert: { key: "booking", showScheduleSelection: true } },
+      { new: true, upsert: true },
+    ).lean();
+
+    return {
+      showScheduleSelection: settings.showScheduleSelection,
+    };
+  }
+
   /**
    * Create appointment
    */
@@ -103,9 +116,14 @@ class AppointmentService {
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Patient not found");
     }
 
-    // Find available slots in the preferred time window
-    const preferredFrom = new Date(data.preferredFrom);
-    const preferredTo = new Date(data.preferredTo);
+    // Find available slots. If the patient schedule step is hidden by admin
+    // settings, use the next published psychologist slot instead of requiring
+    // a patient-selected time window.
+    const hasPreferredWindow = Boolean(data.preferredFrom && data.preferredTo);
+    const preferredFrom = hasPreferredWindow ? new Date(data.preferredFrom!) : new Date();
+    const preferredTo = hasPreferredWindow
+      ? new Date(data.preferredTo!)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     // Build filter for psychologists
     const psychologistFilter: any = {
@@ -122,12 +140,21 @@ class AppointmentService {
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NO_PSYCHOLOGIST_AVAILABLE, "No eligible psychologists available");
     }
 
+    const psychologistRank = new Map(psychologists.map((p) => [
+      p._id.toString(),
+      {
+        priority: p.bookingPriority ?? 0,
+        ratingAverage: p.rating?.average ?? 0,
+        ratingCount: p.rating?.count ?? 0,
+        experienceYears: p.experienceYears ?? 0,
+      },
+    ]));
     const psychologistIds = psychologists.map((p) => p._id);
 
-    // Find available slots
+    // Find available slots and choose the best psychologist by admin priority first.
     const holdUntil = new Date(Date.now() + 10 * 60 * 1000);
     const appointmentId = new Types.ObjectId();
-    const slot = await AvailabilitySlotModel.findOneAndUpdate({
+    const candidateSlots = await AvailabilitySlotModel.find({
       psychologistId: { $in: psychologistIds },
       startTime: { $gte: preferredFrom, $lte: preferredTo },
       mode: data.mode,
@@ -137,12 +164,38 @@ class AppointmentService {
         { holdExpiresAt: { $exists: false } },
         { holdExpiresAt: { $lt: new Date() } },
       ],
-    }, {
-      $set: { holdExpiresAt: holdUntil, heldByAppointmentId: appointmentId },
-    }, {
-      new: true,
-      sort: { startTime: 1 },
+    }).sort({ startTime: 1 }).limit(100).lean();
+
+    const rankedSlots = candidateSlots.sort((a, b) => {
+      const aRank = psychologistRank.get(a.psychologistId.toString()) ?? { priority: 0, ratingAverage: 0, ratingCount: 0, experienceYears: 0 };
+      const bRank = psychologistRank.get(b.psychologistId.toString()) ?? { priority: 0, ratingAverage: 0, ratingCount: 0, experienceYears: 0 };
+
+      return (
+        bRank.priority - aRank.priority ||
+        a.startTime.getTime() - b.startTime.getTime() ||
+        bRank.ratingAverage - aRank.ratingAverage ||
+        bRank.ratingCount - aRank.ratingCount ||
+        bRank.experienceYears - aRank.experienceYears
+      );
     });
+
+    let slot = null;
+    for (const candidate of rankedSlots) {
+      slot = await AvailabilitySlotModel.findOneAndUpdate(
+        {
+          _id: candidate._id,
+          isBooked: false,
+          isBlocked: false,
+          $or: [
+            { holdExpiresAt: { $exists: false } },
+            { holdExpiresAt: { $lt: new Date() } },
+          ],
+        },
+        { $set: { holdExpiresAt: holdUntil, heldByAppointmentId: appointmentId } },
+        { new: true },
+      );
+      if (slot) break;
+    }
 
     if (!slot) {
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NO_PSYCHOLOGIST_AVAILABLE, "No available slots in the preferred time window");

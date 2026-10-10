@@ -36,10 +36,25 @@ export const usePresence = () => {
 
 /**
  * Used by the psychologist dashboard to toggle their own availability.
- * Re-emits "presence:online" to signal the server — the server broadcasts
+ * Emits "presence:set" — the server persists the intent and broadcasts
  * "presence:update" back to all connected clients.
+ *
+ * `onState` receives "presence:state" pushes from the server, which fire on
+ * every (re)connect with the persisted intent — this is what keeps the toggle
+ * accurate across refreshes and page navigation.
  */
-export const usePsychologistPresenceToggle = () => {
+export const usePsychologistPresenceToggle = (
+  onState?: (state: { isOnline: boolean; intendedOnline: boolean }) => void,
+) => {
+  useEffect(() => {
+    if (!onState) return;
+    const socket = connectSocket();
+    socket.on("presence:state", onState);
+    return () => {
+      socket.off("presence:state", onState);
+    };
+  }, [onState]);
+
   const toggleOnline = (isOnline: boolean) => {
     const socket = connectSocket();
     socket.emit("presence:set", { online: isOnline });

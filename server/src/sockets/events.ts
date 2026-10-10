@@ -1,7 +1,7 @@
 export const SocketEvents = {
   // Presence events
   USER_ONLINE: "user:online",
-  USER_OFFLINE: "user:offline",
+  USER_OFFLINE: "user:Offline",
   PRESENCE_UPDATE: "presence:update",
 
   // Chat events

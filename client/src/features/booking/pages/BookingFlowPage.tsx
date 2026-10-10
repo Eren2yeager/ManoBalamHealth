@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,32 +8,25 @@ import {
   HeartHandshake,
   LockKeyhole,
   MessageCircleHeart,
+  HelpCircle,
   ShieldCheck,
   Sparkles,
   Stethoscope,
-  UserRoundSearch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AllocationModeToggle } from "../components/AllocationModeToggle";
 import { AutoTimeWindowPicker } from "../components/AutoTimeWindowPicker";
 import { ConsultationTypePicker } from "../components/ConsultationTypePicker";
-import { SlotPicker } from "../components/SlotPicker";
 import { ConcernForm } from "../components/ConcernForm";
 import { BookingSummary } from "../components/BookingSummary";
-import { PsychologistBookingPicker } from "../components/PsychologistBookingPicker";
 import { useBookingStore } from "../store/bookingStore";
+import { getBookingSettings } from "../api/booking.api";
 
-type Step = "mode" | "type" | "schedule" | "concern" | "summary";
+type Step = "type" | "schedule" | "concern" | "summary";
 
 const STEP_CONFIG: Record<
   Step,
   { label: string; description: string; icon: typeof HeartHandshake }
 > = {
-  mode: {
-    label: "Care path",
-    description: "Choose a professional or let us match you",
-    icon: HeartHandshake,
-  },
   type: {
     label: "Session type",
     description: "Chat, audio, or secure video",
@@ -56,35 +49,47 @@ const STEP_CONFIG: Record<
   },
 };
 
-const STEPS: Step[] = ["mode", "type", "schedule", "concern", "summary"];
+const STEPS: Step[] = ["type", "schedule", "concern", "summary"];
 
 export const BookingFlowPage = () => {
-  const { psychologistId } = useParams<{ psychologistId?: string }>();
-  const [step, setStep] = useState<Step>(psychologistId ? "type" : "mode");
+  const [step, setStep] = useState<Step>("type");
+  const [showScheduleSelection, setShowScheduleSelection] = useState(true);
   const {
-    allocationMode,
     mode,
-    selectedSlotId,
-    selectedPsychologistId,
     preferredWindow,
-    setAllocationMode,
-    setSelectedPsychologist,
     reset,
   } = useBookingStore();
 
-  const isManualFlow = allocationMode === "manual" || Boolean(psychologistId);
   const visibleSteps = useMemo(
-    () => (psychologistId ? STEPS.filter((item) => item !== "mode") : STEPS),
-    [psychologistId],
+    () => showScheduleSelection ? STEPS : STEPS.filter((item) => item !== "schedule"),
+    [showScheduleSelection],
   );
   const currentIndex = visibleSteps.indexOf(step);
+  const proceedHint = useMemo(() => {
+    if (step === "type" && !mode) return "Select chat, audio, or video to continue.";
+    if (step === "schedule") {
+      if (!(preferredWindow?.from && preferredWindow?.to)) return "Pick your preferred date and time window.";
+    }
+    return "Ready for the next step.";
+  }, [mode, preferredWindow, step]);
 
   useEffect(() => {
-    if (psychologistId) {
-      setAllocationMode("manual");
-      setSelectedPsychologist(psychologistId);
-    }
-  }, [psychologistId, setAllocationMode, setSelectedPsychologist]);
+    let active = true;
+    void getBookingSettings()
+      .then((settings) => {
+        if (!active) return;
+        setShowScheduleSelection(settings.showScheduleSelection);
+        if (!settings.showScheduleSelection && step === "schedule") {
+          setStep("concern");
+        }
+      })
+      .catch(() => {
+        if (active) setShowScheduleSelection(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [step]);
 
   useEffect(
     () => () => {
@@ -94,12 +99,9 @@ export const BookingFlowPage = () => {
   );
 
   const canProceed = () => {
-    if (step === "mode") return allocationMode !== null;
     if (step === "type") return Boolean(mode);
     if (step === "schedule") {
-      return isManualFlow
-        ? Boolean(selectedPsychologistId && selectedSlotId)
-        : Boolean(preferredWindow?.from && preferredWindow?.to);
+      return Boolean(preferredWindow?.from && preferredWindow?.to);
     }
     return true;
   };
@@ -114,46 +116,12 @@ export const BookingFlowPage = () => {
     if (currentIndex > 0) setStep(visibleSteps[currentIndex - 1]);
   };
 
-  const renderSchedule = () => {
-    if (!isManualFlow) return <AutoTimeWindowPicker />;
-    if (!selectedPsychologistId) return <PsychologistBookingPicker />;
-    if (!mode) return null;
-
-    return (
-      <div className="space-y-5">
-        {!psychologistId && (
-          <div className="flex items-center justify-between rounded-2xl border border-violet-100 bg-violet-50/60 px-4 py-3">
-            <div className="flex items-center gap-2 text-sm font-bold text-violet-800">
-              <UserRoundSearch className="size-4" />
-              Professional selected
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="rounded-xl font-bold text-violet-700"
-              onClick={() => setSelectedPsychologist(null)}
-            >
-              Change
-            </Button>
-          </div>
-        )}
-        <SlotPicker
-          psychologistId={selectedPsychologistId}
-          consultationMode={mode}
-        />
-      </div>
-    );
-  };
-
   const renderStep = () => {
     switch (step) {
-      case "mode":
-        return <AllocationModeToggle />;
       case "type":
         return <ConsultationTypePicker />;
       case "schedule":
-        return renderSchedule();
+        return <AutoTimeWindowPicker />;
       case "concern":
         return <ConcernForm />;
       case "summary":
@@ -188,8 +156,8 @@ export const BookingFlowPage = () => {
               Your next step, made calm and simple
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-violet-100/70">
-              Choose the support that fits you, find a convenient time, and
-              confirm through a protected payment process.
+              Choose the support that fits you, share what feels helpful, and
+              confirm the priority-matched session through a protected payment process.
             </p>
           </div>
         </section>
@@ -257,6 +225,24 @@ export const BookingFlowPage = () => {
                 to provide care.
               </p>
             </div>
+
+            <div className="mt-3 rounded-2xl bg-violet-50 p-4">
+              <p className="flex items-center gap-2 text-xs font-black text-violet-800">
+                <HelpCircle className="size-4" />
+                Not sure who to choose?
+              </p>
+              <p className="mt-2 text-[11px] leading-5 text-violet-700/80">
+                {showScheduleSelection
+                  ? "You can choose a preferred window; booking is still assigned automatically by priority and availability."
+                  : "Admin has hidden patient schedule selection, so the app assigns the next suitable priority-based slot from psychologist availability."}
+              </p>
+              <Link
+                to="/psychologists"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-700 hover:gap-2"
+              >
+                View psychologists <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
           </aside>
 
           <section className="min-w-0 rounded-[2rem] border border-violet-100 bg-white/95 p-5 shadow-xl shadow-violet-100/40 backdrop-blur sm:p-7 md:p-9">
@@ -279,7 +265,7 @@ export const BookingFlowPage = () => {
             </div>
 
             {step !== "summary" && (
-              <div className="mt-8 flex items-center justify-between gap-4 border-t border-slate-100 pt-6">
+              <div className="mt-8 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <Button
                   variant="outline"
                   disabled={currentIndex === 0}
@@ -289,14 +275,19 @@ export const BookingFlowPage = () => {
                   <ArrowLeft className="mr-2 size-4" />
                   Back
                 </Button>
-                <Button
-                  onClick={nextStep}
-                  disabled={!canProceed()}
-                  className="h-11 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-bold shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-indigo-700"
-                >
-                  Continue
-                  <ArrowRight className="ml-2 size-4" />
-                </Button>
+                <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                  <p className={`text-xs font-semibold ${canProceed() ? "text-emerald-600" : "text-slate-500"}`}>
+                    {proceedHint}
+                  </p>
+                  <Button
+                    onClick={nextStep}
+                    disabled={!canProceed()}
+                    className="h-11 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 font-bold shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-indigo-700"
+                  >
+                    Continue
+                    <ArrowRight className="ml-2 size-4" />
+                  </Button>
+                </div>
               </div>
             )}
           </section>

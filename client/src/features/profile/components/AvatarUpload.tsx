@@ -19,12 +19,14 @@ interface AvatarUploadProps {
   currentAvatarUrl?: string;
   name: string;
   onAvatarUpdated: (avatarUrl: string) => void;
+  student?: boolean;
 }
 
 export const AvatarUpload = ({
   currentAvatarUrl,
   name,
   onAvatarUpdated,
+  student = false,
 }: AvatarUploadProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const user = useUserStore((state) => state.user);
@@ -81,7 +83,7 @@ export const AvatarUpload = ({
   const imageUrl = previewUrl ?? currentAvatarUrl;
 
   return (
-    <div className="flex flex-col items-center">
+    <div className={`${student ? "student-profile-avatar" : ""} flex flex-col items-center`}>
       <div className="group relative">
         <div className="grid size-36 place-items-center overflow-hidden rounded-[2.5rem] border-4 border-white bg-gradient-to-br from-violet-100 to-blue-100 text-violet-600 shadow-2xl shadow-violet-200/60">
           {imageUrl ? (

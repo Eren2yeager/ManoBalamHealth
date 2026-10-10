@@ -7,8 +7,8 @@ export interface CreateAppointmentManualRequest {
 
 export interface CreateAppointmentAutoRequest {
   allocationMode: "auto";
-  preferredFrom: string;
-  preferredTo: string;
+  preferredFrom?: string;
+  preferredTo?: string;
   mode: "chat" | "audio" | "video";
   specialization?: string;
   concernDescription?: string;

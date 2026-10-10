@@ -6,8 +6,14 @@ import { AssessmentProgress } from "../components/AssessmentProgress";
 import { AssessmentResult } from "../components/AssessmentResult";
 import { getAssessmentTemplate, submitAssessment } from "../api/assessment.api";
 import { useAssessmentStore } from "../store/assessmentStore";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Languages } from "lucide-react";
 import type { AssessmentType } from "../types/assessment.types";
+import {
+  assessmentLanguageLabels,
+  getAssessmentInstruction,
+  getAssessmentTitle,
+  type AssessmentLanguage,
+} from "../utils/assessmentTranslations";
 
 export function AssessmentPage() {
   const { type } = useParams<{ type: string }>();
@@ -28,6 +34,7 @@ export function AssessmentPage() {
     reset,
   } = useAssessmentStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [language, setLanguage] = useState<AssessmentLanguage>("en");
 
   // On the /assessment/:type/result route the store already has the result —
   // just render it. Only load the template when we're on the question route.
@@ -166,6 +173,7 @@ export function AssessmentPage() {
   }
 
   if (!template) return null;
+  const assessmentType = type as AssessmentType;
 
   // ── Question flow ─────────────────────────────────────────────────────────
   const currentQuestion = template.questions[currentStep];
@@ -188,10 +196,43 @@ export function AssessmentPage() {
             </Button>
           </div>
           <div>
-            <h1 className="text-3xl font-black mb-2 text-slate-950">{template.title}</h1>
+            <h1 className="text-3xl font-black mb-2 text-slate-950">
+              {getAssessmentTitle(assessmentType, template.title, language)}
+            </h1>
             <p className="text-sm text-slate-600">
-              Answer the following questions honestly to get your results
+              {getAssessmentInstruction(language)}
             </p>
+          </div>
+          <div className="mt-5 rounded-3xl border border-violet-100 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <span className="grid size-10 place-items-center rounded-2xl bg-violet-100 text-violet-700">
+                  <Languages className="size-5" />
+                </span>
+                <div>
+                  <p className="text-sm font-black text-slate-950">Question language</p>
+                  <p className="text-xs text-slate-500">
+                    {assessmentLanguageLabels[language].helper}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 rounded-2xl bg-violet-50 p-1">
+                {(["en", "hi"] as const).map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setLanguage(item)}
+                    className={`rounded-xl px-4 py-2 text-sm font-black transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 ${
+                      language === item
+                        ? "bg-white text-violet-700 shadow-sm"
+                        : "text-slate-500 hover:text-violet-700"
+                    }`}
+                  >
+                    {assessmentLanguageLabels[item].label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </header>
 
@@ -202,6 +243,8 @@ export function AssessmentPage() {
 
         <AssessmentQuestion
           question={currentQuestion}
+          assessmentType={assessmentType}
+          language={language}
           selectedScore={selectedScore}
           onSelectScore={(score) => setAnswer(currentQuestion.id, score)}
         />
@@ -213,7 +256,7 @@ export function AssessmentPage() {
             disabled={currentStep === 0}
             className="h-11 rounded-xl px-6 font-bold border-slate-200 hover:bg-slate-50"
           >
-            Previous
+            {language === "hi" ? "पीछे" : "Previous"}
           </Button>
           <div className="flex gap-3">
             {isLastStep ? (
@@ -223,7 +266,7 @@ export function AssessmentPage() {
                 className="h-11 rounded-xl bg-gradient-to-r from-primary to-violet-600 font-bold shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-indigo-700"
               >
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Submit Assessment
+                {language === "hi" ? "जमा करें" : "Submit Assessment"}
               </Button>
             ) : (
               <Button
@@ -231,7 +274,7 @@ export function AssessmentPage() {
                 disabled={selectedScore === null}
                 className="h-11 rounded-xl bg-gradient-to-r from-primary to-violet-600 font-bold shadow-lg shadow-violet-200 hover:from-violet-700 hover:to-indigo-700"
               >
-                Next
+                {language === "hi" ? "आगे" : "Next"}
               </Button>
             )}
           </div>

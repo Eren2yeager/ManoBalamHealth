@@ -19,10 +19,9 @@ const envSchema = z.object({
   EMAIL_DELIVERY_MODE: z.enum(["resend", "console"]).default("resend"),
   EMAIL_FROM: z.string().min(3).optional(),
   MSG91_API_KEY: z.string().optional(),
-  TURN_SERVER_URL: z.string().min(1),
-  TURN_SERVER_USERNAME: z.string().min(1),
-  TURN_SERVER_CREDENTIAL: z.string().min(1),
+  METERED_TURN_CREDENTIALS_URL: z.string().url(),
   CLIENT_ORIGIN: z.string().min(1),
+  ENCRYPTION_KEY: z.string().min(32),
 }).superRefine((data, context) => {
   if (data.NODE_ENV === "production" && data.EMAIL_DELIVERY_MODE !== "resend") {
     context.addIssue({

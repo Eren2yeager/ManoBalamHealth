@@ -29,15 +29,18 @@ export const PsychologistCard = ({
   psychologist,
   animationClass = "",
 }: PsychologistCardProps) => {
+  // Admin-controlled booked-session fee, falling back to the public price matrix.
+  const startingPaise =
+    psychologist.priceMatrix?.chat?.[30] ?? psychologist.consultationFee.amount;
   const fee = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: psychologist.consultationFee.currency || "INR",
     maximumFractionDigits: 0,
-  }).format(psychologist.consultationFee.amount / 100);
+  }).format(startingPaise / 100);
 
   return (
     <article
-      className={`group relative flex h-full animate-in fade-in slide-in-from-bottom-4 flex-col overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white shadow-sm duration-500 hover:-translate-y-2 hover:border-violet-100 hover:shadow-2xl hover:shadow-primary/10 ${animationClass}`}
+      className={`psychologist-directory-card group relative flex h-full animate-in fade-in slide-in-from-bottom-4 flex-col overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white shadow-sm duration-500 hover:-translate-y-2 hover:border-violet-100 hover:shadow-2xl hover:shadow-primary/10 ${animationClass}`}
     >
       <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-br from-violet-100/75 via-purple-50 to-blue-50 opacity-80" />
       <div className="absolute -right-10 -top-10 size-28 rounded-full bg-primary/8 blur-2xl transition-transform duration-500 group-hover:scale-150" />
@@ -57,7 +60,7 @@ export const PsychologistCard = ({
               className={`absolute bottom-0 right-0 size-4 rounded-full border-[3px] border-white ${
                 psychologist.isOnline ? "bg-emerald-500" : "bg-slate-300"
               }`}
-              title={psychologist.isOnline ? "Online now" : "Currently offline"}
+              title={psychologist.isOnline ? "Online" : "Offline"}
             />
           </div>
 
@@ -146,6 +149,9 @@ export const PsychologistCard = ({
             View profile
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
           </Link>
+          <p className="mt-2 text-center text-[10px] font-semibold text-slate-400">
+            Booking is assigned automatically by availability and care priority.
+          </p>
         </div>
       </div>
     </article>

@@ -3,7 +3,8 @@ import type { ApiErrorResponse } from "@/types/global.types";
 import { useUserStore } from "@/stores/userStore";
 
 export const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  // Falls back to same-origin /api for combined deployments (server serves the client)
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   withCredentials: true, // sends httpOnly refresh cookie automatically
 });
 

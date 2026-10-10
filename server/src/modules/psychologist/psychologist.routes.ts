@@ -7,9 +7,13 @@ import {
   updatePsychologistProfileSchema,
   getPsychologistsQuerySchema,
   uploadCredentialsSchema,
+  setPsychologistFeeSchema,
+  bulkSetPsychologistFeeSchema,
 } from "./psychologist.validation";
 
 const router = Router();
+
+router.get("/meta", psychologistController.getMeta);
 
 router.get(
   "/me/onboarding",
@@ -42,12 +46,43 @@ router.post(
   psychologistController.uploadCredentials,
 );
 
+router.delete(
+  "/me/credentials/:credentialId",
+  requireAuth,
+  requireRole("psychologist"),
+  psychologistController.deleteCredential,
+);
+
 router.patch(
   "/me/profile",
   requireAuth,
   requireRole("psychologist"),
   validate(updatePsychologistProfileSchema),
   psychologistController.updateMyProfile,
+);
+
+// Admin-only fee management routes
+router.put(
+  "/fees/bulk",
+  requireAuth,
+  requireRole("admin"),
+  validate(bulkSetPsychologistFeeSchema),
+  psychologistController.bulkSetPsychologistFee,
+);
+
+router.put(
+  "/:id/fee",
+  requireAuth,
+  requireRole("admin"),
+  validate(setPsychologistFeeSchema),
+  psychologistController.setPsychologistFee,
+);
+
+router.get(
+  "/:id/fee-history",
+  requireAuth,
+  requireRole("admin"),
+  psychologistController.getFeeHistory,
 );
 
 export default router;

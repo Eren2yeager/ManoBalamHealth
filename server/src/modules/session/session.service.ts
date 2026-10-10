@@ -1,4 +1,4 @@
-import { SessionModel } from "./session.model";
+import { ISession, SessionModel } from "./session.model";
 import { AppointmentModel } from "@/modules/appointment/appointment.model";
 import { PsychologistModel } from "@/modules/psychologist/psychologist.model";
 import { ApiError } from "@/utils/ApiError";
@@ -9,9 +9,42 @@ import redis from "@/config/redis";
 import { sessionLifecycleService } from "./sessionLifecycle.service";
 import {
   GetSessionResponse,
+  SessionNoteEntryDto,
   UpdateSessionNotesRequest,
   UpdateSessionNotesResponse,
 } from "./session.types";
+
+type IceServer = { urls: string | string[]; username?: string; credential?: string };
+
+const ICE_SERVERS_CACHE_TTL_MS = 5 * 60 * 1000;
+let cachedIceServers: IceServer[] | null = null;
+let cachedIceServersAt = 0;
+
+/**
+ * Fetch TURN/STUN credentials from the Metered API. Credentials are
+ * short-lived, so results are cached only briefly; on failure we fall
+ * back to a public STUN server so calls can still connect when both
+ * peers are reachable directly.
+ */
+async function getIceServers(): Promise<IceServer[]> {
+  const now = Date.now();
+  if (cachedIceServers && now - cachedIceServersAt < ICE_SERVERS_CACHE_TTL_MS) {
+    return cachedIceServers;
+  }
+  try {
+    const response = await fetch(env.METERED_TURN_CREDENTIALS_URL);
+    if (!response.ok) {
+      throw new Error(`Metered TURN credentials request failed: ${response.status}`);
+    }
+    const iceServers = (await response.json()) as IceServer[];
+    cachedIceServers = iceServers;
+    cachedIceServersAt = now;
+    return iceServers;
+  } catch (error) {
+    console.error("Failed to fetch TURN credentials, falling back to STUN only:", error);
+    return [{ urls: "stun:stun.l.google.com:19302" }];
+  }
+}
 
 class SessionService {
   /**
@@ -73,15 +106,8 @@ class SessionService {
       throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Session not found");
     }
 
-    // Prepare ICE servers from env
-    const iceServers: Array<{ urls: string; username?: string; credential?: string }> = [
-      { urls: "stun:stun.l.google.com:19302" },
-      {
-        urls: env.TURN_SERVER_URL,
-        username: env.TURN_SERVER_USERNAME,
-        credential: env.TURN_SERVER_CREDENTIAL,
-      },
-    ];
+    // Fetch ICE servers (STUN + TURN) from the Metered API
+    const iceServers = await getIceServers();
 
     const patientUserId = apptAny.patientId._id.toString();
     const psychologistUserId = apptAny.psychologistId.userId._id.toString();
@@ -118,6 +144,9 @@ class SessionService {
         psychologistOnline: psychologistSocketCount > 0,
       },
       iceServers,
+      ...(userId === psychologistUserId
+        ? { psychologistNotes: buildNoteEntries(session) }
+        : {}),
     };
   }
 
@@ -147,8 +176,16 @@ class SessionService {
       throw new ApiError(StatusCodes.FORBIDDEN, ErrorCodes.FORBIDDEN_ROLE, "You are not authorized to update notes for this session");
     }
 
-    // Update notes
-    session.psychologistNotes = data.notes;
+    // Replace the structured note entries wholesale (the client always sends
+    // the full list). Once entries exist they supersede the legacy string.
+    session.psychologistNoteEntries = data.entries.map((entry) => ({
+      id: entry.id,
+      text: entry.text,
+      emotion: entry.emotion,
+      atSeconds: entry.atSeconds,
+      createdAt: entry.createdAt ? new Date(entry.createdAt) : new Date(),
+    }));
+    session.psychologistNotes = undefined;
     await session.save();
 
     return {
@@ -156,6 +193,32 @@ class SessionService {
       notesUpdated: true,
     };
   }
+}
+
+/**
+ * Structured note entries for a session; legacy free-text notes (saved before
+ * structured entries existed) are folded in as a single entry.
+ */
+function buildNoteEntries(session: ISession): SessionNoteEntryDto[] {
+  if (session.psychologistNoteEntries?.length) {
+    return session.psychologistNoteEntries.map((entry) => ({
+      id: entry.id,
+      text: entry.text,
+      emotion: entry.emotion,
+      atSeconds: entry.atSeconds,
+      createdAt: entry.createdAt.toISOString(),
+    }));
+  }
+  if (session.psychologistNotes) {
+    return [
+      {
+        id: "legacy",
+        text: session.psychologistNotes,
+        createdAt: (session as any).updatedAt?.toISOString?.() ?? new Date(0).toISOString(),
+      },
+    ];
+  }
+  return [];
 }
 
 export const sessionService = new SessionService();

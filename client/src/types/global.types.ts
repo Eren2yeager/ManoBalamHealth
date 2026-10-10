@@ -31,7 +31,8 @@ export type AppointmentStatus =
   | "in_progress"
   | "completed"
   | "cancelled"
-  | "no_show";
+  | "no_show"
+  | "refunded";
 
 export type RiskLevel = "low" | "moderate" | "high" | "severe";
 

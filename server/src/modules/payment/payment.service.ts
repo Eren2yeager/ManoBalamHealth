@@ -8,6 +8,7 @@ import { StatusCodes } from "@/constants/statusCodes.constant";
 import { ErrorCodes } from "@/constants/errorCodes.constant";
 import { env } from "@/config/env";
 import { razorpayProvider } from "./providers/razorpay.provider";
+import { computeSessionFee } from "@/modules/psychologist/psychologist.constants";
 import { reminderQueue } from "@/jobs/queues/reminder.queue";
 import { DateTime } from "luxon";
 import {
@@ -90,9 +91,28 @@ class PaymentService {
       };
     }
 
+    // Amount is the admin-controlled session fee in paise. Slot duration is
+    // still passed for compatibility with the price matrix API, but checkout
+    // intentionally charges the exact fee set by admin.
+    let durationMinutes = 30;
+    if (appointment.slotId) {
+      const slot = await AvailabilitySlotModel.findById(appointment.slotId);
+      if (slot?.startTime && slot?.endTime) {
+        const minutes = Math.round(
+          (new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime()) / 60000,
+        );
+        if (minutes > 0) durationMinutes = minutes;
+      }
+    }
+    const amount = computeSessionFee(
+      psychologist.consultationFee.amount,
+      appointment.mode,
+      durationMinutes,
+    );
+
     // Create Razorpay order (amount in smallest currency unit, e.g., paise for INR)
     const order = await razorpayProvider.createOrder({
-      amount: psychologist.consultationFee.amount,
+      amount,
       currency: psychologist.consultationFee.currency,
       receipt: `appt_${appointment._id.toString()}`,
       notes: {

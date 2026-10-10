@@ -7,7 +7,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RatingStars } from "./RatingStars";
 import { submitFeedback } from "../api/feedback.api";
 import { toast } from "sonner";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Loader2, CheckCircle2, ArrowRight } from "lucide-react";
 
 interface FeedbackFormProps {
   appointmentId: string;
@@ -75,6 +76,11 @@ export function FeedbackForm({ appointmentId, onSuccess }: FeedbackFormProps) {
               <span className="text-xs font-semibold text-slate-500">Your rating:</span>
               <RatingStars value={rating} readOnly size="lg" />
             </div>
+            <Button asChild className="mt-8 rounded-xl font-bold">
+              <Link to="/appointments">
+                Back to appointments <ArrowRight className="ml-2 size-4" />
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -97,6 +103,9 @@ export function FeedbackForm({ appointmentId, onSuccess }: FeedbackFormProps) {
             </Label>
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
               <RatingStars value={rating} onChange={setRating} size="lg" />
+              <p className="mt-3 text-xs font-semibold text-slate-500">
+                Choose the rating that best matches how supported you felt.
+              </p>
             </div>
           </div>
 
@@ -106,7 +115,7 @@ export function FeedbackForm({ appointmentId, onSuccess }: FeedbackFormProps) {
             </Label>
             <Textarea
               id="comment"
-              placeholder="Tell us about your experience..."
+              placeholder="What felt helpful? Was anything confusing or uncomfortable? What would you like next time?"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={5}

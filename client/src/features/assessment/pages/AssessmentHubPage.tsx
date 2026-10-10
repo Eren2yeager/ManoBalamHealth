@@ -1,37 +1,55 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { HeartPulse, Brain, Activity, History, ArrowRight, Sparkles } from "lucide-react";
+import {
+  HeartPulse,
+  Brain,
+  Activity,
+  History,
+  ArrowRight,
+  Sparkles,
+  ShieldCheck,
+  Clock3,
+  CheckCircle2,
+} from "lucide-react";
 import type { AssessmentType } from "../types/assessment.types";
 
 const ASSESSMENTS: { 
   type: AssessmentType; 
   title: string; 
   description: string; 
+  duration: string;
+  focus: string;
   icon: React.ReactNode;
   gradient: string;
   surface: string;
 }[] = [
   {
     type: "anxiety",
-    title: "Anxiety Screening",
-    description: "Assess your anxiety levels with a validated questionnaire.",
+    title: "Anxiety check-in",
+    description: "Notice worry, tension, and anxious thought patterns.",
+    duration: "2 to 4 min",
+    focus: "Worry and nervousness",
     icon: <HeartPulse className="size-8" />,
     gradient: "from-rose-500 to-pink-600",
     surface: "bg-rose-50 border-rose-100",
   },
   {
     type: "depression",
-    title: "Depression Screening",
-    description: "Understand your mood and identify signs of depression.",
+    title: "Mood check-in",
+    description: "Reflect on motivation, energy, and low-mood signals.",
+    duration: "3 to 5 min",
+    focus: "Mood and motivation",
     icon: <Brain className="size-8" />,
     gradient: "from-blue-500 to-indigo-600",
     surface: "bg-blue-50 border-blue-100",
   },
   {
     type: "stress",
-    title: "Stress Assessment",
-    description: "Measure your current stress load and coping capacity.",
+    title: "Stress check-in",
+    description: "Understand current pressure and coping capacity.",
+    duration: "2 to 4 min",
+    focus: "Pressure and coping",
     icon: <Activity className="size-8" />,
     gradient: "from-amber-500 to-orange-600",
     surface: "bg-amber-50 border-amber-100",
@@ -78,6 +96,16 @@ export function AssessmentHubPage() {
               <p className="mt-3 max-w-lg text-sm leading-6 text-slate-600">
                 A guided assessment can help you notice patterns and decide what kind of support may feel useful next.
               </p>
+              <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 shadow-sm">
+                  <ShieldCheck className="size-3.5 text-emerald-600" />
+                  Private check-ins
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 shadow-sm">
+                  <Clock3 className="size-3.5 text-violet-600" />
+                  Usually under 5 minutes
+                </span>
+              </div>
             </div>
 
             <Button
@@ -91,6 +119,23 @@ export function AssessmentHubPage() {
         </div>
       </section>
 
+      <section className="px-4 pt-7 md:px-8">
+        <div className="mx-auto grid max-w-6xl gap-3 md:grid-cols-3">
+          {[
+            "Choose the check-in that matches today",
+            "Answer honestly at your own pace",
+            "Use results to decide your next support step",
+          ].map((step, index) => (
+            <div key={step} className="flex items-center gap-3 rounded-3xl border border-violet-100 bg-white p-4 shadow-sm">
+              <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-violet-100 text-sm font-black text-violet-700">
+                {index + 1}
+              </span>
+              <p className="text-sm font-bold text-slate-700">{step}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Assessments Grid */}
       <section className="px-4 py-8 md:px-8">
         <div className="mx-auto max-w-6xl">
@@ -100,7 +145,7 @@ export function AssessmentHubPage() {
           />
           
           <div className="grid gap-6 lg:grid-cols-3">
-            {ASSESSMENTS.map(({ type, title, description, icon, gradient, surface }) => (
+            {ASSESSMENTS.map(({ type, title, description, duration, focus, icon, gradient, surface }) => (
               <button
                 key={type}
                 onClick={() => navigate(`/assessment/${type}`)}
@@ -124,6 +169,20 @@ export function AssessmentHubPage() {
                     <p className="text-sm text-slate-600 leading-relaxed">
                       {description}
                     </p>
+                    <div className="grid gap-2 rounded-2xl bg-white/70 p-3 text-xs font-semibold text-slate-600">
+                      <span className="flex items-center gap-2">
+                        <Clock3 className="size-3.5 text-violet-600" />
+                        {duration}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-emerald-600" />
+                        {focus}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <ShieldCheck className="size-3.5 text-violet-600" />
+                        English / हिन्दी questions
+                      </span>
+                    </div>
                     <div className="flex items-center justify-between">
                       <Button
                         className="h-10 rounded-xl bg-gradient-to-r from-primary to-violet-600 font-bold shadow-md"

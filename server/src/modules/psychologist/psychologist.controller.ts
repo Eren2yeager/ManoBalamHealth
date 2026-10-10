@@ -8,6 +8,11 @@ import { psychologistService } from "./psychologist.service";
 import { UserModel } from "../user/user.model";
 
 export class PsychologistController {
+  getMeta = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.status(200).json(ApiResponse.success(psychologistService.getMeta(), "Psychologist metadata"));
+  });
+
   getMyOnboarding = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const result = await psychologistService.getMyOnboarding(req.user!.userId);
     res.status(200).json(ApiResponse.success(result, "Onboarding profile retrieved"));
@@ -68,9 +73,56 @@ export class PsychologistController {
     res.status(201).json(ApiResponse.success(result, "Credentials uploaded successfully"));
   });
 
+  deleteCredential = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const credentialId = Array.isArray(req.params.credentialId)
+      ? req.params.credentialId[0]
+      : req.params.credentialId;
+    const result = await psychologistService.deleteCredential(req.user!.userId, credentialId);
+    res.status(200).json(ApiResponse.success(result, "Credential deleted"));
+  });
+
   submitForReview = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const result = await psychologistService.submitForReview(req.user!.userId);
     res.status(200).json(ApiResponse.success(result, "Application submitted for review"));
+  });
+
+  // Admin-only fee management endpoints
+  setPsychologistFee = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const psychologistId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const adminUserId = req.user!.userId;
+    const { amount, currency, reason } = req.body;
+
+    const result = await psychologistService.setPsychologistFee(
+      psychologistId,
+      amount,
+      currency,
+      adminUserId,
+      reason,
+    );
+    res.status(200).json(ApiResponse.success(result, "Psychologist fee updated successfully"));
+  });
+
+  bulkSetPsychologistFee = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const adminUserId = req.user!.userId;
+    const { amount, currency, reason, psychologistIds } = req.body;
+
+    const result = await psychologistService.bulkSetPsychologistFee(
+      amount,
+      currency,
+      adminUserId,
+      reason,
+      psychologistIds,
+    );
+    res.status(200).json(ApiResponse.success(result, "Psychologist fees updated successfully"));
+  });
+
+  getFeeHistory = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const psychologistId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    const result = await psychologistService.getFeeHistory(psychologistId, page, limit);
+    res.status(200).json(ApiResponse.success(result.data, "Fee history retrieved", result.meta));
   });
 }
 

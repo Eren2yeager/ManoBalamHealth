@@ -1,4 +1,6 @@
+import { randomUUID } from "crypto";
 import { Types } from "mongoose";
+import { cloudinary } from "@/config/cloudinary";
 import { MessageModel } from "./message.model";
 import { SessionModel } from "@/modules/session/session.model";
 import { AppointmentModel } from "@/modules/appointment/appointment.model";
@@ -79,6 +81,81 @@ class ChatService {
     }));
 
     return { data, meta: { page: query.page, limit: query.limit, total, totalPages } };
+  }
+
+  /**
+   * Upload a chat attachment to Cloudinary. Only session participants may
+   * upload, and only while the session hasn't ended.
+   */
+  async uploadAttachment(
+    sessionId: string,
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<{ url: string; mimeType: string }> {
+    if (!Types.ObjectId.isValid(sessionId)) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Session not found");
+    }
+
+    const session = await SessionModel.findById(sessionId);
+    if (!session) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Session not found");
+    }
+    if (session.status === "ended") {
+      throw new ApiError(
+        StatusCodes.FORBIDDEN,
+        ErrorCodes.FORBIDDEN_ROLE,
+        "This session has ended",
+      );
+    }
+
+    const appointment = await AppointmentModel.findById(session.appointmentId)
+      .select("patientId psychologistId")
+      .lean();
+    if (!appointment) {
+      throw new ApiError(StatusCodes.NOT_FOUND, ErrorCodes.NOT_FOUND, "Appointment not found");
+    }
+
+    const psychologist = await PsychologistModel.findById(appointment.psychologistId)
+      .select("userId")
+      .lean();
+    const isParticipant =
+      appointment.patientId.toString() === userId ||
+      psychologist?.userId.toString() === userId;
+    if (!isParticipant) {
+      throw new ApiError(
+        StatusCodes.FORBIDDEN,
+        ErrorCodes.FORBIDDEN_ROLE,
+        "You are not a participant of this session",
+      );
+    }
+
+    const url = await new Promise<string>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          public_id: `manobalam/chat/${sessionId}/${randomUUID()}`,
+          resource_type: file.mimetype === "application/pdf" ? "raw" : "image",
+          transformation:
+            file.mimetype === "application/pdf"
+              ? undefined
+              : [{ width: 1600, height: 1600, crop: "limit" }, { quality: "auto" }],
+        },
+        (error, result) => {
+          if (error || !result?.secure_url) {
+            return reject(
+              new ApiError(
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                ErrorCodes.INTERNAL_ERROR,
+                "Failed to upload attachment",
+              ),
+            );
+          }
+          resolve(result.secure_url);
+        },
+      );
+      uploadStream.end(file.buffer);
+    });
+
+    return { url, mimeType: file.mimetype };
   }
 }
 

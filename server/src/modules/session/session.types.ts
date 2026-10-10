@@ -17,14 +17,25 @@ export interface GetSessionResponse {
     psychologistOnline: boolean;
   };
   iceServers: Array<{
-    urls: string;
+    urls: string | string[];
     username?: string;
     credential?: string;
   }>;
+  /** Private notes — only included when the requester is the session's psychologist */
+  psychologistNotes?: SessionNoteEntryDto[];
+}
+
+export interface SessionNoteEntryDto {
+  id: string;
+  text: string;
+  emotion?: "happy" | "calm" | "neutral" | "anxious" | "sad" | "angry";
+  /** Elapsed seconds into the session when the note was taken (if taken live) */
+  atSeconds?: number;
+  createdAt: string;
 }
 
 export interface UpdateSessionNotesRequest {
-  notes: string;
+  entries: Array<Omit<SessionNoteEntryDto, "createdAt"> & { createdAt?: string }>;
 }
 
 export interface UpdateSessionNotesResponse {

@@ -4,10 +4,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PsychologistVerificationCard } from "../components/PsychologistVerificationCard";
-import { getPendingPsychologists, verifyPsychologist } from "../api/admin.api";
+import { AdminWorkspaceHeader } from "../components/AdminWorkspaceHeader";
+import { getPendingPsychologists, verifyPsychologist, reviewPsychologistChanges } from "../api/admin.api";
 import type { PendingPsychologistItem, VerifyPsychologistDto } from "../types/admin.types";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle, RefreshCw, Sparkles } from "lucide-react";
+import { CheckCircle2, AlertCircle, RefreshCw, ShieldCheck } from "lucide-react";
 
 export function AdminVerificationsPage() {
   const [psychologists, setPsychologists] = useState<PendingPsychologistItem[]>([]);
@@ -36,14 +37,29 @@ export function AdminVerificationsPage() {
   }, [fetchPsychologists]);
 
   const handleVerify = async (id: string, payload: VerifyPsychologistDto) => {
+    const psychologist = psychologists.find((item) => item.id === id);
+    // Approved psychologists with pending edits go through the change-review
+    // endpoint; everyone else is a first-time verification.
+    const isChangeReview =
+      psychologist?.changeReviewStatus === "pending" &&
+      psychologist?.onboardingStatus === "approved";
     try {
       setIsProcessing(true);
-      await verifyPsychologist(id, payload);
-      toast.success(
-        payload.decision === "approved"
-          ? "Psychologist approved!"
-          : "Psychologist rejected!"
-      );
+      if (isChangeReview) {
+        await reviewPsychologistChanges(id, payload);
+        toast.success(
+          payload.decision === "approved"
+            ? "Profile changes approved and published!"
+            : "Profile changes rejected — the live profile is unchanged."
+        );
+      } else {
+        await verifyPsychologist(id, payload);
+        toast.success(
+          payload.decision === "approved"
+            ? "Psychologist approved!"
+            : "Psychologist rejected!"
+        );
+      }
       fetchPsychologists();
     } catch (err) {
       toast.error("Failed to process verification");
@@ -92,36 +108,13 @@ export function AdminVerificationsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-violet-600 via-primary to-indigo-700 p-7 text-white shadow-xl md:p-10">
-          <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 left-1/3 size-64 rounded-full bg-white/10 blur-3xl" />
-          
-          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="mb-4 flex items-center gap-2 text-sm font-bold text-violet-100">
-                <span className="grid size-9 place-items-center rounded-xl bg-white/15">
-                  <Sparkles className="size-4" />
-                </span>
-                Psychologist Reviews
-              </div>
-              <h1 className="text-3xl font-black tracking-[-0.035em] md:text-4xl">
-                Pending Verifications
-              </h1>
-              <p className="mt-3 max-w-lg text-sm leading-relaxed text-violet-100/80">
-                Review and verify new psychologist applications to ensure platform quality.
-              </p>
-            </div>
-
-            <Button
-              onClick={fetchPsychologists}
-              className="h-11 rounded-xl bg-white px-6 font-bold text-primary hover:bg-violet-50"
-            >
-              <RefreshCw className="mr-2 size-4" />
-              Refresh
-            </Button>
-          </div>
-        </section>
+        <AdminWorkspaceHeader
+          icon={ShieldCheck}
+          eyebrow="Professional reviews"
+          title="Verification queue"
+          description="Review onboarding submissions and profile changes before they affect patient-facing care."
+          actions={<Button onClick={fetchPsychologists} className="h-11 rounded-xl bg-white px-5 font-bold text-primary hover:bg-violet-50"><RefreshCw className="mr-2 size-4" />Refresh queue</Button>}
+        />
 
         {/* Content Section */}
         {psychologists.length === 0 ? (

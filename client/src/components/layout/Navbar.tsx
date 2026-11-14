@@ -277,9 +277,9 @@ export function Navbar() {
 
   return (
     <>
-      <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${isAboutPage ? "about-page-chrome border-white/10 bg-[#18142f]/95 shadow-[0_12px_36px_-26px_rgba(124,58,237,.8)] backdrop-blur-xl" : scrolled || isMobileMenuOpen || location.pathname !== "/" ? "border-slate-200/70 bg-white/96 shadow-[0_8px_35px_rgba(32,22,70,.07)] backdrop-blur-xl" : "border-transparent bg-white/80 backdrop-blur-lg"}`}>
+      <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${isAboutPage ? "about-page-chrome border-[#ddd6fe] bg-white/96 shadow-[0_8px_35px_rgba(76,29,149,.08)] backdrop-blur-xl" : scrolled || isMobileMenuOpen || location.pathname !== "/" ? "border-slate-200/70 bg-white/96 shadow-[0_8px_35px_rgba(32,22,70,.07)] backdrop-blur-xl" : "border-transparent bg-white/80 backdrop-blur-lg"}`}>
         <div className={`mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 md:px-7 ${isAboutPage ? "h-20 max-[480px]:h-auto max-[480px]:flex-wrap max-[480px]:py-3" : "h-19"}`}>
-          <BrandLogo to={homePath} dark={isAboutPage} className={isAboutPage ? "rounded-2xl bg-white/[.05] p-1.5 pr-3 ring-1 ring-white/10" : undefined} imageClassName={isAboutPage ? "size-9" : undefined} />
+          <BrandLogo to={homePath} dark={false} className={isAboutPage ? "rounded-2xl bg-[#f5f3ff] p-1.5 pr-3 ring-1 ring-[#ddd6fe]" : undefined} imageClassName={isAboutPage ? "size-9" : undefined} />
 
           {!showPublicNavigation && user ? (
             <nav aria-label="Main navigation" className="hidden items-center gap-7 lg:flex">
@@ -294,7 +294,7 @@ export function Navbar() {
               homeTo={publicHomePath}
               openMenu={openMenu}
               setOpenMenu={setOpenMenu}
-              about={isAboutPage}
+              about={false}
             />
           )}
 
@@ -310,16 +310,16 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Button asChild variant="ghost" className={`hidden rounded-xl px-4 font-bold sm:inline-flex ${isAboutPage ? "h-11 text-violet-100 hover:bg-white/[.07] hover:text-white" : "h-10"}`}><Link to="/login">Log in</Link></Button>
+                <Button asChild variant="ghost" className={`hidden rounded-xl px-4 font-bold sm:inline-flex ${isAboutPage ? "h-11 text-[#4c1d95] hover:bg-[#f5f3ff] hover:text-[#7c3aed]" : "h-10"}`}><Link to="/login">Log in</Link></Button>
                 <Button asChild className={`rounded-xl px-4 font-bold ${isAboutPage ? "h-11 bg-[#7c3aed] text-white shadow-[0_12px_30px_-16px_rgba(76,29,149,.8)] hover:bg-[#6d28d9]" : "h-10 bg-gradient-to-r from-primary to-violet-600 shadow-lg shadow-primary/20 hover:opacity-90"}`}><Link to="/register">Get started</Link></Button>
               </>
             )}
-            <Button variant="ghost" size="icon" className={`rounded-xl ${isAboutPage ? "text-violet-100 hover:bg-white/[.07] hover:text-white" : ""} ${user ? "lg:hidden" : "xl:hidden"}`} aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen((open) => !open)}>{isMobileMenuOpen ? <X /> : <Menu />}</Button>
+            <Button variant="ghost" size="icon" className={`rounded-xl ${isAboutPage ? "text-[#4c1d95] hover:bg-[#f5f3ff] hover:text-[#7c3aed]" : ""} ${user ? "lg:hidden" : "xl:hidden"}`} aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen((open) => !open)}>{isMobileMenuOpen ? <X /> : <Menu />}</Button>
           </div>
         </div>
 
         {isMobileMenuOpen && (
-          <div className={`border-t px-4 py-4 shadow-xl ${isAboutPage ? "border-white/10 bg-[#18142f]" : "border-slate-100 bg-white"} ${user ? "lg:hidden" : "xl:hidden"}`}>
+          <div className={`border-t px-4 py-4 shadow-xl ${isAboutPage ? "border-[#ddd6fe] bg-white" : "border-slate-100 bg-white"} ${user ? "lg:hidden" : "xl:hidden"}`}>
             <div className="mx-auto max-h-[calc(100vh-7rem)] max-w-7xl overflow-y-auto">
               {!showPublicNavigation && user ? (
                 <nav aria-label="Mobile navigation" className="grid gap-1">
@@ -332,7 +332,7 @@ export function Navbar() {
                   close={() => setIsMobileMenuOpen(false)}
                   homeTo={publicHomePath}
                   showLogin={!user}
-                  about={isAboutPage}
+                  about={false}
                 />
               )}
             </div>
